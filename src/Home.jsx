@@ -189,18 +189,18 @@ const Home = () => {
                     {/* 💡 [공부 포인트 1] 사이드바 상단 영역(헤더)을 새로 묶어서 타이틀과 검색창을 같이 배치했어! */}
                     <div style={sidebarHeaderAreaStyle}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
-                            <h2 style={{ fontSize: '18px', margin: 0 }}>🏆 클린 사업장 랭킹</h2>
+                            <h2 style={{ fontSize: '18px', margin: 0 }}> 클린 사업장 리스트</h2>
                             
                             {/* 💡 [공부 포인트 2] 레퍼런스 이미지처럼 현재 리스트에 있는 가게 개수를 보여줌! */}
                             <span style={{ fontSize: '13px', color: '#888', fontWeight: 'bold' }}>
-                                전체 DB {stores.length}건
+                                전체 {stores.length}건
                             </span>
                         </div>
                         
                         {/* 💡 [공부 포인트 3] 상단바에 있던 검색창 코드를 그대로 이쪽으로 옮겨왔어. (가로 100% 꽉 차게 스타일만 수정) */}
                         <input
                             type="text"
-                            placeholder="가게 이름 검색 후 엔터"
+                            placeholder="사업장 이름 검색"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             onKeyDown={handleSearch}
