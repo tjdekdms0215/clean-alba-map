@@ -7,8 +7,9 @@ const DUMMY_STORES = [
     { id: 2, name: '정문 ㅇㅇ편의점', cleanIndex: 75, lat: 35.1750, lng: 126.9100, issue: '근로계약서 미교부 의심', oxStats: '근로계약서 X (2건) / 주휴수당 O (5건)', reviewCount: 7, frequentJobs: ['야간 카운터'] },
     { id: 3, name: '상대 ㅁㅁ카페', cleanIndex: 55, lat: 35.1780, lng: 126.9080, issue: '주휴수당 미지급 의심', oxStats: '근로계약서 O (5건) / 주휴수당 X (4건)', reviewCount: 9, frequentJobs: ['오픈 파트타이머'] },
     { id: 4, name: '후문 XX식당', cleanIndex: 30, lat: 35.1740, lng: 126.9150, issue: '최저임금 위반 의심', oxStats: '최저임금 X (10건)', reviewCount: 10, frequentJobs: ['주방 보조'] },
-    { id: 5, name: '신장개업 카페 (리뷰없음)', cleanIndex: 0, lat: 35.1790, lng: 126.9110, issue: '리뷰 없음', oxStats: '데이터 없음', reviewCount: 0, frequentJobs: ['알바생 구함'] }
 ];
+const REVIEWED_STORES = DUMMY_STORES.filter((store) => store.reviewCount > 0);
+   
 
 // 💡 [공부 포인트 2] 점수에 따라 색상과 라벨을 뱉어내는 마법의 자판기 함수!
 const getCleanGradeInfo = (score) => {
@@ -40,7 +41,7 @@ const Home = () => {
             if (userRole === 'ADMIN') setIsAdmin(true);
         }
 
-        const sortedStores = [...DUMMY_STORES].sort((a, b) => b.cleanIndex - a.cleanIndex);
+        const sortedStores = [...REVIEWED_STORES].sort((a, b) => b.cleanIndex - a.cleanIndex);
         setStores(sortedStores);
     }, []);
 
@@ -89,19 +90,26 @@ const Home = () => {
     };
 
     const handleSearch = (e) => {
-        if (e.key !== 'Enter') return;
-        const keyword = searchTerm.trim();
+    if (e.key !== 'Enter') return;
 
-        if (keyword === '') {
-            setStores([...DUMMY_STORES].sort((a, b) => b.cleanIndex - a.cleanIndex));
-            setSelectedStore(null);
-            return;
-        }
-        const filteredStores = DUMMY_STORES
-            .filter((store) => store.name.includes(keyword))
-            .sort((a, b) => b.cleanIndex - a.cleanIndex);
-        setStores(filteredStores);
+    const keyword = searchTerm.trim();
+
+    if (keyword === '') {
+        const sortedStores = [...REVIEWED_STORES].sort(
+            (a, b) => b.cleanIndex - a.cleanIndex
+        );
+
+        setStores(sortedStores);
         setSelectedStore(null);
+        return;
+    }
+
+    const filteredStores = REVIEWED_STORES
+        .filter((store) => store.name.includes(keyword))
+        .sort((a, b) => b.cleanIndex - a.cleanIndex);
+
+    setStores(filteredStores);
+    setSelectedStore(null);
     };
 
     return (
