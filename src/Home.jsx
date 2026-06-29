@@ -220,7 +220,6 @@ const Home = () => {
                                 <div key={store.id} style={listItemStyle} onClick={() => setSelectedStore(store)}>
                                     {/* 💡 가게 이름이 안 보이길래 복구해 뒀어! */}
                                     <div style={storeNameStyle}>
-                                        <span style={rankStyle}>{index + 1}위</span>
                                         {store.name}
                                     </div>
                                     <div style={storeInfoStyle}>
