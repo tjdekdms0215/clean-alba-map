@@ -9,11 +9,12 @@ const DUMMY_STORES = [
     { id: 5, name: '신장개업 카페 (리뷰없음)', cleanIndex: 0, lat: 35.1790, lng: 126.9110, issue: '리뷰 없음', oxStats: '데이터 없음', reviewCount: 0, frequentJobs: ['알바생 구함'] }
 ];
 
+// 💡 [수정됨] 파스텔톤을 빼고 쨍하고 또렷한 원색 계열로 변경!
 const getCleanGradeInfo = (score) => {
-    if (score >= 80) return { color: '#2ecc71', label: '우수' };
-    if (score >= 60) return { color: '#f1c40f', label: '보통' };
-    if (score >= 40) return { color: '#e67e22', label: '주의' };
-    return { color: '#e74c3c', label: '위험' };
+    if (score >= 80) return { color: '#009900', label: '우수' }; // 🟢 쨍한 초록
+    if (score >= 60) return { color: '#FFC000', label: '보통' }; // 🟡 진한 노랑(글씨도 잘 보이게)
+    if (score >= 40) return { color: '#FF6600', label: '주의' }; // 🟠 쨍한 주황
+    return { color: '#DD0000', label: '위험' };                  // 🔴 쨍한 빨강
 };
 
 const Home = () => {
@@ -126,12 +127,12 @@ const Home = () => {
                 <div style={mapContainerStyle}>
                     <div id="kakao-map" style={{ width: '100%', height: '100%' }} />
                     
-                    {/* 💡 [추가됨] 지도 왼쪽 하단 점수 범례(Legend) 박스 */}
+                    {/* 💡 [수정됨] 하단 범례 색상도 원색으로 통일! */}
                     <div style={legendBoxStyle}>
-                        <div style={legendRowStyle}><span style={{...legendDotStyle, backgroundColor: '#2ecc71'}}></span> 80+ 우수</div>
-                        <div style={legendRowStyle}><span style={{...legendDotStyle, backgroundColor: '#f1c40f'}}></span> 60~79 보통</div>
-                        <div style={legendRowStyle}><span style={{...legendDotStyle, backgroundColor: '#e67e22'}}></span> 40~59 주의</div>
-                        <div style={legendRowStyle}><span style={{...legendDotStyle, backgroundColor: '#e74c3c'}}></span> 40미만 위험</div>
+                        <div style={legendRowStyle}><span style={{...legendDotStyle, backgroundColor: '#009900'}}></span> 80+ 우수</div>
+                        <div style={legendRowStyle}><span style={{...legendDotStyle, backgroundColor: '#FFC000'}}></span> 60~79 보통</div>
+                        <div style={legendRowStyle}><span style={{...legendDotStyle, backgroundColor: '#FF6600'}}></span> 40~59 주의</div>
+                        <div style={legendRowStyle}><span style={{...legendDotStyle, backgroundColor: '#DD0000'}}></span> 40미만 위험</div>
                     </div>
 
                     {selectedStore && (
@@ -171,7 +172,6 @@ const Home = () => {
                         </div>
                     )}
                     
-                    {/* 후기 쓰기 버튼 */}
                     <button onClick={() => navigate('/review/write')} style={fabStyle}>후기 쓰기</button>
                 </div>
 
@@ -194,7 +194,6 @@ const Home = () => {
                         {stores.length > 0 ? (
                             stores.map((store, index) => (
                                 <div key={store.id} style={listItemStyle} onClick={() => setSelectedStore(store)}>
-                                    {/* 💡 [수정됨] 스크린샷 1과 동일한 레이아웃: 글자 빼고 점과 이름만 표기 + 우측에 점수 배치 */}
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div style={storeNameStyle}>
                                             <span style={{...statusDotStyle, backgroundColor: getCleanGradeInfo(store.cleanIndex).color}}></span>
@@ -233,14 +232,13 @@ const profileCircleStyle = { width: '32px', height: '32px', borderRadius: '50%',
 const contentStyle = { display: 'flex', flex: 1, overflow: 'hidden' };
 const mapContainerStyle = { flex: 1, position: 'relative', backgroundColor: '#e9ecef' };
 
-// 💡 새로 추가된 범례(Legend) 스타일 모음
 const legendBoxStyle = {
     position: 'absolute',
     bottom: '24px',
     left: '24px',
     backgroundColor: 'white',
     border: '1px solid #ddd',
-    borderRadius: '6px', // 사각형 느낌을 살린 살짝 둥근 모서리
+    borderRadius: '6px', 
     padding: '16px',
     zIndex: 15,
     display: 'flex',
@@ -279,8 +277,6 @@ const infoRowStyle = { display: 'flex', justifyContent: 'space-between', alignIt
 const infoLabelStyle = { fontSize: '13px', fontWeight: 'bold', color: '#777' };
 const tagStyle = { backgroundColor: '#f0f4f8', color: '#007AFF', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '500' };
 const detailBtnStyle = { width: '100%', padding: '12px', marginTop: '16px', backgroundColor: '#007AFF', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' };
-
-// '후기 쓰기' 버튼의 위치를 우측 상단으로 이동시켰어 (범례가 왼쪽 아래를 차지했으니까!)
 const fabStyle = { position: 'absolute', top: '24px', right: '24px', width: '100px', height: '40px', backgroundColor: '#ffffff', color: 'black', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', zIndex: 15 };
 
 export default Home;
