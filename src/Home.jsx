@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// 💡 [공부 포인트 1] 공고 내역을 빼고 '후기 요약(reviewSummary)' 데이터를 새로 넣었어!
 const DUMMY_STORES = [
     { id: 1, name: '전대 후문 맘스터치', cleanIndex: 98, lat: 35.1764, lng: 126.9135, issue: '클린 사업장!', oxStats: '근로계약서 O (12건) / 주휴수당 O (12건)', reviewCount: 12, reviewSummary: '사장님이 친절하고 주휴수당을 칼같이 챙겨주십니다.', category: '식당', location: '후문' },
     { id: 2, name: '정문 ㅇㅇ편의점', cleanIndex: 75, lat: 35.1750, lng: 126.9100, issue: '근로계약서 미교부 의심', oxStats: '근로계약서 X (2건) / 주휴수당 O (5건)', reviewCount: 7, reviewSummary: '알바 강도는 낮지만 근로계약서 작성을 미루는 경향이 있어요.', category: '편의점', location: '정문' },
@@ -143,8 +142,7 @@ const Home = () => {
                         <div style={popupStyle}>
                             <button onClick={() => setSelectedStore(null)} style={closeIconBtnStyle}>✕</button>
                             
-                            {/* 💡 [수정됨] 직사각형 태그로 등급 표시 */}
-                            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                                 <span style={{
                                     ...tagStatusStyle, 
                                     backgroundColor: '#fff', 
@@ -155,15 +153,13 @@ const Home = () => {
                                 </span>
                             </div>
 
-                            {/* 💡 [수정됨] 이름과 위치, 업종 정보 배치 */}
-                            <h3 style={{ margin: '0 0 6px 0', fontSize: '20px', color: '#333' }}>
+                            <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', color: '#333' }}>
                                 {selectedStore.name}
                             </h3>
-                            <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#666' }}>
+                            <p style={{ margin: '0 0 14px 0', fontSize: '13px', color: '#666' }}>
                                 {selectedStore.location} • {selectedStore.category}
                             </p>
 
-                            {/* 💡 [수정됨] 직사각형 회색 박스 (점수 & O/X 통계) */}
                             <div style={grayBoxStyle}>
                                 <div style={boxRowStyle}>
                                     <span style={boxLabelStyle}>클린 점수:</span>
@@ -177,7 +173,6 @@ const Home = () => {
                                 </div>
                             </div>
 
-                            {/* 💡 [수정됨] 직사각형 컬러 박스 (후기 수 & 후기 요약) */}
                             <div style={tintedBoxStyle}>
                                 <div style={boxRowStyle}>
                                     <span style={boxLabelStyle}>누적 후기:</span>
@@ -189,8 +184,7 @@ const Home = () => {
                                 </div>
                             </div>
 
-                            {/* 💡 [수정됨] 직사각형 닫기 버튼 */}
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
                                 <button onClick={() => navigate(`/detail/${selectedStore.id}`)} style={modernDetailBtnStyle}>
                                     후기 자세히 보기 ➔
                                 </button>
@@ -286,27 +280,28 @@ const emptyStyle = { padding: '24px', color: '#777', fontSize: '14px', textAlign
 
 const fabStyle = { position: 'absolute', top: '24px', left: '24px', width: '100px', height: '40px', backgroundColor: '#ffffff', color: 'black', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', zIndex: 15 };
 
-// 💡 [공부 포인트 2] 팝업 내부 요소들의 borderRadius(모서리 둥글기)를 전부 0으로 만들어서 직사각형으로 각지게 바꿨어!
+// 💡 [수정됨] 팝업창 크기를 340px에서 280px로 줄이고 패딩도 살짝 줄였어!
 const popupStyle = { 
     position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', 
-    backgroundColor: 'white', padding: '24px', 
-    borderRadius: '0', // 팝업창 바깥 테두리 직사각형
-    boxShadow: '0 8px 30px rgba(0,0,0,0.2)', zIndex: 20, width: '340px', 
+    backgroundColor: 'white', padding: '20px', 
+    borderRadius: '0', 
+    boxShadow: '0 8px 30px rgba(0,0,0,0.2)', zIndex: 20, width: '280px', 
     display: 'flex', flexDirection: 'column' 
 };
-const closeIconBtnStyle = { position: 'absolute', top: '20px', right: '20px', backgroundColor: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#999' };
-const tagStatusStyle = { padding: '4px 8px', borderRadius: '0', fontSize: '13px', fontWeight: 'bold' }; // 태그 직사각형
+const closeIconBtnStyle = { position: 'absolute', top: '16px', right: '16px', backgroundColor: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#999' };
+const tagStatusStyle = { padding: '4px 8px', borderRadius: '0', fontSize: '12px', fontWeight: 'bold' };
 
-const grayBoxStyle = { backgroundColor: '#f8f9fa', padding: '16px', borderRadius: '0', marginBottom: '8px', border: '1px solid #eee' }; // 회색 박스 직사각형
-const tintedBoxStyle = { backgroundColor: '#fff8f0', padding: '16px', borderRadius: '0', border: '1px solid #fde7d8' }; // 주황 박스 직사각형
-const boxRowStyle = { display: 'flex', alignItems: 'flex-start', fontSize: '14px', color: '#333', marginBottom: '8px' };
-const boxLabelStyle = { minWidth: '70px', fontWeight: 'bold', color: '#555' };
+// 💡 내부 박스들의 패딩도 16px에서 12px로 줄여서 비율을 맞춤!
+const grayBoxStyle = { backgroundColor: '#f8f9fa', padding: '12px', borderRadius: '0', marginBottom: '8px', border: '1px solid #eee' }; 
+const tintedBoxStyle = { backgroundColor: '#fff8f0', padding: '12px', borderRadius: '0', border: '1px solid #fde7d8' }; 
+const boxRowStyle = { display: 'flex', alignItems: 'flex-start', fontSize: '13px', color: '#333', marginBottom: '6px' };
+const boxLabelStyle = { minWidth: '65px', fontWeight: 'bold', color: '#555' };
 
 const modernDetailBtnStyle = { 
     backgroundColor: '#f8f9fa', color: '#333', border: '1px solid #ddd', 
-    padding: '10px 16px', 
-    borderRadius: '0', // 버튼 직사각형
-    cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px'
+    padding: '8px 14px', 
+    borderRadius: '0', 
+    cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px'
 };
 
 export default Home;
