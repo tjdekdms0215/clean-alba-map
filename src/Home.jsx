@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// 💡 [공부 포인트 1] 공고 내역을 빼고 '후기 요약(reviewSummary)' 데이터를 새로 넣었어!
 const DUMMY_STORES = [
-    { id: 1, name: '전대 후문 맘스터치', cleanIndex: 98, lat: 35.1764, lng: 126.9135, issue: '클린 사업장!', oxStats: '근로계약서 O (12건) / 주휴수당 O (12건)', reviewCount: 12, frequentJobs: ['홀 서빙'], category: '식당', location: '후문' },
-    { id: 2, name: '정문 ㅇㅇ편의점', cleanIndex: 75, lat: 35.1750, lng: 126.9100, issue: '근로계약서 미교부 의심', oxStats: '근로계약서 X (2건) / 주휴수당 O (5건)', reviewCount: 7, frequentJobs: ['야간 카운터'], category: '편의점', location: '정문' },
-    { id: 3, name: '상대 ㅁㅁ카페', cleanIndex: 55, lat: 35.1780, lng: 126.9080, issue: '주휴수당 미지급 의심', oxStats: '근로계약서 O (5건) / 주휴수당 X (4건)', reviewCount: 9, frequentJobs: ['오픈 파트타이머'], category: '카페', location: '상대' },
-    { id: 4, name: '후문 XX식당', cleanIndex: 30, lat: 35.1740, lng: 126.9150, issue: '최저임금 위반 의심', oxStats: '최저임금 X (10건)', reviewCount: 10, frequentJobs: ['주방 보조'], category: '식당', location: '후문' },
-    { id: 5, name: '신장개업 카페 (리뷰없음)', cleanIndex: 0, lat: 35.1790, lng: 126.9110, issue: '리뷰 없음', oxStats: '데이터 없음', reviewCount: 0, frequentJobs: ['알바생 구함'], category: '카페', location: '상대' }
+    { id: 1, name: '전대 후문 맘스터치', cleanIndex: 98, lat: 35.1764, lng: 126.9135, issue: '클린 사업장!', oxStats: '근로계약서 O (12건) / 주휴수당 O (12건)', reviewCount: 12, reviewSummary: '사장님이 친절하고 주휴수당을 칼같이 챙겨주십니다.', category: '식당', location: '후문' },
+    { id: 2, name: '정문 ㅇㅇ편의점', cleanIndex: 75, lat: 35.1750, lng: 126.9100, issue: '근로계약서 미교부 의심', oxStats: '근로계약서 X (2건) / 주휴수당 O (5건)', reviewCount: 7, reviewSummary: '알바 강도는 낮지만 근로계약서 작성을 미루는 경향이 있어요.', category: '편의점', location: '정문' },
+    { id: 3, name: '상대 ㅁㅁ카페', cleanIndex: 55, lat: 35.1780, lng: 126.9080, issue: '주휴수당 미지급 의심', oxStats: '근로계약서 O (5건) / 주휴수당 X (4건)', reviewCount: 9, reviewSummary: '일은 재밌는데 주휴수당 챙겨 받기가 눈치 보입니다.', category: '카페', location: '상대' },
+    { id: 4, name: '후문 XX식당', cleanIndex: 30, lat: 35.1740, lng: 126.9150, issue: '최저임금 위반 의심', oxStats: '최저임금 X (10건)', reviewCount: 10, reviewSummary: '수습 기간 핑계로 최저시급을 안 맞춰줍니다. 주의하세요!', category: '식당', location: '후문' },
+    { id: 5, name: '신장개업 카페 (리뷰없음)', cleanIndex: 0, lat: 35.1790, lng: 126.9110, issue: '리뷰 없음', oxStats: '데이터 없음', reviewCount: 0, reviewSummary: '', category: '카페', location: '상대' }
 ];
 
 const getCleanGradeInfo = (score) => {
@@ -138,14 +139,12 @@ const Home = () => {
                         <div style={legendRowStyle}><span style={{...legendDotStyle, backgroundColor: '#DD0000'}}></span> 40미만 위험</div>
                     </div>
 
-                    {/* 💡 [리뉴얼] 레퍼런스 이미지를 바탕으로 재설계된 팝업창 UI */}
                     {selectedStore && (
                         <div style={popupStyle}>
                             <button onClick={() => setSelectedStore(null)} style={closeIconBtnStyle}>✕</button>
                             
-                            {/* 1. 상단 태그 영역 (ID & 상태) */}
+                            {/* 💡 [수정됨] 직사각형 태그로 등급 표시 */}
                             <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                                <span style={tagIdStyle}>ID: {selectedStore.id}</span>
                                 <span style={{
                                     ...tagStatusStyle, 
                                     backgroundColor: '#fff', 
@@ -156,15 +155,15 @@ const Home = () => {
                                 </span>
                             </div>
 
-                            {/* 2. 타이틀 & 주소(상권) 영역 */}
+                            {/* 💡 [수정됨] 이름과 위치, 업종 정보 배치 */}
                             <h3 style={{ margin: '0 0 6px 0', fontSize: '20px', color: '#333' }}>
                                 {selectedStore.name}
                             </h3>
                             <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#666' }}>
-                                광주광역시 북구 • {selectedStore.location} {selectedStore.category}
+                                {selectedStore.location} • {selectedStore.category}
                             </p>
 
-                            {/* 3. 첫 번째 박스 (회색 배경 - 점수 및 근거) */}
+                            {/* 💡 [수정됨] 직사각형 회색 박스 (점수 & O/X 통계) */}
                             <div style={grayBoxStyle}>
                                 <div style={boxRowStyle}>
                                     <span style={boxLabelStyle}>클린 점수:</span>
@@ -178,19 +177,19 @@ const Home = () => {
                                 </div>
                             </div>
 
-                            {/* 4. 두 번째 박스 (연한 주황색 배경 - 후기 및 공고) */}
+                            {/* 💡 [수정됨] 직사각형 컬러 박스 (후기 수 & 후기 요약) */}
                             <div style={tintedBoxStyle}>
                                 <div style={boxRowStyle}>
                                     <span style={boxLabelStyle}>누적 후기:</span>
                                     <span>{selectedStore.reviewCount}명 참여</span>
                                 </div>
                                 <div style={boxRowStyle}>
-                                    <span style={boxLabelStyle}>주요 공고:</span>
-                                    <span>{selectedStore.frequentJobs.join(', ')}</span>
+                                    <span style={boxLabelStyle}>후기 요약:</span>
+                                    <span style={{ lineHeight: '1.4' }}>{selectedStore.reviewSummary}</span>
                                 </div>
                             </div>
 
-                            {/* 5. 하단 영역 (자세히 보기 버튼) */}
+                            {/* 💡 [수정됨] 직사각형 닫기 버튼 */}
                             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
                                 <button onClick={() => navigate(`/detail/${selectedStore.id}`)} style={modernDetailBtnStyle}>
                                     후기 자세히 보기 ➔
@@ -287,27 +286,27 @@ const emptyStyle = { padding: '24px', color: '#777', fontSize: '14px', textAlign
 
 const fabStyle = { position: 'absolute', top: '24px', left: '24px', width: '100px', height: '40px', backgroundColor: '#ffffff', color: 'black', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', zIndex: 15 };
 
-// 💡 [리뉴얼] 팝업창 전용 신규 스타일 모음
+// 💡 [공부 포인트 2] 팝업 내부 요소들의 borderRadius(모서리 둥글기)를 전부 0으로 만들어서 직사각형으로 각지게 바꿨어!
 const popupStyle = { 
-    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', // 화면 중앙에 띄우기!
-    backgroundColor: 'white', padding: '24px', borderRadius: '12px', 
+    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', 
+    backgroundColor: 'white', padding: '24px', 
+    borderRadius: '0', // 팝업창 바깥 테두리 직사각형
     boxShadow: '0 8px 30px rgba(0,0,0,0.2)', zIndex: 20, width: '340px', 
     display: 'flex', flexDirection: 'column' 
 };
 const closeIconBtnStyle = { position: 'absolute', top: '20px', right: '20px', backgroundColor: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#999' };
-const tagIdStyle = { padding: '4px 8px', backgroundColor: '#f0f2f5', borderRadius: '4px', fontSize: '13px', color: '#555', fontWeight: 'bold' };
-const tagStatusStyle = { padding: '4px 8px', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold' };
+const tagStatusStyle = { padding: '4px 8px', borderRadius: '0', fontSize: '13px', fontWeight: 'bold' }; // 태그 직사각형
 
-const grayBoxStyle = { backgroundColor: '#f8f9fa', padding: '16px', borderRadius: '8px', marginBottom: '8px', border: '1px solid #eee' };
-const tintedBoxStyle = { backgroundColor: '#fff8f0', padding: '16px', borderRadius: '8px', border: '1px solid #fde7d8' }; // 레퍼런스의 연한 주황색 느낌
+const grayBoxStyle = { backgroundColor: '#f8f9fa', padding: '16px', borderRadius: '0', marginBottom: '8px', border: '1px solid #eee' }; // 회색 박스 직사각형
+const tintedBoxStyle = { backgroundColor: '#fff8f0', padding: '16px', borderRadius: '0', border: '1px solid #fde7d8' }; // 주황 박스 직사각형
 const boxRowStyle = { display: 'flex', alignItems: 'flex-start', fontSize: '14px', color: '#333', marginBottom: '8px' };
-const boxLabelStyle = { width: '70px', fontWeight: 'bold', color: '#555' };
+const boxLabelStyle = { minWidth: '70px', fontWeight: 'bold', color: '#555' };
 
-// 레퍼런스 스타일의 각진 우측 하단 버튼
 const modernDetailBtnStyle = { 
     backgroundColor: '#f8f9fa', color: '#333', border: '1px solid #ddd', 
-    padding: '10px 16px', borderRadius: '6px', cursor: 'pointer', 
-    fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px'
+    padding: '10px 16px', 
+    borderRadius: '0', // 버튼 직사각형
+    cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px'
 };
 
 export default Home;
