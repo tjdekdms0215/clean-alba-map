@@ -179,6 +179,7 @@ const Home = () => {
                 </div>
 
                 <div style={sidebarStyle}>
+                    {/* 💡 상단 검색 블록 영역 */}
                     <div style={sidebarHeaderAreaStyle}>
                         <div style={searchContainerStyle}>
                             <input
@@ -194,12 +195,13 @@ const Home = () => {
                             </span>
                         </div>
                         
-                        {/* 💡 [공부 포인트] 검색 가이드 예시 문구 추가구간! */}
+                        {/* 💡 [공부 포인트] 검색창 바로 밑, 구분선 위에 오도록 예시 가이드 배치 완료! */}
                         <div style={searchExampleTextStyle}>
-                            조건 ex. 상대에 클린점수 60점 넘는 카페 찾아줘
+                            💡 조건 ex) 상대에 클린점수 60점 넘는 카페 찾아줘
                         </div>
                     </div>
-
+                    
+                    {/* 💡 하단 타이틀 및 구분선 영역 */}
                     <div style={listTitleAreaStyle}>
                         <h2 style={{ fontSize: '18px', margin: 0 }}>클린 사업장 리스트</h2>
                         <span style={{ fontSize: '13px', color: '#888', fontWeight: 'bold' }}>전체 {stores.length}건</span>
@@ -252,19 +254,25 @@ const legendRowStyle = { display: 'flex', alignItems: 'center', fontSize: '15px'
 const legendDotStyle = { width: '14px', height: '14px', borderRadius: '50%', marginRight: '10px' };
 
 const sidebarStyle = { width: '400px', backgroundColor: '#ffffff', borderLeft: '1px solid #ddd', display: 'flex', flexDirection: 'column' };
-const sidebarHeaderAreaStyle = { padding: '20px', borderBottom: '1px solid #ddd', backgroundColor: '#fafafa' };
+const sidebarHeaderAreaStyle = { padding: '20px 20px 14px 20px', borderBottom: '1px solid #ddd', backgroundColor: '#fafafa' };
 
-const listTitleAreaStyle = { display: 'flex', justifycontent: 'space-between', alignItems: 'flex-end', padding: '20px 20px 16px 20px', borderBottom: '1px solid #eee' };
+// 💡 수정됨: 오타 교정 및 레이아웃 패딩값 최적화
+const listTitleAreaStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    padding: '20px 20px 16px 20px', 
+    borderBottom: '1px solid #eee'
+};
 
 const searchContainerStyle = { position: 'relative', width: '100%' };
 const sidebarSearchInputStyle = { width: '100%', boxSizing: 'border-box', padding: '12px 40px 12px 14px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none', fontSize: '15px' };
 const searchIconStyle = { position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontSize: '18px' };
 
-// 💡 새로 추가된 조그만 예시 문구 스타일
 const searchExampleTextStyle = {
     fontSize: '12px',
-    color: '#777',
-    marginTop: '8px',
+    color: '#DD0000',
+    marginTop: '10px',
     paddingLeft: '4px',
     lineHeight: '1.4',
     fontWeight: '500'
@@ -281,7 +289,7 @@ const statusDotStyle = { display: 'inline-block', width: '12px', height: '12px',
 
 const popupStyle = { position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 20, width: '320px', display: 'flex', flexDirection: 'column' };
 const closeIconBtnStyle = { backgroundColor: 'transparent', border: 'none', fontSize: '16px', cursor: 'pointer', color: '#999' };
-const infoRowStyle = { display: 'flex', justifycontent: 'space-between', alignItems: 'center', paddingBottom: '10px', marginBottom: '10px', borderBottom: '1px dashed #eee' };
+const infoRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '10px', marginBottom: '10px', borderBottom: '1px dashed #eee' };
 const infoLabelStyle = { fontSize: '13px', fontWeight: 'bold', color: '#777' };
 const tagStyle = { backgroundColor: '#f0f4f8', color: '#007AFF', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '500' };
 const detailBtnStyle = { width: '100%', padding: '12px', marginTop: '16px', backgroundColor: '#007AFF', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' };
