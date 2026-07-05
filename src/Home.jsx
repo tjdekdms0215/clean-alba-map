@@ -138,40 +138,64 @@ const Home = () => {
                         <div style={legendRowStyle}><span style={{...legendDotStyle, backgroundColor: '#DD0000'}}></span> 40미만 위험</div>
                     </div>
 
+                    {/* 💡 [리뉴얼] 레퍼런스 이미지를 바탕으로 재설계된 팝업창 UI */}
                     {selectedStore && (
                         <div style={popupStyle}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                                <h3 style={{ margin: 0, fontSize: '18px', color: '#333' }}>
-                                    <span style={{...statusDotStyle, backgroundColor: getCleanGradeInfo(selectedStore.cleanIndex).color}}></span>
-                                    {selectedStore.name}
-                                </h3>
-                                <button onClick={() => setSelectedStore(null)} style={closeIconBtnStyle}>✕</button>
-                            </div>
-                            <div style={infoRowStyle}>
-                                <span style={infoLabelStyle}>🏆 종합 점수</span>
-                                <span style={{ fontWeight: 'bold', color: getCleanGradeInfo(selectedStore.cleanIndex).color }}>
-                                    {selectedStore.cleanIndex}점 ({getCleanGradeInfo(selectedStore.cleanIndex).label})
+                            <button onClick={() => setSelectedStore(null)} style={closeIconBtnStyle}>✕</button>
+                            
+                            {/* 1. 상단 태그 영역 (ID & 상태) */}
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                                <span style={tagIdStyle}>ID: {selectedStore.id}</span>
+                                <span style={{
+                                    ...tagStatusStyle, 
+                                    backgroundColor: '#fff', 
+                                    color: getCleanGradeInfo(selectedStore.cleanIndex).color,
+                                    border: `1px solid ${getCleanGradeInfo(selectedStore.cleanIndex).color}`
+                                }}>
+                                    {getCleanGradeInfo(selectedStore.cleanIndex).label}
                                 </span>
                             </div>
-                            <div style={infoRowStyle}>
-                                <span style={infoLabelStyle}>📊 산출 근거</span>
-                                <span style={{ fontSize: '13px', color: '#555' }}>{selectedStore.oxStats}</span>
-                            </div>
-                            <div style={infoRowStyle}>
-                                <span style={infoLabelStyle}>✍️ 누적 후기</span>
-                                <span style={{ fontSize: '13px', color: '#555' }}>{selectedStore.reviewCount}명 참여</span>
-                            </div>
-                            <div style={{ ...infoRowStyle, borderBottom: 'none', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-                                <span style={infoLabelStyle}>📢 자주 올라오는 공고</span>
-                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
-                                    {selectedStore.frequentJobs.map((job, idx) => (
-                                        <span key={idx} style={tagStyle}>{job}</span>
-                                    ))}
+
+                            {/* 2. 타이틀 & 주소(상권) 영역 */}
+                            <h3 style={{ margin: '0 0 6px 0', fontSize: '20px', color: '#333' }}>
+                                {selectedStore.name}
+                            </h3>
+                            <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#666' }}>
+                                광주광역시 북구 • {selectedStore.location} {selectedStore.category}
+                            </p>
+
+                            {/* 3. 첫 번째 박스 (회색 배경 - 점수 및 근거) */}
+                            <div style={grayBoxStyle}>
+                                <div style={boxRowStyle}>
+                                    <span style={boxLabelStyle}>클린 점수:</span>
+                                    <span style={{ fontWeight: 'bold', color: getCleanGradeInfo(selectedStore.cleanIndex).color }}>
+                                        {selectedStore.cleanIndex}점
+                                    </span>
+                                </div>
+                                <div style={boxRowStyle}>
+                                    <span style={boxLabelStyle}>산출 근거:</span>
+                                    <span>{selectedStore.oxStats}</span>
                                 </div>
                             </div>
-                            <button onClick={() => navigate(`/detail/${selectedStore.id}`)} style={detailBtnStyle}>
-                                후기 자세히 보기
-                            </button>
+
+                            {/* 4. 두 번째 박스 (연한 주황색 배경 - 후기 및 공고) */}
+                            <div style={tintedBoxStyle}>
+                                <div style={boxRowStyle}>
+                                    <span style={boxLabelStyle}>누적 후기:</span>
+                                    <span>{selectedStore.reviewCount}명 참여</span>
+                                </div>
+                                <div style={boxRowStyle}>
+                                    <span style={boxLabelStyle}>주요 공고:</span>
+                                    <span>{selectedStore.frequentJobs.join(', ')}</span>
+                                </div>
+                            </div>
+
+                            {/* 5. 하단 영역 (자세히 보기 버튼) */}
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+                                <button onClick={() => navigate(`/detail/${selectedStore.id}`)} style={modernDetailBtnStyle}>
+                                    후기 자세히 보기 ➔
+                                </button>
+                            </div>
                         </div>
                     )}
                     
@@ -179,7 +203,6 @@ const Home = () => {
                 </div>
 
                 <div style={sidebarStyle}>
-                    {/* 💡 상단 검색 블록 영역 */}
                     <div style={sidebarHeaderAreaStyle}>
                         <div style={searchContainerStyle}>
                             <input
@@ -190,18 +213,13 @@ const Home = () => {
                                 onKeyDown={handleSearch}
                                 style={sidebarSearchInputStyle}
                             />
-                            <span style={searchIconStyle} onClick={executeSearch}>
-                                🔍
-                            </span>
+                            <span style={searchIconStyle} onClick={executeSearch}>🔍</span>
                         </div>
-                        
-                        {/* 💡 [공부 포인트] 검색창 바로 밑, 구분선 위에 오도록 예시 가이드 배치 완료! */}
                         <div style={searchExampleTextStyle}>
-                             조건 ex) 상대에 클린점수 60점 넘는 카페 찾아줘
+                            💡 조건 ex) 상대에 클린점수 60점 넘는 카페 찾아줘
                         </div>
                     </div>
-                    
-                    {/* 💡 하단 타이틀 및 구분선 영역 */}
+
                     <div style={listTitleAreaStyle}>
                         <h2 style={{ fontSize: '18px', margin: 0 }}>클린 사업장 리스트</h2>
                         <span style={{ fontSize: '13px', color: '#888', fontWeight: 'bold' }}>전체 {stores.length}건</span>
@@ -219,7 +237,6 @@ const Home = () => {
                                             {store.cleanIndex}점
                                         </div>
                                     </div>
-                                    
                                     <div style={storeInfoStyle}>
                                         {store.location} • {store.category}
                                     </div>
@@ -256,43 +273,41 @@ const legendDotStyle = { width: '14px', height: '14px', borderRadius: '50%', mar
 const sidebarStyle = { width: '400px', backgroundColor: '#ffffff', borderLeft: '1px solid #ddd', display: 'flex', flexDirection: 'column' };
 const sidebarHeaderAreaStyle = { padding: '20px 20px 14px 20px', borderBottom: '1px solid #ddd', backgroundColor: '#fafafa' };
 
-// 💡 수정됨: 오타 교정 및 레이아웃 패딩값 최적화
-const listTitleAreaStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    padding: '20px 20px 16px 20px', 
-    borderBottom: '1px solid #eee'
-};
-
+const listTitleAreaStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '20px 20px 16px 20px', borderBottom: '1px solid #eee' };
 const searchContainerStyle = { position: 'relative', width: '100%' };
 const sidebarSearchInputStyle = { width: '100%', boxSizing: 'border-box', padding: '12px 40px 12px 14px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none', fontSize: '15px' };
 const searchIconStyle = { position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontSize: '18px' };
-
-const searchExampleTextStyle = {
-    fontSize: '12px',
-    color: '#DD0000',
-    marginTop: '10px',
-    paddingLeft: '4px',
-    lineHeight: '1.4',
-    fontWeight: '500'
-};
+const searchExampleTextStyle = { fontSize: '12px', color: '#777', marginTop: '10px', paddingLeft: '4px', lineHeight: '1.4', fontWeight: '500' };
 
 const listContainerStyle = { overflowY: 'auto', flex: 1 };
 const listItemStyle = { padding: '20px', borderBottom: '1px solid #eee', cursor: 'pointer' };
 const storeNameStyle = { fontSize: '18px', fontWeight: 'bold', display: 'flex', alignItems: 'center' };
-
 const storeInfoStyle = { fontSize: '14px', color: '#666', marginTop: '8px', fontWeight: '500' };
 const emptyStyle = { padding: '24px', color: '#777', fontSize: '14px', textAlign: 'center' };
 
-const statusDotStyle = { display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', marginRight: '8px' };
-
-const popupStyle = { position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 20, width: '320px', display: 'flex', flexDirection: 'column' };
-const closeIconBtnStyle = { backgroundColor: 'transparent', border: 'none', fontSize: '16px', cursor: 'pointer', color: '#999' };
-const infoRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '10px', marginBottom: '10px', borderBottom: '1px dashed #eee' };
-const infoLabelStyle = { fontSize: '13px', fontWeight: 'bold', color: '#777' };
-const tagStyle = { backgroundColor: '#f0f4f8', color: '#007AFF', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '500' };
-const detailBtnStyle = { width: '100%', padding: '12px', marginTop: '16px', backgroundColor: '#007AFF', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' };
 const fabStyle = { position: 'absolute', top: '24px', left: '24px', width: '100px', height: '40px', backgroundColor: '#ffffff', color: 'black', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', zIndex: 15 };
+
+// 💡 [리뉴얼] 팝업창 전용 신규 스타일 모음
+const popupStyle = { 
+    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', // 화면 중앙에 띄우기!
+    backgroundColor: 'white', padding: '24px', borderRadius: '12px', 
+    boxShadow: '0 8px 30px rgba(0,0,0,0.2)', zIndex: 20, width: '340px', 
+    display: 'flex', flexDirection: 'column' 
+};
+const closeIconBtnStyle = { position: 'absolute', top: '20px', right: '20px', backgroundColor: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#999' };
+const tagIdStyle = { padding: '4px 8px', backgroundColor: '#f0f2f5', borderRadius: '4px', fontSize: '13px', color: '#555', fontWeight: 'bold' };
+const tagStatusStyle = { padding: '4px 8px', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold' };
+
+const grayBoxStyle = { backgroundColor: '#f8f9fa', padding: '16px', borderRadius: '8px', marginBottom: '8px', border: '1px solid #eee' };
+const tintedBoxStyle = { backgroundColor: '#fff8f0', padding: '16px', borderRadius: '8px', border: '1px solid #fde7d8' }; // 레퍼런스의 연한 주황색 느낌
+const boxRowStyle = { display: 'flex', alignItems: 'flex-start', fontSize: '14px', color: '#333', marginBottom: '8px' };
+const boxLabelStyle = { width: '70px', fontWeight: 'bold', color: '#555' };
+
+// 레퍼런스 스타일의 각진 우측 하단 버튼
+const modernDetailBtnStyle = { 
+    backgroundColor: '#f8f9fa', color: '#333', border: '1px solid #ddd', 
+    padding: '10px 16px', borderRadius: '6px', cursor: 'pointer', 
+    fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px'
+};
 
 export default Home;
