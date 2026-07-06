@@ -29,6 +29,9 @@ const Home = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStore, setSelectedStore] = useState(null);
 
+    // 💡 [추가됨] 서비스 소개 팝업창을 띄우고 닫기 위한 상태값이야!
+    const [showIntroModal, setShowIntroModal] = useState(false);
+
     useEffect(() => {
         const token = localStorage.getItem('jwt_token');
         const savedNickname = localStorage.getItem('user_nickname');
@@ -110,8 +113,8 @@ const Home = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <button style={logoBtnStyle} onClick={() => navigate('/')}>전남대 클린알바맵</button>
                     
-                    {/* 💡 [수정됨] 서비스 소개 버튼에 onClick 이벤트를 추가해서 '/intro'로 넘어가게 설정! */}
-                    <button style={navBtnStyle} onClick={() => navigate('/intro')}>서비스 소개</button>
+                    {/* 💡 [수정됨] 클릭 시 페이지 이동이 아니라 팝업 상태를 true로 변경! */}
+                    <button style={navBtnStyle} onClick={() => setShowIntroModal(true)}>서비스 소개</button>
                     
                     <button style={navBtnStyle}>근로기준법 안내</button>
                 </div>
@@ -247,6 +250,52 @@ const Home = () => {
                     </div>
                 </div>
             </div>
+
+            {/* 💡 [추가됨] 서비스 소개 팝업 (모달) 영역 */}
+            {showIntroModal && (
+                <div style={modalOverlayStyle} onClick={() => setShowIntroModal(false)}>
+                    <div style={introModalStyle} onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => setShowIntroModal(false)} style={closeIconBtnStyle}>✕</button>
+                        
+                        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                            <span style={{ backgroundColor: '#e0e7ff', color: '#3b82f6', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
+                                CORE VALUE
+                            </span>
+                            <h2 style={{ fontSize: '20px', color: '#111', margin: '12px 0 8px 0', lineHeight: '1.4' }}>
+                                안전한 알바를 위한<br />
+                                <span style={{ color: '#3b82f6' }}>전남대 클린알바맵</span>
+                            </h2>
+                            <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>
+                                솔직한 후기, 공정한 평가로 더 나은 문화를 만듭니다.
+                            </p>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={introFeatureStyle}>
+                                <div style={introFeatureIconStyle}>01</div>
+                                <div>
+                                    <div style={introFeatureTitleStyle}>클린 지수 시각화</div>
+                                    <div style={introFeatureDescStyle}>사업장의 근로기준법 준수 여부를 100점 만점으로 점수화해 컬러 핀으로 표시합니다.</div>
+                                </div>
+                            </div>
+                            <div style={introFeatureStyle}>
+                                <div style={introFeatureIconStyle}>02</div>
+                                <div>
+                                    <div style={introFeatureTitleStyle}>인증 기반 후기</div>
+                                    <div style={introFeatureDescStyle}>실제 근로 증명 자료를 첨부해야만 후기를 작성할 수 있어 객관적이고 신뢰할 수 있습니다.</div>
+                                </div>
+                            </div>
+                            <div style={introFeatureStyle}>
+                                <div style={introFeatureIconStyle}>03</div>
+                                <div>
+                                    <div style={introFeatureTitleStyle}>AI 후기 순화</div>
+                                    <div style={introFeatureDescStyle}>명예훼손 소지 표현을 LLM이 안전한 언어로 자동 변환해 작성자의 법적 리스크를 낮춥니다.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -269,7 +318,7 @@ const legendBoxStyle = { position: 'absolute', bottom: '24px', left: '24px', bac
 const legendRowStyle = { display: 'flex', alignItems: 'center', fontSize: '15px', color: '#444', fontWeight: '500' };
 const legendDotStyle = { width: '14px', height: '14px', borderRadius: '50%', marginRight: '10px' };
 
-const sidebarStyle = { width: '400px', backgroundColor: '#ffffff', borderLeft: '1px solid #ddd', display: 'flex', flexDirection: 'column' };
+const sidebarStyle = { width: '400px', backgroundColor: '#ffffff', borderLeft: '1px solid #ddd', display: 'flex', flexDirection: 'column', zIndex: 5 }; // 모달 뒤로 가게 zIndex 조정
 const sidebarHeaderAreaStyle = { padding: '20px 20px 14px 20px', borderBottom: '1px solid #ddd', backgroundColor: '#fafafa' };
 
 const listTitleAreaStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '20px 20px 16px 20px', borderBottom: '1px solid #eee' };
@@ -296,5 +345,22 @@ const boxRowStyle = { display: 'flex', alignItems: 'flex-start', fontSize: '12px
 const boxLabelStyle = { minWidth: '60px', fontWeight: 'bold', color: '#555' };
 
 const modernDetailBtnStyle = { backgroundColor: '#f8f9fa', color: '#333', border: '1px solid #ddd', padding: '6px 12px', borderRadius: '0', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' };
+
+// 💡 [추가됨] 서비스 소개 모달 스타일
+const modalOverlayStyle = { 
+    position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
+    backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, 
+    display: 'flex', justifyContent: 'center', alignItems: 'center',
+    backdropFilter: 'blur(2px)' // 배경 살짝 흐리게
+};
+const introModalStyle = { 
+    backgroundColor: '#fff', width: '380px', padding: '32px', 
+    position: 'relative', boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+    borderRadius: '12px' // 팝업은 직사각형이어도 이런 메인 모달창은 살짝 둥근 게 이뻐서 12px 적용!
+};
+const introFeatureStyle = { display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' };
+const introFeatureIconStyle = { backgroundColor: '#3b82f6', color: '#fff', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '12px', fontWeight: 'bold', flexShrink: 0 };
+const introFeatureTitleStyle = { fontSize: '14px', fontWeight: 'bold', color: '#111', marginBottom: '4px' };
+const introFeatureDescStyle = { fontSize: '12px', color: '#555', lineHeight: '1.5', wordBreak: 'keep-all' };
 
 export default Home;
