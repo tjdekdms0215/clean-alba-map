@@ -7,7 +7,6 @@ const Guide = () => {
 
     const tabs = ['2026 최저시급', '근로계약서', '주휴수당', '임금체불신고'];
 
-    // 💡 각 탭별로 렌더링될 메인 콘텐츠 컴포넌트들
     const renderContent = () => {
         switch (activeTab) {
             case '2026 최저시급':
@@ -248,7 +247,6 @@ const Guide = () => {
         <div style={pageWrapperStyle}>
             <div style={containerStyle}>
                 
-                {/* 헤더 영역 */}
                 <div style={headerStyle}>
                     <div style={logoStyle} onClick={() => navigate('/')}>
                         전남대 클린알바맵
@@ -260,7 +258,6 @@ const Guide = () => {
                     </div>
                 </div>
 
-                {/* 탭 메뉴 영역 */}
                 <div style={tabsContainerStyle}>
                     {tabs.map((tab) => (
                         <div 
@@ -273,12 +270,10 @@ const Guide = () => {
                     ))}
                 </div>
 
-                {/* 메인 콘텐츠 영역 */}
                 {renderContent()}
 
-                {/* 공통 푸터(CTA) 영역 */}
                 <div style={footerStyle}>
-                    <span style={{ color: '#888', fontSize: '14px' }}>
+                    <span style={{ color: '#888', fontSize: '13px' }}>
                         자세한 사항은 국가법령정보센터에서 확인하실 수 있습니다.
                     </span>
                     <button style={footerBtnStyle}>
@@ -313,171 +308,95 @@ const faqData = {
 
 // --- 스타일 영역 ---
 
-/* 전체 배경 및 컨테이너 */
+/* 전체 배경 및 컨테이너 (여백 및 너비 최적화) */
 const pageWrapperStyle = {
     width: '100vw',
     minHeight: '100vh',
-    backgroundColor: '#4b4b4b', // 스크린샷 밖의 다크 그레이 배경
+    backgroundColor: '#4b4b4b',
     display: 'flex',
     justifyContent: 'center',
-    padding: '40px 0',
+    padding: '20px 20px', // 위아래 여백을 줄이고 화면이 작을 때를 대비해 좌우 여백 추가
+    boxSizing: 'border-box',
     fontFamily: 'sans-serif'
 };
 const containerStyle = {
-    width: '1000px',
+    width: '100%',
+    maxWidth: '860px', // 노트북 13~15인치에 딱 맞는 너비로 축소!
     backgroundColor: '#ffffff',
     boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    borderRadius: '8px',
+    overflow: 'hidden'
 };
 
-/* 헤더 영역 */
-const headerStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    height: '64px',
-    padding: '0 40px',
-    borderBottom: '1px solid #eee'
-};
-const logoStyle = { fontSize: '18px', fontWeight: 'bold', cursor: 'pointer', color: '#111' };
-const headerRightStyle = { display: 'flex', gap: '16px', alignItems: 'center' };
-const navBtnStyle = { background: 'none', border: 'none', color: '#555', fontSize: '14px', cursor: 'pointer' };
-const iconBtnStyle = { background: 'none', border: 'none', color: '#555', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' };
+/* 헤더 및 탭 영역 (패딩 축소) */
+const headerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '60px', padding: '0 24px', borderBottom: '1px solid #eee' };
+const logoStyle = { fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', color: '#111' };
+const headerRightStyle = { display: 'flex', gap: '12px', alignItems: 'center' };
+const navBtnStyle = { background: 'none', border: 'none', color: '#555', fontSize: '13px', cursor: 'pointer' };
+const iconBtnStyle = { background: 'none', border: 'none', color: '#555', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' };
 
-/* 탭 메뉴 영역 */
-const tabsContainerStyle = {
-    display: 'flex',
-    padding: '0 40px',
-    borderBottom: '1px solid #eee'
-};
-const tabBaseStyle = {
-    padding: '20px 24px',
-    fontSize: '15px',
-    cursor: 'pointer',
-    position: 'relative'
-};
-const activeTabStyle = {
-    ...tabBaseStyle,
-    color: '#4063ff',
-    fontWeight: 'bold',
-    borderBottom: '3px solid #4063ff'
-};
-const inactiveTabStyle = {
-    ...tabBaseStyle,
-    color: '#888'
-};
+const tabsContainerStyle = { display: 'flex', padding: '0 24px', borderBottom: '1px solid #eee' };
+const tabBaseStyle = { padding: '16px 20px', fontSize: '14px', cursor: 'pointer', position: 'relative' };
+const activeTabStyle = { ...tabBaseStyle, color: '#4063ff', fontWeight: 'bold', borderBottom: '3px solid #4063ff' };
+const inactiveTabStyle = { ...tabBaseStyle, color: '#888' };
 
-/* 히어로 영역 (블루 배경) */
-const heroStyle = {
-    backgroundColor: '#4063ff',
-    color: '#fff',
-    padding: '50px 40px 0 40px',
-    display: 'flex',
-    flexDirection: 'column'
-};
-const heroSubStyle = { fontSize: '13px', opacity: 0.8, marginBottom: '12px' };
-const heroTitleStyle = { fontSize: '32px', fontWeight: 'bold', margin: '0 0 16px 0' };
-const heroDescStyle = { fontSize: '15px', lineHeight: '1.6', opacity: 0.9, margin: '0 0 40px 0' };
+/* 히어로 영역 (패딩 축소) */
+const heroStyle = { backgroundColor: '#4063ff', color: '#fff', padding: '40px 24px 0 24px', display: 'flex', flexDirection: 'column' };
+const heroSubStyle = { fontSize: '12px', opacity: 0.8, marginBottom: '8px' };
+const heroTitleStyle = { fontSize: '28px', fontWeight: 'bold', margin: '0 0 12px 0' };
+const heroDescStyle = { fontSize: '14px', lineHeight: '1.5', opacity: 0.9, margin: '0 0 32px 0' };
 
-/* 히어로 통계 그리드 (첫번째 탭 전용) */
-const heroStatsGridStyle = {
-    display: 'flex',
-    borderTop: '1px solid rgba(255,255,255,0.2)',
-    margin: '0 -40px', // 좌우 패딩 상쇄해서 꽉 차게
-};
-const heroStatItemStyle = {
-    flex: 1,
-    padding: '24px 0',
-    textAlign: 'center',
-    borderRight: '1px solid rgba(255,255,255,0.2)'
-};
-const heroStatLabelStyle = { fontSize: '13px', opacity: 0.8, marginBottom: '8px' };
-const heroStatValueStyle = { fontSize: '20px', fontWeight: 'bold' };
+/* 히어로 통계 그리드 */
+const heroStatsGridStyle = { display: 'flex', borderTop: '1px solid rgba(255,255,255,0.2)', margin: '0 -24px' };
+const heroStatItemStyle = { flex: 1, padding: '20px 0', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.2)' };
+const heroStatLabelStyle = { fontSize: '12px', opacity: 0.8, marginBottom: '6px' };
+const heroStatValueStyle = { fontSize: '18px', fontWeight: 'bold' };
 
 /* 메인 콘텐츠 공통 영역 */
-const contentAreaStyle = {
-    padding: '60px 40px',
-    backgroundColor: '#fff'
-};
-const sectionStyle = { marginTop: '60px' };
-const sectionTitleStyle = { fontSize: '20px', fontWeight: 'bold', color: '#111', margin: '0 0 12px 0' };
-const sectionDescStyle = { fontSize: '14px', color: '#666', marginBottom: '24px' };
-const paragraphStyle = { fontSize: '14px', color: '#444', lineHeight: '1.6', margin: '0 0 40px 0' };
+const contentAreaStyle = { padding: '40px 24px', backgroundColor: '#fff' };
+const sectionStyle = { marginTop: '48px' };
+const sectionTitleStyle = { fontSize: '18px', fontWeight: 'bold', color: '#111', margin: '0 0 10px 0' };
+const sectionDescStyle = { fontSize: '13px', color: '#666', marginBottom: '20px' };
+const paragraphStyle = { fontSize: '13px', color: '#444', lineHeight: '1.6', margin: '0 0 32px 0' };
 
-/* 그리드 및 카드 스타일 */
-const threeColGridStyle = { display: 'flex', gap: '24px', marginBottom: '40px' };
-const twoColGridStyle = { display: 'flex', gap: '24px', marginBottom: '40px' };
-const cardStyle = {
-    flex: 1,
-    backgroundColor: '#fafafa',
-    padding: '32px 24px',
-    textAlign: 'center',
-    border: '1px solid #f0f0f0'
-};
-const cardTitleStyle = { fontSize: '16px', fontWeight: 'bold', color: '#111', margin: '0 0 20px 0' };
-const cardTextStyle = { fontSize: '14px', color: '#333', lineHeight: '1.6', margin: '0 0 16px 0' };
-const cardSmallTextStyle = { fontSize: '12px', color: '#888', lineHeight: '1.6', margin: 0 };
+/* 그리드 및 카드 스타일 (너비에 맞춰 찌그러지지 않게 grid 활용) */
+const threeColGridStyle = { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' };
+const twoColGridStyle = { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '32px' };
+const cardStyle = { backgroundColor: '#fafafa', padding: '24px 20px', textAlign: 'center', border: '1px solid #f0f0f0' };
+const cardTitleStyle = { fontSize: '15px', fontWeight: 'bold', color: '#111', margin: '0 0 16px 0' };
+const cardTextStyle = { fontSize: '13px', color: '#333', lineHeight: '1.5', margin: '0 0 12px 0' };
+const cardSmallTextStyle = { fontSize: '11px', color: '#888', lineHeight: '1.5', margin: 0 };
 
-/* 제17조 박스 스타일 (근로계약서 탭) */
-const infoBoxStyle = {
-    backgroundColor: '#f8fafc',
-    padding: '32px',
-    borderRadius: '8px',
-    marginBottom: '40px'
-};
-const infoBoxTitleStyle = { fontSize: '16px', fontWeight: 'bold', margin: '0 0 12px 0', color: '#111' };
-const infoBoxTextStyle = { fontSize: '14px', color: '#444', marginBottom: '20px' };
-const infoBoxListStyle = { listStyle: 'none', padding: 0, margin: 0, fontSize: '13px', color: '#555', display: 'flex', flexWrap: 'wrap', gap: '12px 24px' };
+/* 제17조 박스 스타일 */
+const infoBoxStyle = { backgroundColor: '#f8fafc', padding: '24px', borderRadius: '8px', marginBottom: '32px' };
+const infoBoxTitleStyle = { fontSize: '15px', fontWeight: 'bold', margin: '0 0 10px 0', color: '#111' };
+const infoBoxTextStyle = { fontSize: '13px', color: '#444', marginBottom: '16px' };
+const infoBoxListStyle = { listStyle: 'none', padding: 0, margin: 0, fontSize: '12px', color: '#555', display: 'flex', flexWrap: 'wrap', gap: '10px 20px' };
 
-/* 중앙 정렬 리스트 (임금체불신고 탭) */
-const centerListStyle = { fontSize: '14px', color: '#444', lineHeight: '1.8' };
-const bulletListStyle = { fontSize: '14px', color: '#444', lineHeight: '1.8', textAlign: 'left', margin: 0, paddingLeft: '20px' };
+/* 리스트 스타일 */
+const centerListStyle = { fontSize: '13px', color: '#444', lineHeight: '1.6' };
+const bulletListStyle = { fontSize: '13px', color: '#444', lineHeight: '1.6', textAlign: 'left', margin: 0, paddingLeft: '20px' };
 
 /* 최저임금 계산 예시 리스트 */
 const exampleListStyle = { display: 'flex', flexDirection: 'column', gap: '0' };
-const exampleItemStyle = { 
-    display: 'flex', 
-    alignItems: 'center', 
-    padding: '24px 0', 
-    borderBottom: '1px solid #eee' 
-};
-const exampleBadgeStyle = { 
-    backgroundColor: '#a3a3a3', color: '#fff', 
-    width: '40px', height: '40px', borderRadius: '50%', 
-    display: 'flex', justifyContent: 'center', alignItems: 'center', 
-    fontSize: '13px', fontWeight: 'bold', flexShrink: 0, marginRight: '24px' 
-};
-const exampleDescStyle = { flex: 1, fontSize: '13px', color: '#777' };
-const exampleCalcStyle = { flex: 1.2, fontSize: '14px', fontWeight: 'bold', color: '#333' };
+const exampleItemStyle = { display: 'flex', alignItems: 'center', padding: '20px 0', borderBottom: '1px solid #eee' };
+const exampleBadgeStyle = { backgroundColor: '#a3a3a3', color: '#fff', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '12px', fontWeight: 'bold', flexShrink: 0, marginRight: '16px' };
+const exampleDescStyle = { flex: 1, fontSize: '12px', color: '#777' };
+const exampleCalcStyle = { flex: 1.2, fontSize: '13px', fontWeight: 'bold', color: '#333' };
 const exampleSubCalcStyle = { fontSize: '11px', color: '#999', marginTop: '4px' };
-const exampleWarningStyle = { width: '100px', textAlign: 'right', fontSize: '13px', fontWeight: 'bold', color: '#e11d48' };
+const exampleWarningStyle = { width: '90px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold', color: '#e11d48' };
 
 /* FAQ 영역 */
-const faqSectionStyle = { marginTop: '60px' };
-const faqHeaderStyle = { fontSize: '18px', fontWeight: 'bold', margin: '0 0 16px 0', color: '#111' };
-const faqItemStyle = { borderBottom: '1px solid #eee', padding: '20px 0' };
-const faqQuestionStyle = { display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '12px' };
-const faqAnswerStyle = { fontSize: '13px', color: '#666', lineHeight: '1.6' };
+const faqSectionStyle = { marginTop: '48px' };
+const faqHeaderStyle = { fontSize: '16px', fontWeight: 'bold', margin: '0 0 12px 0', color: '#111' };
+const faqItemStyle = { borderBottom: '1px solid #eee', padding: '16px 0' };
+const faqQuestionStyle = { display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 'bold', color: '#333', marginBottom: '8px' };
+const faqAnswerStyle = { fontSize: '12px', color: '#666', lineHeight: '1.5' };
 
-/* 하단 푸터 (확인하기 버튼 영역) */
-const footerStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '32px 40px',
-    borderTop: '1px solid #eee',
-    backgroundColor: '#fff'
-};
-const footerBtnStyle = {
-    backgroundColor: '#f1f5f9',
-    color: '#555',
-    border: 'none',
-    padding: '12px 24px',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    cursor: 'pointer'
-};
+/* 하단 푸터 */
+const footerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px', borderTop: '1px solid #eee', backgroundColor: '#fff' };
+const footerBtnStyle = { backgroundColor: '#f1f5f9', color: '#555', border: 'none', padding: '10px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' };
 
 export default Guide;
