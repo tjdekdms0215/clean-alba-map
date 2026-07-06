@@ -112,7 +112,9 @@ const Home = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <button style={logoBtnStyle} onClick={() => navigate('/')}>전남대 클린알바맵</button>
                     <button style={navBtnStyle} onClick={() => setShowIntroModal(true)}>서비스 소개</button>
-                    <button style={navBtnStyle}>근로기준법 안내</button>
+                    
+                    {/* 💡 [수정됨] 근로기준법 안내 버튼을 누르면 /guide 경로로 이동하도록 바인딩! */}
+                    <button style={navBtnStyle} onClick={() => navigate('/guide')}>근로기준법 안내</button>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     {isLoggedIn ? (
@@ -247,14 +249,13 @@ const Home = () => {
                 </div>
             </div>
 
-            {/* 💡 [수정됨] 철저하게 직사각형으로 깎아낸 모던/시크 서비스 소개 팝업 */}
+            {/* 서비스 소개 팝업 (모달) 영역 */}
             {showIntroModal && (
                 <div style={modalOverlayStyle} onClick={() => setShowIntroModal(false)}>
                     <div style={introModalStyle} onClick={(e) => e.stopPropagation()}>
                         <button onClick={() => setShowIntroModal(false)} style={closeIconBtnStyle}>✕</button>
                         
                         <div style={{ textAlign: 'center', marginBottom: '28px', marginTop: '8px' }}>
-                            {/* 둥근 배지 대신 샤프한 사각형 태그 적용 */}
                             <span style={{ border: '1px solid #3b82f6', color: '#3b82f6', padding: '4px 10px', borderRadius: '0', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>
                                 CORE VALUE
                             </span>
@@ -269,7 +270,6 @@ const Home = () => {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <div style={introFeatureStyle}>
-                                {/* 동그라미 아이콘도 딱 떨어지는 정사각형으로! */}
                                 <div style={introFeatureIconStyle}>01</div>
                                 <div>
                                     <div style={introFeatureTitleStyle}>클린 지수 시각화</div>
@@ -344,28 +344,10 @@ const boxLabelStyle = { minWidth: '60px', fontWeight: 'bold', color: '#555' };
 
 const modernDetailBtnStyle = { backgroundColor: '#f8f9fa', color: '#333', border: '1px solid #ddd', padding: '6px 12px', borderRadius: '0', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' };
 
-// 💡 [수정됨] AI 템플릿 느낌(모서리 둥글림, 과한 블러) 싹 빼고 시크한 직사각형으로 변경!
-const modalOverlayStyle = { 
-    position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
-    backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 1000, 
-    display: 'flex', justifyContent: 'center', alignItems: 'center'
-};
-const introModalStyle = { 
-    backgroundColor: '#fff', width: '380px', padding: '32px', 
-    position: 'relative', boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
-    borderRadius: '0', border: '1px solid #222' // 직사각형 & 샤프한 테두리
-};
-const introFeatureStyle = { 
-    display: 'flex', gap: '14px', alignItems: 'flex-start', 
-    padding: '16px', backgroundColor: '#fdfdfd', 
-    borderRadius: '0', border: '1px solid #eaeaea' // 안쪽 박스도 직사각형
-};
-const introFeatureIconStyle = { 
-    backgroundColor: '#3b82f6', color: '#fff', width: '28px', height: '28px', 
-    borderRadius: '0', // 번호 아이콘마저 정사각형!
-    display: 'flex', justifyContent: 'center', alignItems: 'center', 
-    fontSize: '12px', fontWeight: 'bold', flexShrink: 0 
-};
+const modalOverlayStyle = { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' };
+const introModalStyle = { backgroundColor: '#fff', width: '380px', padding: '32px', position: 'relative', boxShadow: '0 4px 24px rgba(0,0,0,0.15)', borderRadius: '0', border: '1px solid #222' };
+const introFeatureStyle = { display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '16px', backgroundColor: '#fdfdfd', borderRadius: '0', border: '1px solid #eaeaea' };
+const introFeatureIconStyle = { backgroundColor: '#3b82f6', color: '#fff', width: '28px', height: '28px', borderRadius: '0', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '12px', fontWeight: 'bold', flexShrink: 0 };
 const introFeatureTitleStyle = { fontSize: '14px', fontWeight: 'bold', color: '#111', marginBottom: '4px' };
 const introFeatureDescStyle = { fontSize: '12px', color: '#555', lineHeight: '1.5', wordBreak: 'keep-all' };
 
