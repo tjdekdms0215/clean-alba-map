@@ -261,7 +261,7 @@ const Guide = () => {
                         전남대 클린알바맵
                     </div>
                     <div style={headerRightStyle}>
-                        <button style={navBtnStyle}>📖 근로기준법 안내</button>
+                        <button style={navBtnStyle} onClick={() => navigate('/guide')}>📖 근로기준법 안내</button>
                         <button style={iconBtnStyle}>👤</button>
                         <button style={iconBtnStyle} onClick={() => navigate('/login')}>로그아웃 ➔</button>
                     </div>
@@ -269,17 +269,15 @@ const Guide = () => {
 
                 {/* 탭 메뉴 영역 */}
                 <div style={tabsContainerStyle}>
-                    <div style={tabsInnerStyle}>
-                        {tabs.map((tab) => (
-                            <div 
-                                key={tab} 
-                                style={tab === activeTab ? activeTabStyle : inactiveTabStyle}
-                                onClick={() => setActiveTab(tab)}
-                            >
-                                {tab}
-                            </div>
-                        ))}
-                    </div>
+                    {tabs.map((tab) => (
+                        <div 
+                            key={tab} 
+                            style={tab === activeTab ? activeTabStyle : inactiveTabStyle}
+                            onClick={() => setActiveTab(tab)}
+                        >
+                            {tab}
+                        </div>
+                    ))}
                 </div>
 
                 {/* 메인 콘텐츠 영역 */}
@@ -287,14 +285,12 @@ const Guide = () => {
 
                 {/* 공통 푸터(CTA) 영역 */}
                 <div style={footerStyle}>
-                    <div style={footerInnerStyle}>
-                        <span style={{ color: '#888', fontSize: '14px' }}>
-                            자세한 사항은 국가법령정보센터에서 확인하실 수 있습니다.
-                        </span>
-                        <button style={footerBtnStyle}>
-                            {activeTab === '2026 최저시급' ? '최저임금법 확인하기' : '근로기준법 확인하기'}
-                        </button>
-                    </div>
+                    <span style={{ color: '#888', fontSize: '14px' }}>
+                        자세한 사항은 국가법령정보센터에서 확인하실 수 있습니다.
+                    </span>
+                    <button style={footerBtnStyle}>
+                        {activeTab === '2026 최저시급' ? '최저임금법 확인하기' : '근로기준법 확인하기'}
+                    </button>
                 </div>
 
             </div>
@@ -324,58 +320,65 @@ const faqData = {
 
 // --- 스타일 영역 ---
 
-/* 💡 여백 제거 및 풀스크린 꽉 차게 설정 */
+/* 💡 [핵심 해결 1] 부모의 overflow 속성을 덮어씌우고 스크롤이 무조건 생성되도록 보장합니다! */
 const pageWrapperStyle = {
-    width: '100vw',
-    minHeight: '100vh',
-    backgroundColor: '#ffffff', // 회색 배경 제거하고 전체 화이트로
+    width: '100%',
+    height: '100vh',
+    overflowY: 'auto',   // 페이지 안에서 무조건 세로 스크롤 허용
+    overflowX: 'hidden', // 가로 스크롤은 방지
+    backgroundColor: '#ffffff', // 좌우 여백을 없애기 위해 흰색 적용
     display: 'flex',
     flexDirection: 'column',
+    alignItems: 'center', // 컨텐츠 가운데 정렬
     margin: 0,
-    padding: 0,
+    padding: 0, // 상하좌우 바깥 여백 완전 제거
     fontFamily: 'sans-serif'
 };
+
+/* 💡 [핵심 해결 2] 내용은 가운데에 예쁘게 모이게 하되, 가로 길이는 960px로 제한(노트북 최적화) */
 const containerStyle = {
-    width: '100%', // maxWidth 제거하여 화면 끝까지 확장
+    width: '100%',
+    maxWidth: '960px', 
+    backgroundColor: '#ffffff',
     display: 'flex',
     flexDirection: 'column',
-    flex: 1
+    flex: 1, // 높이를 최소 화면 끝까지 늘림
+    minHeight: '100%'
 };
 
-/* 헤더 및 탭 영역 (양옆 여백을 vw로 유연하게) */
-const headerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '64px', padding: '0 6vw', borderBottom: '1px solid #eee' };
+/* 헤더 및 탭 영역 (양옆 패딩은 콘텐츠 너비 기준) */
+const headerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '64px', padding: '0 32px', borderBottom: '1px solid #eee' };
 const logoStyle = { fontSize: '18px', fontWeight: 'bold', cursor: 'pointer', color: '#111' };
 const headerRightStyle = { display: 'flex', gap: '16px', alignItems: 'center' };
-const navBtnStyle = { background: 'none', border: 'none', color: '#555', fontSize: '14px', cursor: 'pointer' };
+const navBtnStyle = { background: 'none', border: 'none', color: '#555', fontSize: '14px', cursor: 'pointer', fontWeight: 'bold' };
 const iconBtnStyle = { background: 'none', border: 'none', color: '#555', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' };
 
-const tabsContainerStyle = { display: 'flex', borderBottom: '1px solid #eee' };
-const tabsInnerStyle = { display: 'flex', padding: '0 6vw', width: '100%' };
+const tabsContainerStyle = { display: 'flex', padding: '0 32px', borderBottom: '1px solid #eee' };
 const tabBaseStyle = { padding: '20px 24px', fontSize: '15px', cursor: 'pointer', position: 'relative' };
 const activeTabStyle = { ...tabBaseStyle, color: '#4063ff', fontWeight: 'bold', borderBottom: '3px solid #4063ff' };
 const inactiveTabStyle = { ...tabBaseStyle, color: '#888' };
 
-/* 히어로 영역 (가로 꽉 차게) */
+/* 히어로 영역 (컨테이너 내에서 꽉 차게) */
 const heroStyle = { backgroundColor: '#4063ff', color: '#fff', display: 'flex', flexDirection: 'column' };
-const heroInnerContentStyle = { padding: '60px 6vw 40px 6vw' };
+const heroInnerContentStyle = { padding: '48px 32px 32px 32px' };
 const heroSubStyle = { fontSize: '14px', opacity: 0.8, marginBottom: '10px' };
 const heroTitleStyle = { fontSize: '32px', fontWeight: 'bold', margin: '0 0 16px 0' };
 const heroDescStyle = { fontSize: '16px', lineHeight: '1.6', opacity: 0.9, margin: 0 };
 
-/* 히어로 통계 그리드 (끝에서 끝까지 꽉 차게 분배) */
+/* 히어로 통계 그리드 */
 const heroStatsGridStyle = { display: 'flex', borderTop: '1px solid rgba(255,255,255,0.2)', width: '100%' };
-const heroStatItemStyle = { flex: 1, padding: '28px 0', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.2)' };
+const heroStatItemStyle = { flex: 1, padding: '24px 0', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.2)' };
 const heroStatLabelStyle = { fontSize: '14px', opacity: 0.8, marginBottom: '8px' };
 const heroStatValueStyle = { fontSize: '22px', fontWeight: 'bold' };
 
 /* 메인 콘텐츠 공통 영역 */
-const contentAreaStyle = { padding: '60px 6vw', backgroundColor: '#fff', flex: 1 };
+const contentAreaStyle = { padding: '48px 32px', backgroundColor: '#fff', flex: 1 };
 const sectionStyle = { marginTop: '60px' };
 const sectionTitleStyle = { fontSize: '22px', fontWeight: 'bold', color: '#111', margin: '0 0 12px 0' };
 const sectionDescStyle = { fontSize: '15px', color: '#666', marginBottom: '24px' };
 const paragraphStyle = { fontSize: '15px', color: '#444', lineHeight: '1.7', margin: '0 0 40px 0' };
 
-/* 그리드 및 카드 스타일 (화면이 넓어졌으므로 쾌적하게 배치) */
+/* 그리드 및 카드 스타일 */
 const threeColGridStyle = { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' };
 const twoColGridStyle = { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px', marginBottom: '40px' };
 const cardStyle = { backgroundColor: '#fafafa', padding: '32px 24px', textAlign: 'center', border: '1px solid #f0f0f0' };
@@ -398,7 +401,7 @@ const exampleListStyle = { display: 'flex', flexDirection: 'column', gap: '0' };
 const exampleItemStyle = { display: 'flex', alignItems: 'center', padding: '24px 0', borderBottom: '1px solid #eee' };
 const exampleBadgeStyle = { backgroundColor: '#a3a3a3', color: '#fff', width: '44px', height: '44px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '14px', fontWeight: 'bold', flexShrink: 0, marginRight: '24px' };
 const exampleDescStyle = { flex: 1.5, fontSize: '14px', color: '#555' };
-const exampleCalcContainerStyle = { flex: 2 }; // 계산식 영역 너비 확보
+const exampleCalcContainerStyle = { flex: 2 }; 
 const exampleCalcStyle = { fontSize: '15px', fontWeight: 'bold', color: '#333' };
 const exampleSubCalcStyle = { fontSize: '12px', color: '#999', marginTop: '6px' };
 const exampleWarningStyle = { width: '120px', textAlign: 'right', fontSize: '14px', fontWeight: 'bold', color: '#e11d48' };
@@ -411,8 +414,7 @@ const faqQuestionStyle = { display: 'flex', justifyContent: 'space-between', fon
 const faqAnswerStyle = { fontSize: '14px', color: '#666', lineHeight: '1.6' };
 
 /* 하단 푸터 */
-const footerStyle = { borderTop: '1px solid #eee', backgroundColor: '#fff' };
-const footerInnerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '32px 6vw' };
+const footerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '32px', borderTop: '1px solid #eee', backgroundColor: '#fff' };
 const footerBtnStyle = { backgroundColor: '#f1f5f9', color: '#555', border: 'none', padding: '12px 24px', borderRadius: '6px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' };
 
 export default Guide;
