@@ -206,6 +206,31 @@ const Home = () => {
         });
     }, [stores]);
 
+    const handleKakaoLogin = () => {
+    if (!KAKAO_REST_API_KEY || !KAKAO_REDIRECT_URI) {
+        console.error('카카오 로그인 환경변수가 설정되지 않았습니다.');
+        alert('카카오 로그인 설정을 확인해 주세요.');
+        return;
+    }
+
+    const state = window.crypto?.randomUUID
+        ? window.crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    sessionStorage.setItem('kakao_oauth_state', state);
+
+    const params = new URLSearchParams({
+        response_type: 'code',
+        client_id: KAKAO_REST_API_KEY,
+        redirect_uri: KAKAO_REDIRECT_URI,
+        state
+    });
+
+    window.location.assign(
+        `https://kauth.kakao.com/oauth/authorize?${params.toString()}`
+    );
+};
+
     const handleLogout = () => {
         localStorage.clear();
 
@@ -306,10 +331,14 @@ const Home = () => {
                     ) : (
                         <button
                             type="button"
-                            onClick={() => navigate('/login')}
-                            style={btnStyle}
+                            onClick={handleKakaoLogin}
+                            style={kakaoLoginBtnStyle}
+                            aria-label="카카오로 로그인"
                         >
-                            로그인
+                            <span style={kakaoLogoStyle} aria-hidden="true">
+                                K
+                            </span>
+                            <span>카카오로 로그인</span>
                         </button>
                     )}
                 </div>
