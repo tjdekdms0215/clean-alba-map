@@ -542,7 +542,7 @@ const Home = () => {
                         </div>
 
                         <div style={searchExampleTextStyle}>
-                            💡 조건 예시: 클린점수 60점 넘는 카페 찾아줘
+                             조건 예시: 클린점수 60점 넘는 카페 찾아줘
                         </div>
                     </div>
 
