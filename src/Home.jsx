@@ -510,7 +510,7 @@ const Home = () => {
 
                     <button
                         type="button"
-                        onClick={() => navigate('/review/write')}
+                        onClick={() => navigate('/review/select')}
                         style={fabStyle}
                     >
                         후기 쓰기
