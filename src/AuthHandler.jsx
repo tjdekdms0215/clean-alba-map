@@ -40,11 +40,7 @@ const AuthHandler = () => {
         sendCodeToBackend();
     }, [navigate]);
     
-    return(
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '100px' }}>
-            <h2>잠시만 기다려 주세요! 로그인 중입니다.</h2>
-        </div>
-    );
+    return null;
 };
 
 export default AuthHandler;
