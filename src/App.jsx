@@ -5,6 +5,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './Home';             // 방금 만든 메인 화면
 import AuthHandler from './AuthHandler'; // 카카오 로그인 통신 처리 화면
 import Guide from './Guide';
+import ReviewSelect from './ReviewSelect';
+import ReviewWrite from './ReviewWrite';
 
 const App = () => {
     return (
@@ -20,6 +22,12 @@ const App = () => {
                 <Route path="/kakao/callback" element={<AuthHandler />} />
 
                 <Route path="/guide" element={<Guide />} />
+
+                <Route path="/review/select" element={<ReviewSelect />} />
+
+                <Route path="/review/write/:workspaceId" element={<ReviewWrite />} />
+
+                <Route path="/review/write/new" element={<ReviewWrite />} />
 
             </Routes>
         </BrowserRouter>
