@@ -2,12 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = 'https://cleanalb-map.duckdns.org';
-
-const KAKAO_REST_API_KEY =
-    import.meta.env.VITE_KAKAO_REST_API_KEY;
-
-const KAKAO_REDIRECT_URI =
-    import.meta.env.VITE_KAKAO_REDIRECT_URI;
+const KAKAO_REST_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY;
+const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
 
 const getCleanGradeInfo = (score) => {
     if (score === null || score === undefined) {
@@ -213,29 +209,29 @@ const Home = () => {
     }, [stores]);
 
     const handleKakaoLogin = () => {
-    if (!KAKAO_REST_API_KEY || !KAKAO_REDIRECT_URI) {
-        console.error('카카오 로그인 환경변수가 설정되지 않았습니다.');
-        alert('카카오 로그인 설정을 확인해 주세요.');
-        return;
-    }
+        if (!KAKAO_REST_API_KEY || !KAKAO_REDIRECT_URI) {
+            console.error('카카오 로그인 환경변수가 설정되지 않았습니다.');
+            alert('카카오 로그인 설정을 확인해 주세요.');
+            return;
+        }
 
-    const state = window.crypto?.randomUUID
-        ? window.crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const state = window.crypto?.randomUUID
+            ? window.crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-    sessionStorage.setItem('kakao_oauth_state', state);
+        sessionStorage.setItem('kakao_oauth_state', state);
 
-    const params = new URLSearchParams({
-        response_type: 'code',
-        client_id: KAKAO_REST_API_KEY,
-        redirect_uri: KAKAO_REDIRECT_URI,
-        state
-    });
+        const params = new URLSearchParams({
+            response_type: 'code',
+            client_id: KAKAO_REST_API_KEY,
+            redirect_uri: KAKAO_REDIRECT_URI,
+            state
+        });
 
-    window.location.assign(
-        `https://kauth.kakao.com/oauth/authorize?${params.toString()}`
-    );
-};
+        window.location.assign(
+            `https://kauth.kakao.com/oauth/authorize?${params.toString()}`
+        );
+    };
 
     const handleLogout = () => {
         localStorage.clear();
@@ -406,9 +402,8 @@ const Home = () => {
                             aria-label={`${selectedStore.name} 사업장 정보`}
                             style={{
                                 ...popupStyle,
-                                borderTop: `6px solid ${selectedGrade.accentColor}`,
-                                boxShadow:
-                                    `0 12px 38px ${selectedGrade.shadowColor}`
+                                backgroundColor: selectedGrade.softColor,
+                                boxShadow: `0 12px 34px ${selectedGrade.shadowColor}`
                             }}
                         >
                             <button
@@ -420,189 +415,71 @@ const Home = () => {
                                 ✕
                             </button>
 
-                            <div
-                                style={{
-                                    ...popupHeaderStyle,
-                                    backgroundColor: selectedGrade.softColor,
-                                    borderBottom:
-                                        `1px solid ${selectedGrade.borderColor}`
-                                }}
-                            >
-                                <div style={popupStatusRowStyle}>
-                                    <div style={popupStatusGroupStyle}>
-                                        <div
-                                            style={{
-                                                ...popupStatusIconStyle,
-                                                backgroundColor:
-                                                    selectedGrade.accentColor
-                                            }}
-                                            aria-hidden="true"
-                                        >
-                                            {selectedGrade.icon}
-                                        </div>
-
-                                        <div>
-                                            <div style={popupEyebrowStyle}>
-                                                클린 상태
-                                            </div>
-
-                                            <div
-                                                style={{
-                                                    ...popupGradeLabelStyle,
-                                                    color: selectedGrade.color
-                                                }}
-                                            >
-                                                {selectedGrade.label}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div style={popupScoreAreaStyle}>
-                                        <div style={popupScoreLabelStyle}>
-                                            클린 점수
-                                        </div>
-
-                                        {selectedStore.cleanScore === null ||
-                                        selectedStore.cleanScore === undefined ? (
-                                            <div
-                                                style={{
-                                                    ...popupNoScoreStyle,
-                                                    color: selectedGrade.color
-                                                }}
-                                            >
-                                                미정
-                                            </div>
-                                        ) : (
-                                            <div style={popupScoreLineStyle}>
-                                                <span
-                                                    style={{
-                                                        ...popupScoreValueStyle,
-                                                        color:
-                                                            selectedGrade.color
-                                                    }}
-                                                >
-                                                    {selectedStore.cleanScore}
-                                                </span>
-
-                                                <span style={popupScoreUnitStyle}>
-                                                    {' '}
-                                                    / 100
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div
+                            <div style={statusBadgeRowStyle}>
+                                <span
                                     style={{
-                                        ...popupStatusMessageStyle,
+                                        ...tagStatusStyle,
                                         color: selectedGrade.color
                                     }}
                                 >
-                                    {selectedGrade.description}
+                                    {selectedGrade.label}
+                                </span>
+                            </div>
+
+                            <h3 style={popupStoreNameStyle}>
+                                {selectedStore.name || '사업장 이름 없음'}
+                            </h3>
+
+                            <p style={popupMetaStyle}>
+                                <span>
+                                    {selectedStore.district || '지역 정보 없음'}
+                                </span>
+                                <span style={metaDividerStyle}>•</span>
+                                <span>
+                                    {selectedStore.category || '업종 정보 없음'}
+                                </span>
+                            </p>
+
+                            <div style={grayBoxStyle}>
+                                <div style={boxRowStyle}>
+                                    <span style={boxLabelStyle}>클린 점수:</span>
+                                    <strong
+                                        style={{
+                                            ...boxValueStyle,
+                                            color: selectedGrade.color
+                                        }}
+                                    >
+                                        {formatCleanScore(selectedStore.cleanScore)}
+                                    </strong>
+                                </div>
+
+                                <div style={boxRowStyle}>
+                                    <span style={boxLabelStyle}>산출 근거:</span>
+                                    <span style={boxTextStyle}>
+                                        {selectedStore.oxStats ||
+                                            '수집된 근거 데이터가 없습니다.'}
+                                    </span>
                                 </div>
                             </div>
 
-                            <div style={popupBodyStyle}>
-                                <div style={popupStoreHeaderStyle}>
-                                    <h3 style={popupStoreNameStyle}>
-                                        {selectedStore.name ||
-                                            '사업장 이름 없음'}
-                                    </h3>
-
-                                    <p style={popupMetaStyle}>
-                                        <span>
-                                            {selectedStore.district ||
-                                                '지역 정보 없음'}
-                                        </span>
-
-                                        <span style={metaDividerStyle}>•</span>
-
-                                        <span>
-                                            {selectedStore.category ||
-                                                '업종 정보 없음'}
-                                        </span>
-                                    </p>
+                            <div style={tintedBoxStyle}>
+                                <div style={boxRowStyle}>
+                                    <span style={boxLabelStyle}>누적 후기:</span>
+                                    <span style={boxTextStyle}>
+                                        {selectedStore.reviewCount ?? 0}명 참여
+                                    </span>
                                 </div>
 
-                                <div style={quickInfoGridStyle}>
-                                    <div style={quickInfoItemStyle}>
-                                        <span style={quickInfoLabelStyle}>
-                                            평가 상태
-                                        </span>
-
-                                        <strong
-                                            style={{
-                                                ...quickInfoValueStyle,
-                                                color: selectedGrade.color
-                                            }}
-                                        >
-                                            {selectedGrade.label}
-                                        </strong>
-                                    </div>
-
-                                    <div style={quickInfoItemStyle}>
-                                        <span style={quickInfoLabelStyle}>
-                                            누적 후기
-                                        </span>
-
-                                        <strong style={quickInfoValueStyle}>
-                                            {selectedStore.reviewCount ?? 0}명
-                                        </strong>
-                                    </div>
-                                </div>
-
-                                <div style={infoSectionStyle}>
-                                    <div style={infoSectionHeaderStyle}>
-                                        <span
-                                            style={{
-                                                ...infoSectionAccentStyle,
-                                                backgroundColor:
-                                                    selectedGrade.accentColor
-                                            }}
-                                        />
-
-                                        <span style={infoSectionTitleStyle}>
-                                            점수 산출 근거
-                                        </span>
-                                    </div>
-
-                                    <p style={infoSectionTextStyle}>
-                                        {selectedStore.oxStats ||
-                                            '수집된 근거 데이터가 없습니다.'}
-                                    </p>
-                                </div>
-
-                                <div
-                                    style={{
-                                        ...reviewSummaryBoxStyle,
-                                        backgroundColor:
-                                            selectedGrade.softColor,
-                                        borderColor:
-                                            selectedGrade.borderColor
-                                    }}
-                                >
-                                    <div style={reviewSummaryHeaderStyle}>
-                                        <span style={reviewSummaryTitleStyle}>
-                                            후기 요약
-                                        </span>
-
-                                        <span
-                                            style={{
-                                                ...reviewCountBadgeStyle,
-                                                color: selectedGrade.color
-                                            }}
-                                        >
-                                            {selectedStore.reviewCount ?? 0}건
-                                        </span>
-                                    </div>
-
-                                    <p style={reviewSummaryTextStyle}>
+                                <div style={boxRowStyle}>
+                                    <span style={boxLabelStyle}>후기 요약:</span>
+                                    <span style={boxTextStyle}>
                                         {selectedStore.reviewSummary ||
                                             '아직 요약된 후기가 없습니다.'}
-                                    </p>
+                                    </span>
                                 </div>
+                            </div>
 
+                            <div style={detailButtonAreaStyle}>
                                 <button
                                     type="button"
                                     onClick={() =>
@@ -612,12 +489,10 @@ const Home = () => {
                                     }
                                     style={{
                                         ...modernDetailBtnStyle,
-                                        backgroundColor: selectedGrade.color,
-                                        borderColor: selectedGrade.color
+                                        color: selectedGrade.color
                                     }}
                                 >
-                                    <span>후기 자세히 보기</span>
-                                    <span aria-hidden="true">➔</span>
+                                    후기 자세히 보기 ➔
                                 </button>
                             </div>
                         </div>
@@ -883,32 +758,35 @@ const btnStyle = {
 };
 
 const kakaoLoginBtnStyle = {
-    display: 'flex',
+    display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
+    minWidth: '142px',
     height: '38px',
-    padding: '0 16px',
+    padding: '0 14px',
     backgroundColor: '#FEE500',
-    color: '#191919',
-    border: 'none',
-    borderRadius: '6px',
+    color: 'rgba(0, 0, 0, 0.85)',
+    border: '1px solid #F2D900',
+    borderRadius: '7px',
     cursor: 'pointer',
     fontSize: '14px',
-    fontWeight: '700'
+    fontWeight: '700',
+    whiteSpace: 'nowrap'
 };
 
 const kakaoLogoStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
     width: '20px',
     height: '20px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#191919',
     color: '#FEE500',
     borderRadius: '50%',
     fontSize: '11px',
-    fontWeight: '900'
+    fontWeight: '900',
+    flexShrink: 0
 };
 
 const adminBtnStyle = {
@@ -1144,11 +1022,12 @@ const popupStyle = {
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    width: '340px',
+    width: '320px',
     maxWidth: 'calc(100% - 32px)',
     maxHeight: 'calc(100% - 32px)',
-    backgroundColor: '#ffffff',
-    border: '1px solid #dedede',
+    padding: '22px',
+    boxSizing: 'border-box',
+    border: 'none',
     borderRadius: 0,
     overflowX: 'hidden',
     overflowY: 'auto',
@@ -1159,119 +1038,46 @@ const popupStyle = {
 
 const popupCloseBtnStyle = {
     position: 'absolute',
-    top: '10px',
-    right: '10px',
-    width: '30px',
-    height: '30px',
-    backgroundColor: 'rgba(255,255,255,0.88)',
-    border: '1px solid rgba(0,0,0,0.08)',
-    fontSize: '15px',
+    top: '12px',
+    right: '12px',
+    width: '32px',
+    height: '32px',
+    padding: 0,
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#8a8a8a',
+    fontSize: '20px',
     lineHeight: 1,
-    cursor: 'pointer',
-    color: '#777',
-    zIndex: 2
+    cursor: 'pointer'
 };
 
-const popupHeaderStyle = {
-    padding: '18px 20px 16px'
-};
-
-const popupStatusRowStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: '18px',
-    paddingRight: '26px'
-};
-
-const popupStatusGroupStyle = {
+const statusBadgeRowStyle = {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
-    minWidth: 0
+    minHeight: '32px',
+    marginBottom: '14px',
+    paddingRight: '38px'
 };
 
-const popupStatusIconStyle = {
-    width: '34px',
-    height: '34px',
-    color: '#fff',
-    display: 'flex',
+const tagStatusStyle = {
+    display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '15px',
-    fontWeight: '900',
-    flexShrink: 0
-};
-
-const popupEyebrowStyle = {
-    marginBottom: '2px',
-    color: '#777',
-    fontSize: '10px',
-    fontWeight: '700',
-    letterSpacing: '0.08em'
-};
-
-const popupGradeLabelStyle = {
-    fontSize: '21px',
-    fontWeight: '900',
-    lineHeight: 1.1
-};
-
-const popupScoreAreaStyle = {
-    textAlign: 'right',
-    flexShrink: 0
-};
-
-const popupScoreLabelStyle = {
-    marginBottom: '3px',
-    color: '#777',
-    fontSize: '10px',
-    fontWeight: '700'
-};
-
-const popupScoreLineStyle = {
-    lineHeight: 1
-};
-
-const popupScoreValueStyle = {
-    fontSize: '32px',
-    fontWeight: '900',
-    letterSpacing: '-0.04em'
-};
-
-const popupScoreUnitStyle = {
-    color: '#777',
-    fontSize: '11px',
-    fontWeight: '700'
-};
-
-const popupNoScoreStyle = {
-    fontSize: '22px',
+    minWidth: '48px',
+    padding: '7px 12px',
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    border: 'none',
+    borderRadius: 0,
+    fontSize: '13px',
     fontWeight: '900'
 };
 
-const popupStatusMessageStyle = {
-    marginTop: '12px',
-    fontSize: '12px',
-    fontWeight: '700',
-    lineHeight: '1.45',
-    wordBreak: 'keep-all'
-};
-
-const popupBodyStyle = {
-    padding: '18px 20px 20px'
-};
-
-const popupStoreHeaderStyle = {
-    paddingBottom: '14px',
-    borderBottom: '1px solid #eeeeee'
-};
-
 const popupStoreNameStyle = {
-    margin: 0,
-    color: '#222',
-    fontSize: '19px',
-    fontWeight: '800',
+    margin: '0 0 5px',
+    paddingRight: '20px',
+    color: '#2d2d2d',
+    fontSize: '21px',
+    fontWeight: '900',
     lineHeight: '1.35',
     wordBreak: 'keep-all'
 };
@@ -1281,127 +1087,81 @@ const popupMetaStyle = {
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: '6px',
-    margin: '6px 0 0',
-    color: '#777',
-    fontSize: '12px',
-    fontWeight: '500'
+    margin: '0 0 16px',
+    color: '#666666',
+    fontSize: '13px',
+    fontWeight: '600'
 };
 
 const metaDividerStyle = {
-    color: '#b5b5b5'
+    color: '#a5a5a5'
 };
 
-const quickInfoGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '8px',
-    margin: '14px 0'
-};
-
-const quickInfoItemStyle = {
+const grayBoxStyle = {
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px',
-    padding: '10px 12px',
-    backgroundColor: '#f7f7f7',
-    border: '1px solid #e9e9e9'
-};
-
-const quickInfoLabelStyle = {
-    color: '#777',
-    fontSize: '10px',
-    fontWeight: '700'
-};
-
-const quickInfoValueStyle = {
-    color: '#222',
-    fontSize: '14px',
-    fontWeight: '800'
-};
-
-const infoSectionStyle = {
+    gap: '9px',
     marginBottom: '10px',
-    padding: '12px',
-    backgroundColor: '#fafafa',
-    border: '1px solid #e8e8e8'
+    padding: '14px',
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    border: 'none',
+    borderRadius: 0
 };
 
-const infoSectionHeaderStyle = {
+const tintedBoxStyle = {
     display: 'flex',
-    alignItems: 'center',
-    gap: '7px',
-    marginBottom: '7px'
+    flexDirection: 'column',
+    gap: '9px',
+    marginBottom: '14px',
+    padding: '14px',
+    backgroundColor: 'rgba(255,255,255,0.48)',
+    border: 'none',
+    borderRadius: 0
 };
 
-const infoSectionAccentStyle = {
-    width: '4px',
-    height: '14px',
+const boxRowStyle = {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '10px',
+    color: '#333333',
+    fontSize: '13px',
+    lineHeight: '1.5'
+};
+
+const boxLabelStyle = {
+    minWidth: '68px',
+    color: '#555555',
+    fontWeight: '900',
     flexShrink: 0
 };
 
-const infoSectionTitleStyle = {
-    color: '#333',
-    fontSize: '12px',
-    fontWeight: '800'
+const boxValueStyle = {
+    fontSize: '14px',
+    fontWeight: '900'
 };
 
-const infoSectionTextStyle = {
-    margin: 0,
-    color: '#555',
-    fontSize: '12px',
-    lineHeight: '1.55',
+const boxTextStyle = {
+    minWidth: 0,
+    color: '#333333',
+    fontWeight: '500',
+    lineHeight: '1.5',
     wordBreak: 'keep-all'
 };
 
-const reviewSummaryBoxStyle = {
-    marginBottom: '14px',
-    padding: '12px',
-    border: '1px solid'
-};
-
-const reviewSummaryHeaderStyle = {
+const detailButtonAreaStyle = {
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '10px',
-    marginBottom: '7px'
-};
-
-const reviewSummaryTitleStyle = {
-    color: '#333',
-    fontSize: '12px',
-    fontWeight: '800'
-};
-
-const reviewCountBadgeStyle = {
-    padding: '2px 6px',
-    backgroundColor: 'rgba(255,255,255,0.72)',
-    border: '1px solid rgba(0,0,0,0.08)',
-    fontSize: '10px',
-    fontWeight: '800'
-};
-
-const reviewSummaryTextStyle = {
-    margin: 0,
-    color: '#444',
-    fontSize: '12px',
-    lineHeight: '1.55',
-    wordBreak: 'keep-all'
+    justifyContent: 'flex-end'
 };
 
 const modernDetailBtnStyle = {
-    width: '100%',
-    color: '#ffffff',
-    border: '1px solid',
     padding: '10px 14px',
+    backgroundColor: 'rgba(255,255,255,0.82)',
+    border: 'none',
     borderRadius: 0,
+    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
     cursor: 'pointer',
-    fontWeight: '800',
-    fontSize: '12px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: '8px'
+    fontSize: '13px',
+    fontWeight: '900'
 };
 
 const closeIconBtnStyle = {
