@@ -335,12 +335,22 @@ const Home = () => {
                             type="button"
                             onClick={handleKakaoLogin}
                             style={kakaoLoginBtnStyle}
-                            aria-label="카카오로 로그인"
+                            aria-label="카카오 로그인"
                         >
-                            <span style={kakaoLogoStyle} aria-hidden="true">
-                                K
+                            <svg
+                                viewBox="0 0 24 24"
+                                style={kakaoLogoStyle}
+                                aria-hidden="true"
+                            >
+                                <path
+                                    fill="#191919"
+                                    d="M12 3C6.477 3 2 6.582 2 11c0 2.833 1.838 5.321 4.611 6.744l-1.153 4.227c-.103.377.327.681.656.464l5.119-3.386c.253.014.509.021.767.021 5.523 0 10-3.582 10-8.07C22 6.582 17.523 3 12 3Z"
+                                />
+                            </svg>
+
+                            <span style={kakaoLoginTextStyle}>
+                                카카오 로그인
                             </span>
-                            <span>카카오로 로그인</span>
                         </button>
                     )}
                 </div>
@@ -758,35 +768,35 @@ const btnStyle = {
 };
 
 const kakaoLoginBtnStyle = {
+    height: '42px',
+    minWidth: '168px',
+    padding: '0 20px',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px',
-    minWidth: '142px',
-    height: '38px',
-    padding: '0 14px',
+    gap: '10px',
     backgroundColor: '#FEE500',
-    color: 'rgba(0, 0, 0, 0.85)',
-    border: '1px solid #F2D900',
-    borderRadius: '7px',
+    color: '#191919',
+    border: 'none',
+    borderRadius: '12px',
     cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '700',
+    boxSizing: 'border-box',
+    fontFamily: 'inherit',
     whiteSpace: 'nowrap'
 };
 
 const kakaoLogoStyle = {
-    width: '20px',
-    height: '20px',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#191919',
-    color: '#FEE500',
-    borderRadius: '50%',
-    fontSize: '11px',
-    fontWeight: '900',
-    flexShrink: 0
+    width: '23px',
+    height: '23px',
+    flexShrink: 0,
+    display: 'block'
+};
+
+const kakaoLoginTextStyle = {
+    color: '#191919',
+    fontSize: '15px',
+    fontWeight: '600',
+    lineHeight: 1
 };
 
 const adminBtnStyle = {
@@ -1022,18 +1032,18 @@ const popupStyle = {
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    width: '320px',
-    maxWidth: 'calc(100% - 32px)',
-    maxHeight: 'calc(100% - 32px)',
-    padding: '22px',
-    boxSizing: 'border-box',
+    width: '310px',
+    maxWidth: 'calc(100% - 28px)',
+    maxHeight: 'calc(100% - 28px)',
+    backgroundColor: '#ffffff',
     border: 'none',
     borderRadius: 0,
     overflowX: 'hidden',
     overflowY: 'auto',
     zIndex: 20,
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.16)'
 };
 
 const popupCloseBtnStyle = {
