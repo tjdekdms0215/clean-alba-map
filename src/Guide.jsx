@@ -410,6 +410,8 @@ const InfoCard = ({ title, centered = false, children }) => (
 const pageStyle = {
     width: '100%',
     minHeight: '100vh',
+    overflowY: 'auto',
+    overflowX: 'hidden',
     display: 'flex',
     flexDirection: 'column',
     backgroundColor: '#fafafa',
