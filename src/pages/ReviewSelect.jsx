@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { searchReviewTargets, resolveWorkspace } from '../api/workspace';
 
-const API_BASE_URL = 'https://cleanalb-map.duckdns.org';
 
 const KAKAO_REST_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY;
 const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
@@ -65,9 +65,9 @@ const ReviewSelect = () => {
         alert('로그아웃 되었습니다.');
     };
 
+    // 💡 1. 검색 함수 깔끔하게 교체
     const handleSearch = async (event) => {
         event.preventDefault();
-
         const trimmedKeyword = keyword.trim();
 
         if (!trimmedKeyword) {
@@ -82,32 +82,56 @@ const ReviewSelect = () => {
         setHasSearched(true);
 
         try {
-            // 헤더에 토큰 포함 (로그인 상태일 경우)
-            const token = localStorage.getItem('jwt_token');
-            const headers = {
-                'Content-Type': 'application/json',
-                ...(token && { Authorization: `Bearer ${token}` })
-            };
-
-            const response = await fetch(
-                `${API_BASE_URL}/workspaces/search?keyword=${encodeURIComponent(trimmedKeyword)}`,
-                { headers }
-            );
-
-            if (!response.ok) {
-                throw new Error(`사업장 검색 실패: ${response.status}`);
-            }
-
-            const data = await response.json();
+            // API 파일의 함수 호출
+            const data = await searchReviewTargets(trimmedKeyword);
             const normalizedResults = Array.isArray(data) ? data : [];
-
             setResults(normalizedResults);
         } catch (error) {
             console.error('후기 대상 사업장 검색 오류:', error);
             setResults([]);
-            setErrorMessage(
-                '사업장 검색 결과를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
-            );
+            setErrorMessage('사업장 검색 결과를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // 💡 2. Resolve(선택) 함수 깔끔하게 교체
+    const handleSelectWorkspace = async (place) => {
+        // 1. 이미 DB에 등록된 사업장인 경우
+        if (place.existing && place.workspaceId) {
+            navigate(`/review/write/${place.workspaceId}`, {
+                state: { workspace: place }
+            });
+            return;
+        }
+
+        // 2. 미등록 사업장인 경우 - Resolve API 호출
+        try {
+            setIsLoading(true);
+            
+            // API 파일의 함수에 객체만 딱 넘겨줍니다
+            const data = await resolveWorkspace({
+                kakaoPlaceId: place.kakaoPlaceId,
+                name: place.name,
+                address: place.address,
+                category: place.category || '기타',
+                latitude: place.latitude,
+                longitude: place.longitude
+            });
+
+            const resolvedWorkspaceId = data.workspaceId;
+
+            if (!resolvedWorkspaceId) {
+                throw new Error('생성된 workspaceId가 존재하지 않습니다.');
+            }
+
+            navigate(`/review/write/${resolvedWorkspaceId}`, {
+                state: { workspace: { ...place, workspaceId: resolvedWorkspaceId, existing: true } }
+            });
+
+        } catch (error) {
+            console.error('사업장 Resolve 에러:', error);
+            alert('사업장 정보를 동기화하는 데 실패했습니다. 다시 시도해 주세요.');
         } finally {
             setIsLoading(false);
         }
