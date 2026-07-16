@@ -592,7 +592,7 @@ const calculationListStyle = {
     minWidth: 0,
     display: 'flex',
     flexDirection: 'column',
-    overflowX: 'auto',
+    overflowX: 'visible',
     backgroundColor: '#ffffff',
     borderTop: '1px solid #eeeeee',
     borderBottom: '1px solid #eeeeee'
@@ -600,13 +600,13 @@ const calculationListStyle = {
 
 const calculationRowStyle = {
     width: '100%',
-    minWidth: '900px',
+    minWidth: 0,
     minHeight: '102px',
     padding: '16px 0',
     display: 'grid',
     gridTemplateColumns:
-        '54px 248px minmax(340px, 1fr) 130px',
-    columnGap: '24px',
+        '54px minmax(0, 1.05fr) minmax(0, 1.65fr) 126px',
+    columnGap: '20px',
     alignItems: 'center',
     boxSizing: 'border-box',
     borderBottom: '1px solid #eeeeee'
@@ -631,7 +631,8 @@ const calculationDescriptionStyle = {
     color: '#59616d',
     fontSize: '14px',
     lineHeight: '1.65',
-    wordBreak: 'keep-all'
+    wordBreak: 'keep-all',
+    overflowWrap: 'break-word'
 };
 
 const calculationFormulaWrapStyle = {
@@ -642,25 +643,33 @@ const calculationFormulaWrapStyle = {
 };
 
 const calculationFormulaStyle = {
+    minWidth: 0,
     color: '#2f3338',
     fontSize: '16px',
     fontWeight: '800',
     lineHeight: '1.45',
-    whiteSpace: 'normal'
+    whiteSpace: 'normal',
+    overflowWrap: 'break-word'
 };
 
 const calculationNoteStyle = {
+    minWidth: 0,
     color: '#999fa7',
     fontSize: '12px',
-    lineHeight: '1.45'
+    lineHeight: '1.45',
+    overflowWrap: 'break-word'
 };
 
 const violationTextStyle = {
+    width: '126px',
+    minWidth: 0,
     justifySelf: 'end',
+    textAlign: 'right',
     color: '#ef2348',
     fontSize: '13px',
     fontWeight: '800',
-    whiteSpace: 'nowrap'
+    lineHeight: '1.35',
+    whiteSpace: 'normal'
 };
 
 const faqSectionStyle = { marginTop: '60px' };

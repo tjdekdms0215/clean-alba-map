@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getWorkspaces } from '../api/workspace';
 
-const API_BASE_URL = 'https://cleanalb-map.duckdns.org';
 const KAKAO_REST_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY;
 const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
 
@@ -90,32 +90,27 @@ const Home = () => {
     const [selectedStore, setSelectedStore] = useState(null);
     const [showIntroModal, setShowIntroModal] = useState(false);
 
-    const fetchWorkspaces = async (keyword = '') => {
-        try {
-            const url = keyword
-                ? `${API_BASE_URL}/workspaces?keyword=${encodeURIComponent(keyword)}`
-                : `${API_BASE_URL}/workspaces`;
 
-            const response = await fetch(url);
+// 💡 기존의 fetchWorkspaces 함수를 이걸로 통째로 교체하세요!
+const fetchWorkspaces = async (keyword = '') => {
+    try {
+        // [지워진 부분: url 생성 로직, fetch() 호출, response.ok 체크, response.json() 변환]
+        
+        // 1. 만들어둔 API 함수로 데이터 바로 가져오기 (status는 전체이므로 null)
+        const data = await getWorkspaces(null, keyword);
 
-            if (!response.ok) {
-                console.error('사업장 데이터를 불러오는 데 실패했습니다.');
-                return;
-            }
-
-            const data = await response.json();
-
-            if (Array.isArray(data)) {
-                setStores(data);
-            } else {
-                console.error('사업장 데이터가 배열 형태가 아닙니다.', data);
-                setStores([]);
-            }
-        } catch (error) {
-            console.error('API 연동 에러:', error);
+        // 2. 가져온 데이터 상태에 저장하기
+        if (Array.isArray(data)) {
+            setStores(data);
+        } else {
+            console.error('사업장 데이터가 배열 형태가 아닙니다.', data);
             setStores([]);
         }
-    };
+    } catch (error) {
+        console.error('API 연동 에러:', error);
+        setStores([]);
+    }
+};
 
     useEffect(() => {
         const token = localStorage.getItem('jwt_token');
