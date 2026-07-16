@@ -51,18 +51,29 @@ export const getWorkspaces = async (
  * @returns {Promise<Array>}
  */
 export const searchReviewTargets = async (keyword) => {
-    const response = await api.get(
-        '/workspaces/search',
-        {
-            params: {
-                keyword
-            }
+    const response = await api.get('/workspaces/search', {
+        params: {
+            keyword
         }
-    );
+    });
 
-    return response.data;
+    console.log('사업장 검색 응답:', response.data);
+
+    if (!Array.isArray(response.data)) {
+        throw new Error(
+            '사업장 검색 API 응답이 배열이 아닙니다.'
+        );
+    }
+
+    return response.data.map((place) => ({
+        ...place,
+        category:
+            typeof place.category === 'string' &&
+            place.category.trim()
+                ? place.category
+                : '기타'
+    }));
 };
-
 /**
  * 미등록 카카오 장소를 내부 사업장으로 등록합니다.
  *

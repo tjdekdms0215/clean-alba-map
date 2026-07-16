@@ -67,33 +67,43 @@ const ReviewSelect = () => {
 
     // 💡 1. 검색 함수 깔끔하게 교체
     const handleSearch = async (event) => {
-        event.preventDefault();
-        const trimmedKeyword = keyword.trim();
+    event.preventDefault();
 
-        if (!trimmedKeyword) {
-            setErrorMessage('사업장 이름을 입력해 주세요.');
-            setResults([]);
-            setHasSearched(false);
-            return;
-        }
+    const trimmedKeyword = keyword.trim();
 
-        setIsLoading(true);
-        setErrorMessage('');
-        setHasSearched(true);
+    if (!trimmedKeyword) {
+        setErrorMessage('사업장 이름을 입력해 주세요.');
+        setResults([]);
+        setHasSearched(false);
+        return;
+    }
 
-        try {
-            // API 파일의 함수 호출
-            const data = await searchReviewTargets(trimmedKeyword);
-            const normalizedResults = Array.isArray(data) ? data : [];
-            setResults(normalizedResults);
-        } catch (error) {
-            console.error('후기 대상 사업장 검색 오류:', error);
-            setResults([]);
-            setErrorMessage('사업장 검색 결과를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    setIsLoading(true);
+    setErrorMessage('');
+    setHasSearched(true);
+
+    try {
+        const data = await searchReviewTargets(
+            trimmedKeyword
+        );
+
+        console.log('화면 표시 검색 결과:', data);
+
+        setResults(data);
+    } catch (error) {
+        console.error(
+            '후기 대상 사업장 검색 오류:',
+            error
+        );
+
+        setResults([]);
+        setErrorMessage(
+            '사업장 검색 결과를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
+        );
+    } finally {
+        setIsLoading(false);
+    }
+};
 
     // 💡 2. Resolve(선택) 함수 깔끔하게 교체
     const handleSelectWorkspace = async (place) => {

@@ -1,11 +1,15 @@
 // src/api/axios.js (또는 통신을 설정하는 파일)
 import axios from 'axios';
 
+const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL ||
+    'https://cleanalb-map.duckdns.org';
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL, // 프로젝트 기본 API 주소
+    baseURL: API_BASE_URL,
     headers: {
-        'Content-Type': 'application/json',
-    },
+        'Content-Type': 'application/json'
+    }
 });
 
 // 1. 요청(Request) 인터셉터: 모든 API 요청 시 로컬스토리지의 토큰을 헤더에 담습니다.
