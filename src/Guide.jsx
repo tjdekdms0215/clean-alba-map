@@ -308,7 +308,16 @@ const Guide = () => {
     return (
         <div style={pageStyle}>
             {/* 헤더 */}
-            <header style={{ ...fullWidthWrapperStyle, backgroundColor: '#ffffff', borderBottom: '1px solid #eeeeee' }}>
+            <header
+                style={{
+                    ...fullWidthWrapperStyle,
+                    height: '64px',
+                    minHeight: '64px',
+                    flexShrink: 0,
+                    backgroundColor: '#ffffff',
+                    borderBottom: '1px solid #eeeeee'
+                }}
+            >
                 <div style={{ ...innerContainerStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '64px' }}>
                     <div style={headerLeftStyle}>
                         <button type="button" style={logoButtonStyle} onClick={() => navigate('/')}>전남대 클린알바맵</button>
@@ -338,8 +347,16 @@ const Guide = () => {
                 </div>
             </header>
 
-            {/* 탭 네비게이션 */}
-            <nav style={{ ...fullWidthWrapperStyle, backgroundColor: '#ffffff' }}>
+            <main style={scrollAreaStyle}>
+                {/* 탭 네비게이션 */}
+            <nav
+                    style={{
+                        ...fullWidthWrapperStyle,
+                        overflowX: 'auto',
+                        overflowY: 'hidden',
+                        backgroundColor: '#ffffff'
+                    }}
+                >
                 <div style={{ ...innerContainerStyle, display: 'flex' }}>
                     {Object.values(TAB_KEYS).map((tab) => (
                         <button
@@ -385,6 +402,7 @@ const Guide = () => {
                     <button type="button" style={footerButtonStyle} onClick={openLawCenter}>{activeGuide.footerButton}</button>
                 </div>
             </footer>
+            </main>
 
             {/* 모달 로직 유지 */}
             {showIntroModal && (
@@ -406,20 +424,24 @@ const InfoCard = ({ title, centered = false, children }) => (
 
 // --- CSS 스타일링 영역 ---
 
-// 1. pageStyle 수정: 화면을 고정하던 height와 overflow 속성을 제거
 const pageStyle = {
     width: '100vw',
-    minHeight: '100vh', // 💡 height: '100vh'를 minHeight로 변경!
+    height: '100vh',
     display: 'flex',
     flexDirection: 'column',
-    // 💡 overflow: 'hidden' 삭제 (이 녀석이 범인이었습니다!)
-    backgroundColor: '#f5f7fa'
+    overflow: 'hidden',
+    backgroundColor: '#fafafa'
 };
 
 const scrollAreaStyle = {
-    flex: 1,
+    flex: '1 1 auto',
+    minHeight: 0,
+    width: '100%',
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    WebkitOverflowScrolling: 'touch',
+    overscrollBehaviorY: 'contain',
     backgroundColor: '#f7f8fa'
-    // 💡 minHeight, overflowY, overflowX, WebkitOverflowScrolling 모두 삭제!
 };
 
 const fullWidthWrapperStyle = {
