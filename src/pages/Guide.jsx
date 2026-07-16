@@ -588,27 +588,35 @@ const centerListStyle = { fontSize: '14px', color: '#444', lineHeight: '1.8' };
 const bulletListStyle = { margin: 0, paddingLeft: '20px', color: '#444', fontSize: '14px', lineHeight: '1.8' };
 
 const calculationListStyle = {
-    width: '100%',
+    width:
+        'calc(100% + clamp(20px, 4vw, 48px) + clamp(20px, 4vw, 48px))',
     minWidth: 0,
+    marginLeft:
+        'calc(0px - clamp(20px, 4vw, 48px))',
+    marginRight:
+        'calc(0px - clamp(20px, 4vw, 48px))',
     display: 'flex',
     flexDirection: 'column',
     overflowX: 'visible',
     backgroundColor: '#ffffff',
     borderTop: '1px solid #eeeeee',
-    borderBottom: '1px solid #eeeeee'
+    borderBottom: '1px solid #eeeeee',
+    boxSizing: 'border-box'
 };
 
 const calculationRowStyle = {
     width: '100%',
     minWidth: 0,
     minHeight: '102px',
-    padding: '16px 0',
+    padding:
+        '16px clamp(20px, 4vw, 48px)',
     display: 'grid',
     gridTemplateColumns:
         '54px minmax(0, 1.05fr) minmax(0, 1.65fr) 126px',
     columnGap: '20px',
     alignItems: 'center',
     boxSizing: 'border-box',
+    backgroundColor: '#ffffff',
     borderBottom: '1px solid #eeeeee'
 };
 

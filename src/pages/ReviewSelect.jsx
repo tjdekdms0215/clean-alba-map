@@ -3,11 +3,8 @@ import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = 'https://cleanalb-map.duckdns.org';
 
-const KAKAO_REST_API_KEY =
-    import.meta.env.VITE_KAKAO_REST_API_KEY;
-
-const KAKAO_REDIRECT_URI =
-    import.meta.env.VITE_KAKAO_REDIRECT_URI;
+const KAKAO_REST_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY;
+const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
 
 const ReviewSelect = () => {
     const navigate = useNavigate();
@@ -85,11 +82,16 @@ const ReviewSelect = () => {
         setHasSearched(true);
 
         try {
-            // 백엔드 통합 검색 API 경로가 확정되면 이 주소만 맞춰 주세요.
+            // 헤더에 토큰 포함 (로그인 상태일 경우)
+            const token = localStorage.getItem('jwt_token');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(token && { Authorization: `Bearer ${token}` })
+            };
+
             const response = await fetch(
-                `${API_BASE_URL}/api/review-targets?keyword=${encodeURIComponent(
-                    trimmedKeyword
-                )}`
+                `${API_BASE_URL}/workspaces/search?keyword=${encodeURIComponent(trimmedKeyword)}`,
+                { headers }
             );
 
             if (!response.ok) {
@@ -97,11 +99,7 @@ const ReviewSelect = () => {
             }
 
             const data = await response.json();
-            const normalizedResults = Array.isArray(data)
-                ? data
-                : Array.isArray(data.results)
-                    ? data.results
-                    : [];
+            const normalizedResults = Array.isArray(data) ? data : [];
 
             setResults(normalizedResults);
         } catch (error) {
@@ -115,22 +113,58 @@ const ReviewSelect = () => {
         }
     };
 
-    const handleSelectWorkspace = (place) => {
-        if (place.registered && place.workspaceId) {
+    const handleSelectWorkspace = async (place) => {
+        // 1. 이미 DB에 등록된 사업장인 경우 (existing: true)
+        if (place.existing && place.workspaceId) {
             navigate(`/review/write/${place.workspaceId}`, {
-                state: {
-                    workspace: place
-                }
+                state: { workspace: place }
             });
             return;
         }
 
-        sessionStorage.setItem(
-            'selected_kakao_place',
-            JSON.stringify(place)
-        );
+        // 2. 미등록 사업장인 경우 (existing: false) - Resolve API 호출
+        try {
+            setIsLoading(true); // 이동 전 로딩 처리
+            const token = localStorage.getItem('jwt_token');
+            
+            const response = await fetch(`${API_BASE_URL}/workspaces/resolve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token && { Authorization: `Bearer ${token}` })
+                },
+                body: JSON.stringify({
+                    kakaoPlaceId: place.kakaoPlaceId,
+                    name: place.name,
+                    address: place.address,
+                    category: place.category || '기타', // 카테고리 없을 시 '기타' 처리
+                    latitude: place.latitude,
+                    longitude: place.longitude
+                })
+            });
 
-        navigate('/review/write/new');
+            if (!response.ok) {
+                throw new Error('사업장 초기화 등록에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            const resolvedWorkspaceId = data.workspaceId; // Resolve API 응답에서 ID 추출
+
+            if (!resolvedWorkspaceId) {
+                throw new Error('생성된 workspaceId가 존재하지 않습니다.');
+            }
+
+            // 확보된 workspaceId로 이동
+            navigate(`/review/write/${resolvedWorkspaceId}`, {
+                state: { workspace: { ...place, workspaceId: resolvedWorkspaceId, existing: true } }
+            });
+
+        } catch (error) {
+            console.error('사업장 Resolve 에러:', error);
+            alert('사업장 정보를 동기화하는 데 실패했습니다. 다시 시도해 주세요.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -290,10 +324,10 @@ const ReviewSelect = () => {
                             </div>
                         )}
 
-                        {isLoading && (
+                        {isLoading && !errorMessage && (
                             <div style={feedbackRowStyle}>
                                 <span style={statusTextStyle}>
-                                    사업장을 검색하고 있습니다.
+                                    사업장을 처리하고 있습니다.
                                 </span>
                             </div>
                         )}
@@ -312,48 +346,31 @@ const ReviewSelect = () => {
                         {!isLoading && results.length > 0 && (
                             <div style={resultListStyle}>
                                 {results.map((place) => {
-                                    const resultKey =
-                                        place.workspaceId ||
-                                        place.kakaoPlaceId ||
-                                        place.providerPlaceId ||
-                                        `${place.name}-${place.address}`;
-
-                                    const category =
-                                        place.category ||
-                                        place.categoryName ||
-                                        place.category_name ||
-                                        '업종 정보 없음';
-
-                                    const address =
-                                        place.address ||
-                                        place.roadAddress ||
-                                        place.addressName ||
-                                        place.address_name ||
-                                        place.road_address_name ||
-                                        '주소 정보 없음';
+                                    // 고유 키 (workspaceId 우선, 없으면 kakaoPlaceId)
+                                    const resultKey = place.workspaceId || place.kakaoPlaceId;
+                                    
+                                    // 카테고리 없는 경우 '기타' 처리
+                                    const category = place.category || '기타';
+                                    const address = place.address || '주소 정보 없음';
 
                                     return (
                                         <button
                                             type="button"
                                             key={resultKey}
-                                            onClick={() =>
-                                                handleSelectWorkspace(place)
-                                            }
+                                            onClick={() => handleSelectWorkspace(place)}
                                             style={resultRowStyle}
                                         >
                                             <div style={resultMainStyle}>
                                                 <strong style={placeNameStyle}>
-                                                    {place.name ||
-                                                        place.placeName ||
-                                                        place.place_name ||
-                                                        '사업장 이름 없음'}
+                                                    {place.name || '사업장 이름 없음'}
                                                 </strong>
 
                                                 <div style={placeMetaLineStyle}>
-                                                    <span>{category}</span>
-                                                    <span style={metaDividerStyle}>
-                                                        •
+                                                    <span style={categoryBadgeStyle(place.existing)}>
+                                                        {place.existing ? '등록됨' : '신규'}
                                                     </span>
+                                                    <span>{category}</span>
+                                                    <span style={metaDividerStyle}>•</span>
                                                     <span>{address}</span>
                                                 </div>
                                             </div>
@@ -457,6 +474,19 @@ const ReviewSelect = () => {
         </div>
     );
 };
+
+// --- 기존 스타일과 동일 (등록됨/신규 뱃지 스타일 하나만 추가) ---
+
+const categoryBadgeStyle = (isExisting) => ({
+    display: 'inline-block',
+    padding: '2px 6px',
+    backgroundColor: isExisting ? '#e0e7ff' : '#fef3c7',
+    color: isExisting ? '#4338ca' : '#d97706',
+    borderRadius: '4px',
+    fontSize: '11px',
+    fontWeight: 'bold',
+    marginRight: '6px'
+});
 
 const pageStyle = {
     width: '100vw',
