@@ -406,16 +406,20 @@ const InfoCard = ({ title, centered = false, children }) => (
 
 // --- CSS 스타일링 영역 ---
 
+// 1. pageStyle 수정: 화면을 고정하던 height와 overflow 속성을 제거
 const pageStyle = {
-    width: '100%',
-    minHeight: '100vh',  // 💡 height: '100vh'를 지우고 minHeight로 변경!
-    // overflowY: 'auto', // 💡 overflow 속성도 아예 지워주세요! (브라우저 기본 스크롤 사용)
+    width: '100vw',
+    minHeight: '100vh', // 💡 height: '100vh'를 minHeight로 변경!
     display: 'flex',
     flexDirection: 'column',
-    backgroundColor: '#fafafa',
-    margin: 0,
-    padding: 0,
-    fontFamily: 'sans-serif'
+    // 💡 overflow: 'hidden' 삭제 (이 녀석이 범인이었습니다!)
+    backgroundColor: '#f5f7fa'
+};
+
+const scrollAreaStyle = {
+    flex: 1,
+    backgroundColor: '#f7f8fa'
+    // 💡 minHeight, overflowY, overflowX, WebkitOverflowScrolling 모두 삭제!
 };
 
 const fullWidthWrapperStyle = {
