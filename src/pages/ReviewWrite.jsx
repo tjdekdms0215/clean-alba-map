@@ -1618,8 +1618,12 @@ const ReviewWrite = () => {
 };
 
 const pageStyle = {
+    height: '100vh',
     minHeight: '100vh',
-    backgroundColor: '#f6f8fb'
+    display: 'flex',
+    flexDirection: 'column',
+    backgroundColor: '#f6f8fb',
+    overflow: 'hidden'
 };
 
 const headerStyle = {
@@ -1685,7 +1689,8 @@ const profileIconStyle = {
 };
 
 const mainStyle = {
-    minHeight: 'calc(100vh - 64px)',
+    flex: 1,
+    minHeight: 0,
     overflowY: 'auto'
 };
 

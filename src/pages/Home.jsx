@@ -480,7 +480,8 @@ const Home = () => {
                             style={{
                                 ...popupStyle,
                                 backgroundColor: selectedGrade.softColor,
-                                boxShadow: `0 12px 34px ${selectedGrade.shadowColor}`
+                                borderColor:
+                                    selectedGrade.borderColor
                             }}
                         >
                             <button
@@ -1136,15 +1137,14 @@ const popupStyle = {
     left: '50%',
     transform: 'translate(-50%, -50%)',
 
-    width: '360px',
-    maxWidth: 'calc(100% - 32px)',
-    maxHeight: 'calc(100% - 32px)',
+    width: 'min(336px, calc(100% - 32px))',
+    height: 'min(448px, calc(100% - 32px))',
 
-    padding: '22px',
+    padding: '20px',
     boxSizing: 'border-box',
 
     backgroundColor: '#ffffff',
-    border: 'none',
+    border: '1px solid #D6DDE8',
     borderRadius: 0,
 
     overflowX: 'hidden',
@@ -1154,7 +1154,7 @@ const popupStyle = {
     display: 'flex',
     flexDirection: 'column',
 
-    boxShadow: '0 10px 28px rgba(0,0,0,0.16)'
+    boxShadow: 'none'
 };
 
 const popupCloseBtnStyle = {
@@ -1242,7 +1242,7 @@ const grayBoxStyle = {
     padding: '15px 16px',
 
     backgroundColor: 'rgba(255,255,255,0.72)',
-    border: 'none',
+    border: '1px solid rgba(214, 221, 232, 0.96)',
     borderRadius: 0
 };
 
@@ -1255,7 +1255,7 @@ const tintedBoxStyle = {
     padding: '15px 16px',
 
     backgroundColor: 'rgba(255,255,255,0.48)',
-    border: 'none',
+    border: '1px solid rgba(214, 221, 232, 0.96)',
     borderRadius: 0
 };
 
@@ -1309,7 +1309,10 @@ const evidenceHeadingStyle = {
 const evidenceItemStyle = {
     display: 'flex',
     alignItems: 'flex-start',
-    gap: '10px'
+    gap: '10px',
+    padding: '10px 11px',
+    border: '1px solid rgba(214, 221, 232, 0.96)',
+    backgroundColor: 'rgba(255,255,255,0.86)'
 };
 
 const evidenceTypeBadgeStyle = {
