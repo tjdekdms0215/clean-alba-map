@@ -1,5 +1,158 @@
 import api from './axios';
 
+const coerceFiniteNumber = (value) => {
+    const parsed = Number(value);
+
+    return Number.isFinite(parsed) ? parsed : null;
+};
+
+const pickFirstDefined = (...values) =>
+    values.find(
+        (value) =>
+            value !== undefined &&
+            value !== null &&
+            value !== ''
+    );
+
+const normalizeWorkspace = (workspace = {}) => {
+    const normalizedId = coerceFiniteNumber(
+        pickFirstDefined(
+            workspace?.workspaceId,
+            workspace?.workspace_id,
+            workspace?.id
+        )
+    );
+    const normalizedLatitude = coerceFiniteNumber(
+        pickFirstDefined(
+            workspace?.latitude,
+            workspace?.lat,
+            workspace?.y
+        )
+    );
+    const normalizedLongitude = coerceFiniteNumber(
+        pickFirstDefined(
+            workspace?.longitude,
+            workspace?.lng,
+            workspace?.x
+        )
+    );
+    const normalizedCleanScore = coerceFiniteNumber(
+        pickFirstDefined(
+            workspace?.cleanScore,
+            workspace?.clean_score,
+            workspace?.score
+        )
+    );
+    const normalizedReviewCount = coerceFiniteNumber(
+        pickFirstDefined(
+            workspace?.reviewCount,
+            workspace?.review_count,
+            workspace?.reviewsCount,
+            workspace?.reviews_count
+        )
+    );
+
+    return {
+        ...workspace,
+        workspaceId:
+            normalizedId ??
+            pickFirstDefined(
+                workspace?.workspaceId,
+                workspace?.workspace_id,
+                workspace?.id
+            ),
+        id:
+            normalizedId ??
+            pickFirstDefined(
+                workspace?.id,
+                workspace?.workspaceId,
+                workspace?.workspace_id
+            ),
+        name:
+            pickFirstDefined(
+                workspace?.name,
+                workspace?.placeName,
+                workspace?.place_name,
+                workspace?.workspaceName,
+                workspace?.workspace_name
+            ) || '사업장 이름 없음',
+        address:
+            pickFirstDefined(
+                workspace?.address,
+                workspace?.roadAddress,
+                workspace?.road_address,
+                workspace?.addressName,
+                workspace?.address_name,
+                workspace?.road_address_name
+            ) || '',
+        category:
+            pickFirstDefined(
+                workspace?.category,
+                workspace?.categoryName,
+                workspace?.category_name,
+                workspace?.industryType,
+                workspace?.industry_type
+            ) || '기타',
+        district:
+            pickFirstDefined(
+                workspace?.district,
+                workspace?.region,
+                workspace?.gu,
+                workspace?.addressRegion,
+                workspace?.address_region
+            ) || '',
+        latitude:
+            normalizedLatitude ??
+            pickFirstDefined(
+                workspace?.latitude,
+                workspace?.lat,
+                workspace?.y
+            ),
+        longitude:
+            normalizedLongitude ??
+            pickFirstDefined(
+                workspace?.longitude,
+                workspace?.lng,
+                workspace?.x
+            ),
+        cleanScore:
+            normalizedCleanScore ??
+            pickFirstDefined(
+                workspace?.cleanScore,
+                workspace?.clean_score,
+                workspace?.score
+            ),
+        reviewCount:
+            normalizedReviewCount ??
+            pickFirstDefined(
+                workspace?.reviewCount,
+                workspace?.review_count,
+                workspace?.reviewsCount,
+                workspace?.reviews_count
+            )
+    };
+};
+
+const normalizeWorkspaceList = (payload) => {
+    if (Array.isArray(payload)) {
+        return payload.map(normalizeWorkspace);
+    }
+
+    const extracted = pickFirstDefined(
+        payload?.data,
+        payload?.results,
+        payload?.items,
+        payload?.content,
+        payload?.workspaces
+    );
+
+    if (Array.isArray(extracted)) {
+        return extracted.map(normalizeWorkspace);
+    }
+
+    return [];
+};
+
 /**
  * 사업장 목록 및 지도 핀 데이터 조회
  *
@@ -26,7 +179,7 @@ export const getWorkspaces = async (
         useAuth: false
     });
 
-    return response.data;
+    return normalizeWorkspaceList(response.data);
 };
 
 export const searchWorkspacesNaturalLanguage = async (
@@ -43,9 +196,9 @@ export const searchWorkspacesNaturalLanguage = async (
     );
 
     const raw = response.data?.data || response.data;
-    const results = Array.isArray(raw?.results)
-        ? raw.results
-        : [];
+    const results = normalizeWorkspaceList(
+        raw?.results ?? raw
+    );
 
     return {
         interpreted:
@@ -58,17 +211,18 @@ export const searchWorkspacesNaturalLanguage = async (
 };
 
 const normalizeReviewTarget = (place) => {
+    const normalizedWorkspace =
+        normalizeWorkspace(place);
     const workspaceId = Number(
-        place?.workspaceId ??
-            place?.id ??
-            place?.workspace_id
+        normalizedWorkspace?.workspaceId ??
+            normalizedWorkspace?.id
     );
 
     return {
-        ...place,
+        ...normalizedWorkspace,
         workspaceId: Number.isFinite(workspaceId)
             ? workspaceId
-            : place?.workspaceId,
+            : normalizedWorkspace?.workspaceId,
         kakaoPlaceId:
             place?.kakaoPlaceId ||
             place?.providerPlaceId ||
@@ -77,30 +231,17 @@ const normalizeReviewTarget = (place) => {
             place?.place_id ||
             '',
         name:
-            place?.name ||
-            place?.placeName ||
-            place?.place_name ||
+            normalizedWorkspace?.name ||
             '사업장 이름 없음',
         address:
-            place?.address ||
-            place?.roadAddress ||
-            place?.addressName ||
-            place?.address_name ||
-            place?.road_address_name ||
+            normalizedWorkspace?.address ||
             '',
         category:
-            place?.category?.trim?.() ||
-            place?.categoryName?.trim?.() ||
-            place?.category_name?.trim?.() ||
+            normalizedWorkspace?.category?.trim?.() ||
             '기타',
-        latitude:
-            place?.latitude ??
-            place?.y ??
-            null,
+        latitude: normalizedWorkspace?.latitude ?? null,
         longitude:
-            place?.longitude ??
-            place?.x ??
-            null,
+            normalizedWorkspace?.longitude ?? null,
         existing:
             place?.existing ??
             Boolean(
@@ -161,7 +302,7 @@ export const getWorkspaceDetail = async (workspaceId) => {
         }
     );
 
-    return response.data;
+    return normalizeWorkspace(response.data);
 };
 
 export const getWorkspaceSummary = async (workspaceId) => {
@@ -172,7 +313,7 @@ export const getWorkspaceSummary = async (workspaceId) => {
         }
     );
 
-    return response.data;
+    return normalizeWorkspace(response.data);
 };
 
 export const createWorkspace = async (payload) => {
