@@ -129,124 +129,114 @@ const ServiceIntroModal = ({
 
 const modalOverlayStyle = {
     position: 'fixed',
-    inset: 0,
-    backgroundColor: 'rgba(17, 24, 39, 0.52)',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     display: 'flex',
-    alignItems: 'center',
     justifyContent: 'center',
-    padding: '24px',
-    zIndex: 1200
+    alignItems: 'center',
+    zIndex: 1000
 };
 
 const introModalStyle = {
-    position: 'relative',
-    width: '100%',
-    maxWidth: '640px',
-    maxHeight: 'calc(100vh - 48px)',
-    overflowY: 'auto',
+    backgroundColor: '#fff',
+    width: '380px',
+    maxWidth: 'calc(100% - 40px)',
     padding: '32px',
     boxSizing: 'border-box',
-    backgroundColor: '#ffffff',
-    borderRadius: '24px',
-    boxShadow: '0 26px 60px rgba(15, 23, 42, 0.24)'
+    position: 'relative',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
+    borderRadius: 0,
+    border: '1px solid #222'
 };
 
 const closeIconBtnStyle = {
     position: 'absolute',
-    top: '18px',
-    right: '18px',
-    width: '36px',
-    height: '36px',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    top: '12px',
+    right: '12px',
+    backgroundColor: 'transparent',
     border: 'none',
-    borderRadius: '999px',
-    backgroundColor: '#f3f5f8',
-    color: '#6b7280',
-    fontSize: '16px',
+    fontSize: '18px',
     cursor: 'pointer'
 };
 
 const introHeaderStyle = {
-    marginBottom: '26px'
+    textAlign: 'center',
+    marginBottom: '28px',
+    marginTop: '8px'
 };
 
 const coreValueBadgeStyle = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    height: '28px',
-    padding: '0 12px',
-    borderRadius: '999px',
-    backgroundColor: '#eaf0ff',
-    color: '#3d63f3',
-    fontSize: '12px',
-    fontWeight: '900',
-    letterSpacing: '0.06em'
+    border: '1px solid #3b82f6',
+    color: '#3b82f6',
+    padding: '4px 10px',
+    borderRadius: 0,
+    fontSize: '11px',
+    fontWeight: 'bold',
+    letterSpacing: '1px'
 };
 
 const introTitleStyle = {
-    margin: '18px 0 12px',
-    color: '#121826',
-    fontSize: 'clamp(28px, 4vw, 38px)',
-    fontWeight: '900',
-    lineHeight: '1.18',
-    letterSpacing: '-0.04em'
+    fontSize: '20px',
+    color: '#111',
+    margin: '16px 0 8px',
+    lineHeight: '1.4'
 };
 
 const introTitleAccentStyle = {
-    color: '#3f64f4'
+    color: '#3b82f6'
 };
 
 const introSubtitleStyle = {
     margin: 0,
-    color: '#667085',
-    fontSize: '15px',
-    lineHeight: '1.7',
-    fontWeight: '500'
+    fontSize: '13px',
+    color: '#666'
 };
 
 const introFeatureListStyle = {
-    display: 'grid',
-    gap: '16px'
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
 };
 
 const introFeatureStyle = {
-    padding: '20px',
-    display: 'grid',
-    gridTemplateColumns: '56px minmax(0, 1fr)',
-    gap: '18px',
+    display: 'flex',
+    gap: '14px',
     alignItems: 'flex-start',
-    borderRadius: '18px',
-    backgroundColor: '#f8fafc',
-    border: '1px solid #e8edf4'
+    padding: '16px',
+    backgroundColor: '#fdfdfd',
+    borderRadius: 0,
+    border: '1px solid #eaeaea'
 };
 
 const introFeatureIconStyle = {
-    width: '56px',
-    height: '56px',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '18px',
-    backgroundColor: '#4063ff',
+    backgroundColor: '#3b82f6',
     color: '#ffffff',
-    fontSize: '15px',
-    fontWeight: '900'
+    width: '28px',
+    height: '28px',
+    borderRadius: 0,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    flexShrink: 0
 };
 
 const introFeatureTitleStyle = {
-    marginBottom: '8px',
-    color: '#121826',
-    fontSize: '17px',
-    fontWeight: '900'
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: '#111',
+    marginBottom: '4px'
 };
 
 const introFeatureDescStyle = {
-    color: '#667085',
-    fontSize: '14px',
-    lineHeight: '1.7',
-    fontWeight: '500'
+    fontSize: '12px',
+    color: '#555',
+    lineHeight: '1.5',
+    wordBreak: 'keep-all'
 };
 
 export default ServiceIntroModal;
