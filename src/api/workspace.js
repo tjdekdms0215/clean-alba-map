@@ -29,6 +29,34 @@ export const getWorkspaces = async (
     return response.data;
 };
 
+export const searchWorkspacesNaturalLanguage = async (
+    query
+) => {
+    const response = await api.get(
+        '/workspaces/nl-search',
+        {
+            params: {
+                query
+            },
+            useAuth: false
+        }
+    );
+
+    const raw = response.data?.data || response.data;
+    const results = Array.isArray(raw?.results)
+        ? raw.results
+        : [];
+
+    return {
+        interpreted:
+            raw?.interpreted &&
+            typeof raw.interpreted === 'object'
+                ? raw.interpreted
+                : null,
+        results
+    };
+};
+
 export const searchReviewTargets = async (keyword) => {
     const response = await api.get(
         '/workspaces/search',

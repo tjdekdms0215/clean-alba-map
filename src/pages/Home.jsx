@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     getWorkspaceSummary,
-    getWorkspaces
+    getWorkspaces,
+    searchWorkspacesNaturalLanguage
 } from '../api/workspace';
 import { getWorkspaceEvidenceSummary } from '../utils/workspaceEvidence';
 import AppHeader from '../components/AppHeader';
@@ -80,6 +81,59 @@ const formatCleanScore = (score) => {
     return `${score}점`;
 };
 
+const shouldFallbackToKeywordSearch = (error) =>
+    [502, 503].includes(error?.response?.status);
+
+const coerceFiniteNumber = (value) => {
+    const parsed = Number(value);
+
+    return Number.isFinite(parsed) ? parsed : null;
+};
+
+const buildInterpretedSearchChips = (
+    interpreted
+) => {
+    if (!interpreted || typeof interpreted !== 'object') {
+        return [];
+    }
+
+    const chips = [];
+
+    if (interpreted.district) {
+        chips.push(String(interpreted.district));
+    }
+
+    if (interpreted.category) {
+        chips.push(String(interpreted.category));
+    }
+
+    const minScore = coerceFiniteNumber(
+        interpreted.minScore
+    );
+    const maxScore = coerceFiniteNumber(
+        interpreted.maxScore
+    );
+
+    if (
+        Number.isFinite(minScore) &&
+        Number.isFinite(maxScore)
+    ) {
+        chips.push(
+            `${minScore}~${maxScore}점`
+        );
+    } else if (Number.isFinite(minScore)) {
+        chips.push(`${minScore}점 이상`);
+    } else if (Number.isFinite(maxScore)) {
+        chips.push(`${maxScore}점 이하`);
+    }
+
+    if (interpreted.keyword) {
+        chips.push(String(interpreted.keyword));
+    }
+
+    return chips.filter(Boolean);
+};
+
 const Home = () => {
     const navigate = useNavigate();
 
@@ -88,9 +142,9 @@ const Home = () => {
     const [selectedStore, setSelectedStore] = useState(null);
     const [selectedStoreSummary, setSelectedStoreSummary] =
         useState(null);
+    const [searchInterpretation, setSearchInterpretation] =
+        useState(null);
 
-
-// 💡 기존의 fetchWorkspaces 함수를 이걸로 통째로 교체하세요!
 const fetchWorkspaces = async (keyword = '') => {
     try {
         const data = await getWorkspaces(null, keyword);
@@ -229,7 +283,48 @@ const fetchWorkspaces = async (keyword = '') => {
     const executeSearch = (nextKeyword = searchTerm) => {
         const keyword = nextKeyword.trim();
 
-        fetchWorkspaces(keyword);
+        if (!keyword) {
+            setSearchInterpretation(null);
+            fetchWorkspaces('');
+            setSelectedStore(null);
+            return;
+        }
+
+        const runSearch = async () => {
+            try {
+                const data =
+                    await searchWorkspacesNaturalLanguage(
+                        keyword
+                    );
+
+                setSearchInterpretation(
+                    data.interpreted || null
+                );
+                setStores(
+                    Array.isArray(data.results)
+                        ? data.results
+                        : []
+                );
+            } catch (error) {
+                console.error(
+                    '자연어 검색 API 연동 에러:',
+                    error
+                );
+
+                if (
+                    shouldFallbackToKeywordSearch(error)
+                ) {
+                    setSearchInterpretation(null);
+                    fetchWorkspaces(keyword);
+                    return;
+                }
+
+                setSearchInterpretation(null);
+                setStores([]);
+            }
+        };
+
+        runSearch();
         setSelectedStore(null);
     };
 
@@ -247,6 +342,10 @@ const fetchWorkspaces = async (keyword = '') => {
     const evidenceSummary = activeSelectedStore
         ? getWorkspaceEvidenceSummary(activeSelectedStore)
         : null;
+    const interpretedChips =
+        buildInterpretedSearchChips(
+            searchInterpretation
+        );
 
     return (
         <div style={pageStyle}>
@@ -529,6 +628,27 @@ const fetchWorkspaces = async (keyword = '') => {
                         <div style={searchExampleTextStyle}>
                             ex)클린점수 60점 넘는 상대 카페 추천해줘
                         </div>
+
+                        {interpretedChips.length > 0 && (
+                            <div
+                                style={
+                                    searchChipListStyle
+                                }
+                            >
+                                {interpretedChips.map(
+                                    (chip) => (
+                                        <span
+                                            key={chip}
+                                            style={
+                                                searchChipStyle
+                                            }
+                                        >
+                                            {chip}
+                                        </span>
+                                    )
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <div style={listTitleAreaStyle}>
@@ -847,6 +967,27 @@ const searchExampleTextStyle = {
     paddingLeft: '4px',
     lineHeight: '1.4',
     fontWeight: '500'
+};
+
+const searchChipListStyle = {
+    marginTop: '12px',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px'
+};
+
+const searchChipStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    minHeight: '28px',
+    padding: '0 10px',
+    border: '1px solid #d8e2ff',
+    backgroundColor: '#eef3ff',
+    color: '#3f63f4',
+    fontSize: '12px',
+    fontWeight: '700',
+    borderRadius: '999px',
+    boxSizing: 'border-box'
 };
 
 const listContainerStyle = {
