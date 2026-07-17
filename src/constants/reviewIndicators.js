@@ -1,6 +1,7 @@
 export const REVIEW_INDICATORS = [
     {
         id: 'NO_CONTRACT',
+        apiValue: 'CONTRACT',
         label: '근로계약서 미작성',
         positiveLabel: '근로계약서 작성',
         requestKey: 'contractViolation',
@@ -14,6 +15,7 @@ export const REVIEW_INDICATORS = [
     },
     {
         id: 'MINIMUM_WAGE',
+        apiValue: 'MINIMUM_WAGE',
         label: '최저시급 미준수',
         positiveLabel: '최저시급 준수',
         requestKey: 'minimumWageViolation',
@@ -27,6 +29,7 @@ export const REVIEW_INDICATORS = [
     },
     {
         id: 'WEEKLY_ALLOWANCE',
+        apiValue: 'WEEKLY_ALLOWANCE',
         label: '주휴수당 미지급',
         positiveLabel: '주휴수당 지급',
         requestKey: 'weeklyHolidayAllowanceViolation',
@@ -40,6 +43,7 @@ export const REVIEW_INDICATORS = [
     },
     {
         id: 'PAY_DELAY',
+        apiValue: 'PAY_DELAY',
         label: '급여 지급 지연',
         positiveLabel: '급여 지급 일정 준수',
         requestKey: 'wageDelayViolation',
@@ -53,6 +57,7 @@ export const REVIEW_INDICATORS = [
     },
     {
         id: 'SCHEDULE_CHANGE',
+        apiValue: 'SCHEDULE_CHANGE',
         label: '사전 협의 없는 스케줄 변경',
         positiveLabel: '사전 협의 후 스케줄 변경',
         requestKey: 'scheduleChangeViolation',
@@ -67,6 +72,7 @@ export const REVIEW_INDICATORS = [
     },
     {
         id: 'SUBSTITUTE_DEMAND',
+        apiValue: 'SUBSTITUTE_DEMAND',
         label: '반복적이고 지속적인 대타요구 및 강요',
         positiveLabel: '무리한 대타 요구 없음',
         requestKey: 'substituteDemandViolation',
@@ -83,6 +89,7 @@ export const REVIEW_INDICATORS = [
     },
     {
         id: 'OVERTIME_PAY',
+        apiValue: 'OVERTIME_PAY',
         label: '초과근무 급여 미지급',
         positiveLabel: '초과근무 급여 지급',
         requestKey: 'overtimePayViolation',
@@ -182,7 +189,9 @@ export const getViolationIndicatorIds = (
 export const buildReviewRequestPayload = ({
     selectedIndicatorIds = [],
     coworkerCount = null,
-    content = ''
+    content = '',
+    dayType = '',
+    timeSlot = ''
 }) => {
     const selectedSet = new Set(selectedIndicatorIds);
     const payload = REVIEW_INDICATORS.reduce(
@@ -194,8 +203,26 @@ export const buildReviewRequestPayload = ({
         {}
     );
 
+    payload.violationItems = REVIEW_INDICATORS.filter(
+        (indicator) => selectedSet.has(indicator.id)
+    ).map(
+        (indicator) =>
+            indicator.apiValue || indicator.id
+    );
+
     if (Number.isInteger(coworkerCount) && coworkerCount >= 0) {
         payload.coworkerCount = coworkerCount;
+    }
+
+    if (typeof dayType === 'string' && dayType.trim()) {
+        payload.dayType = dayType.trim();
+    }
+
+    if (
+        typeof timeSlot === 'string' &&
+        timeSlot.trim()
+    ) {
+        payload.timeSlot = timeSlot.trim();
     }
 
     if (typeof content === 'string' && content.trim()) {

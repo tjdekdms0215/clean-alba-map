@@ -1603,9 +1603,9 @@ const popupStyle = {
 const mobilePopupStyle = {
     width: '244px',
     maxWidth: 'calc(100% - 48px)',
-    height: '252px',
-    minHeight: '252px',
-    maxHeight: '252px',
+    height: '286px',
+    minHeight: '286px',
+    maxHeight: '286px',
     padding: '10px 10px 9px'
 };
 
@@ -1736,7 +1736,7 @@ const grayBoxStyle = {
 
 const mobileGrayBoxStyle = {
     gap: '4px',
-    marginBottom: '6px',
+    marginBottom: '5px',
     padding: '7px 8px'
 };
 
@@ -1755,7 +1755,7 @@ const tintedBoxStyle = {
 
 const mobileTintedBoxStyle = {
     gap: '4px',
-    padding: '7px 8px'
+    padding: '6px 7px'
 };
 
 const boxRowStyle = {
@@ -1978,8 +1978,8 @@ const mobileModernDetailBtnStyle = {
 
 const mobilePopupSummaryTextStyle = {
     ...mobileBoxTextStyle,
-    minHeight: '2.5em',
-    maxHeight: '2.5em'
+    minHeight: '2.3em',
+    maxHeight: '2.3em'
 };
 
 const closeIconBtnStyle = {

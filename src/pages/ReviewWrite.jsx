@@ -689,10 +689,16 @@ const ReviewWrite = () => {
 
     const isFormValid = useMemo(
         () =>
+            Boolean(
+                selectedShiftDay &&
+                    selectedShiftTime
+            ) &&
             coworkerCount !== null &&
             evidenceItems.length > 0 &&
             reviewText.trim().length >= MIN_REVIEW_LENGTH,
         [
+            selectedShiftDay,
+            selectedShiftTime,
             coworkerCount,
             evidenceItems.length,
             reviewText
@@ -1078,6 +1084,8 @@ const ReviewWrite = () => {
                 workspaceId: resolvedWorkspaceId,
                 reviewData: buildReviewRequestPayload({
                     selectedIndicatorIds: selectedViolations,
+                    dayType: selectedShiftDay,
+                    timeSlot: selectedShiftTime,
                     coworkerCount,
                     content: reviewText
                 }),
