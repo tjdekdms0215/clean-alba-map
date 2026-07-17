@@ -894,7 +894,9 @@ const WorkspaceDetail = () => {
                                                             ...progressFillStyle,
                                                             width: `${item.complianceRate}%`,
                                                             backgroundColor:
-                                                                item.color
+                                                                detailData
+                                                                    .cleanGradeInfo
+                                                                    .accentColor
                                                         }}
                                                     />
                                                 </div>
@@ -947,7 +949,9 @@ const WorkspaceDetail = () => {
                                                 style={{
                                                     ...legendDotStyle,
                                                     backgroundColor:
-                                                        '#1FA84F'
+                                                        detailData
+                                                            .cleanGradeInfo
+                                                            .accentColor
                                                 }}
                                             />
                                             평일
@@ -1040,7 +1044,9 @@ const WorkspaceDetail = () => {
                                                                                     backgroundColor:
                                                                                         dayType ===
                                                                                         'weekday'
-                                                                                            ? '#1FA84F'
+                                                                                            ? detailData
+                                                                                                  .cleanGradeInfo
+                                                                                                  .accentColor
                                                                                             : '#316AE8'
                                                                                 }}
                                                                             />
