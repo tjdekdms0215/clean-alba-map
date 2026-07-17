@@ -295,6 +295,44 @@ const isGenericBadRequestMessage = (message = '') =>
             .toUpperCase()
     );
 
+const buildUppercaseEnumReviewData = (
+    reviewData = {}
+) => ({
+    ...reviewData,
+    dayType:
+        typeof reviewData.dayType === 'string'
+            ? reviewData.dayType.toUpperCase()
+            : reviewData.dayType,
+    timeSlot:
+        typeof reviewData.timeSlot === 'string'
+            ? reviewData.timeSlot.toUpperCase()
+            : reviewData.timeSlot
+});
+
+const shouldRetryWithUppercaseEnums = (
+    error,
+    reviewData
+) => {
+    if (error?.response?.status !== 400) {
+        return false;
+    }
+
+    const apiMessage = extractApiErrorMessage(error);
+
+    if (!isGenericBadRequestMessage(apiMessage)) {
+        return false;
+    }
+
+    const hasLowercaseDayType =
+        typeof reviewData?.dayType === 'string' &&
+        /[a-z]/.test(reviewData.dayType);
+    const hasLowercaseTimeSlot =
+        typeof reviewData?.timeSlot === 'string' &&
+        /[a-z]/.test(reviewData.timeSlot);
+
+    return hasLowercaseDayType || hasLowercaseTimeSlot;
+};
+
 const normalizeAdminStatus = (value = '') => {
     const normalized = String(value)
         .trim()
@@ -675,6 +713,45 @@ const createReview = async (workspaceId, reviewData) => {
 
         return response.data?.data || response.data;
     } catch (error) {
+        if (
+            shouldRetryWithUppercaseEnums(
+                error,
+                reviewData
+            )
+        ) {
+            const fallbackReviewData =
+                buildUppercaseEnumReviewData(
+                    reviewData
+                );
+
+            try {
+                const retryResponse = await api.post(
+                    `/workspaces/${workspaceId}/reviews`,
+                    fallbackReviewData
+                );
+
+                return (
+                    retryResponse.data?.data ||
+                    retryResponse.data
+                );
+            } catch (retryError) {
+                console.error(
+                    '대문자 enum 재시도도 실패했습니다.',
+                    {
+                        url: `/workspaces/${workspaceId}/reviews`,
+                        workspaceId,
+                        requestBody:
+                            fallbackReviewData,
+                        responseData:
+                            retryError?.response?.data,
+                        status:
+                            retryError?.response?.status
+                    }
+                );
+                error = retryError;
+            }
+        }
+
         console.error('리뷰 생성 요청 실패', {
             url: `/workspaces/${workspaceId}/reviews`,
             workspaceId,
