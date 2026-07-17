@@ -788,14 +788,6 @@ const WorkspaceDetail = () => {
 
             <main style={mainStyle}>
                 <div style={contentWrapStyle}>
-                    <button
-                        type="button"
-                        style={backButtonStyle}
-                        onClick={() => navigate('/')}
-                    >
-                        ‹ 지도로 돌아가기
-                    </button>
-
                     {isLoading ? (
                         <section style={feedbackCardStyle}>
                             사업장 정보를 불러오는 중입니다.

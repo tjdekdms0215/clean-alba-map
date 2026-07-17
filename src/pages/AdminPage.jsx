@@ -512,12 +512,7 @@ const AdminPage = () => {
                     </div>
 
                     <div
-                        style={{
-                            ...listWrapStyle,
-                            maxHeight: isMobile
-                                ? 'none'
-                                : 'calc(100vh - 134px)'
-                        }}
+                        style={listWrapStyle}
                     >
                         {isListLoading ? (
                             <div style={emptyPanelStyle}>
@@ -1178,7 +1173,7 @@ const listWrapStyle = {
     padding: '0 6px 10px',
     flex: 1,
     backgroundColor: '#FFFFFF',
-    overflowY: 'auto'
+    overflow: 'visible'
 };
 
 const listItemStyle = {

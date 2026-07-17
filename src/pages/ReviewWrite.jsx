@@ -1113,14 +1113,6 @@ const ReviewWrite = () => {
                             : '28px 0 96px'
                     }}
                 >
-                    <button
-                        type="button"
-                        onClick={() => navigate('/review/select')}
-                        style={backButtonStyle}
-                    >
-                        ‹ 돌아가기
-                    </button>
-
                     {workspaceError && !workspace ? (
                         <div style={emptyCardStyle}>
                             <strong style={emptyTitleStyle}>
