@@ -453,18 +453,35 @@ const AdminPage = () => {
     ];
 
     return (
-        <div style={pageStyle}>
+        <div
+            style={{
+                ...pageStyle,
+                ...(isMobile
+                    ? mobilePageStyle
+                    : desktopPageStyle)
+            }}
+        >
             <AppHeader />
 
             <main
                 style={{
                     ...mainStyle,
+                    ...(isMobile
+                        ? mobileMainStyle
+                        : desktopMainStyle),
                     gridTemplateColumns: isMobile
                         ? '1fr'
                         : '240px minmax(0, 1fr)'
                 }}
             >
-                <aside style={sidebarStyle}>
+                <aside
+                    style={{
+                        ...sidebarStyle,
+                        ...(isMobile
+                            ? mobileSidebarStyle
+                            : desktopSidebarStyle)
+                    }}
+                >
                     <div
                         style={{
                             ...statusTabsStyle,
@@ -512,7 +529,12 @@ const AdminPage = () => {
                     </div>
 
                     <div
-                        style={listWrapStyle}
+                        style={{
+                            ...listWrapStyle,
+                            ...(isMobile
+                                ? mobileListWrapStyle
+                                : desktopListWrapStyle)
+                        }}
                     >
                         {isListLoading ? (
                             <div style={emptyPanelStyle}>
@@ -615,7 +637,14 @@ const AdminPage = () => {
                     </div>
                 </aside>
 
-                <section style={detailAreaStyle}>
+                <section
+                    style={{
+                        ...detailAreaStyle,
+                        ...(isMobile
+                            ? mobileDetailAreaStyle
+                            : desktopDetailAreaStyle)
+                    }}
+                >
                     <div
                         style={{
                             ...adminStatsGridStyle,
@@ -1065,6 +1094,15 @@ const pageStyle = {
     overflowX: 'hidden'
 };
 
+const desktopPageStyle = {
+    height: '100dvh',
+    overflow: 'hidden'
+};
+
+const mobilePageStyle = {
+    overflowY: 'auto'
+};
+
 const headerStyle = {
     height: '64px',
     padding: '0 18px',
@@ -1127,6 +1165,15 @@ const mainStyle = {
     width: '100%'
 };
 
+const desktopMainStyle = {
+    minHeight: 0,
+    overflow: 'hidden'
+};
+
+const mobileMainStyle = {
+    minHeight: 0
+};
+
 const sidebarStyle = {
     display: 'flex',
     flexDirection: 'column',
@@ -1135,6 +1182,16 @@ const sidebarStyle = {
     borderRight: '1px solid #E8ECF2',
     backgroundColor: '#FFFFFF',
     overflow: 'visible'
+};
+
+const desktopSidebarStyle = {
+    height: '100%',
+    minHeight: 0,
+    overflow: 'hidden'
+};
+
+const mobileSidebarStyle = {
+    height: 'auto'
 };
 
 const statusTabsStyle = {
@@ -1173,6 +1230,17 @@ const listWrapStyle = {
     padding: '0 6px 10px',
     flex: 1,
     backgroundColor: '#FFFFFF',
+    overflow: 'visible'
+};
+
+const desktopListWrapStyle = {
+    minHeight: 0,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    WebkitOverflowScrolling: 'touch'
+};
+
+const mobileListWrapStyle = {
     overflow: 'visible'
 };
 
@@ -1238,6 +1306,18 @@ const detailAreaStyle = {
     flexDirection: 'column',
     gap: '12px',
     boxSizing: 'border-box'
+};
+
+const desktopDetailAreaStyle = {
+    height: '100%',
+    minHeight: 0,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    WebkitOverflowScrolling: 'touch'
+};
+
+const mobileDetailAreaStyle = {
+    overflow: 'visible'
 };
 
 const adminStatsGridStyle = {
