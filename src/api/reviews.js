@@ -223,6 +223,51 @@ const shouldUseMockFallback = (error) =>
     !error?.response ||
     [404, 405, 501].includes(error?.response?.status);
 
+const extractApiErrorMessage = (error) => {
+    const responseData = error?.response?.data;
+
+    if (typeof responseData === 'string' && responseData.trim()) {
+        return responseData.trim();
+    }
+
+    const candidates = [
+        responseData?.message,
+        responseData?.error,
+        responseData?.detail,
+        responseData?.reason,
+        responseData?.data?.message,
+        responseData?.data?.error,
+        responseData?.data?.detail
+    ];
+
+    const firstMessage = candidates.find(
+        (value) =>
+            typeof value === 'string' && value.trim()
+    );
+
+    if (firstMessage) {
+        return firstMessage.trim();
+    }
+
+    const fieldErrorMessage =
+        responseData?.errors?.find?.(
+            (item) =>
+                typeof item?.defaultMessage === 'string' &&
+                item.defaultMessage.trim()
+        )?.defaultMessage ||
+        responseData?.errors?.find?.(
+            (item) =>
+                typeof item?.message === 'string' &&
+                item.message.trim()
+        )?.message;
+
+    if (fieldErrorMessage) {
+        return fieldErrorMessage.trim();
+    }
+
+    return '';
+};
+
 const normalizeAdminStatus = (value = '') => {
     const normalized = String(value)
         .trim()
@@ -595,12 +640,24 @@ const fetchAdminReviewPage = async (status) => {
 };
 
 const createReview = async (workspaceId, reviewData) => {
-    const response = await api.post(
-        `/workspaces/${workspaceId}/reviews`,
-        reviewData
-    );
+    try {
+        const response = await api.post(
+            `/workspaces/${workspaceId}/reviews`,
+            reviewData
+        );
 
-    return response.data?.data || response.data;
+        return response.data?.data || response.data;
+    } catch (error) {
+        const statusCode = error?.response?.status;
+        const apiMessage = extractApiErrorMessage(error);
+
+        throw new Error(
+            apiMessage ||
+                (statusCode
+                    ? `후기 등록에 실패했습니다. (HTTP ${statusCode})`
+                    : '후기 등록에 실패했습니다.')
+        );
+    }
 };
 
 const resolveCreatedReviewId = (createdReview) =>
@@ -662,11 +719,13 @@ export const submitReview = async ({
             const fileName =
                 file?.name || '첨부 파일';
             const statusCode = error?.response?.status;
+            const apiMessage = extractApiErrorMessage(error);
 
             throw new Error(
-                statusCode
+                apiMessage ||
+                    (statusCode
                     ? `${fileName} 업로드에 실패했습니다. (HTTP ${statusCode})`
-                    : `${fileName} 업로드에 실패했습니다.`
+                    : `${fileName} 업로드에 실패했습니다.`)
             );
         }
     }

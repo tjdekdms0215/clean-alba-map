@@ -1058,10 +1058,10 @@ const AdminPage = () => {
 };
 
 const pageStyle = {
-    height: '100vh',
-    minHeight: '100vh',
+    minHeight: '100dvh',
+    display: 'flex',
+    flexDirection: 'column',
     backgroundColor: '#F6F8FB',
-    overflowY: 'auto',
     overflowX: 'hidden'
 };
 
@@ -1123,7 +1123,7 @@ const profileCircleStyle = {
 
 const mainStyle = {
     display: 'grid',
-    minHeight: 'calc(100vh - 64px)',
+    flex: '1 0 auto',
     width: '100%'
 };
 
