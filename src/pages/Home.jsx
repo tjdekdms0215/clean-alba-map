@@ -232,6 +232,19 @@ const Home = () => {
 
         const map = new window.kakao.maps.Map(container, options);
 
+        window.requestAnimationFrame(() => {
+            window.kakao.maps.event.trigger(
+                map,
+                'resize'
+            );
+            map.setCenter(
+                new window.kakao.maps.LatLng(
+                    centerCoordinates.lat,
+                    centerCoordinates.lng
+                )
+            );
+        });
+
         stores.forEach((store) => {
             const score = store.cleanScore;
             const lat = store.latitude;
@@ -283,7 +296,7 @@ const Home = () => {
                 setSelectedStore(store);
             });
         });
-    }, [stores, mapCenterStore]);
+    }, [stores, mapCenterStore, isMobile]);
 
     useEffect(() => {
         if (!selectedStore) {
@@ -461,40 +474,80 @@ const Home = () => {
                                 : null)
                         }}
                     >
-                        <div style={legendRowStyle}>
+                        <div
+                            style={{
+                                ...legendRowStyle,
+                                ...(isMobile
+                                    ? mobileLegendRowStyle
+                                    : null)
+                            }}
+                        >
                             <span
                                 style={{
                                     ...legendDotStyle,
+                                    ...(isMobile
+                                        ? mobileLegendDotStyle
+                                        : null),
                                     backgroundColor: '#009900'
                                 }}
                             />
                             80점 이상 우수
                         </div>
 
-                        <div style={legendRowStyle}>
+                        <div
+                            style={{
+                                ...legendRowStyle,
+                                ...(isMobile
+                                    ? mobileLegendRowStyle
+                                    : null)
+                            }}
+                        >
                             <span
                                 style={{
                                     ...legendDotStyle,
+                                    ...(isMobile
+                                        ? mobileLegendDotStyle
+                                        : null),
                                     backgroundColor: '#FFC000'
                                 }}
                             />
                             60~79점 보통
                         </div>
 
-                        <div style={legendRowStyle}>
+                        <div
+                            style={{
+                                ...legendRowStyle,
+                                ...(isMobile
+                                    ? mobileLegendRowStyle
+                                    : null)
+                            }}
+                        >
                             <span
                                 style={{
                                     ...legendDotStyle,
+                                    ...(isMobile
+                                        ? mobileLegendDotStyle
+                                        : null),
                                     backgroundColor: '#FF6600'
                                 }}
                             />
                             40~59점 주의
                         </div>
 
-                        <div style={legendRowStyle}>
+                        <div
+                            style={{
+                                ...legendRowStyle,
+                                ...(isMobile
+                                    ? mobileLegendRowStyle
+                                    : null)
+                            }}
+                        >
                             <span
                                 style={{
                                     ...legendDotStyle,
+                                    ...(isMobile
+                                        ? mobileLegendDotStyle
+                                        : null),
                                     backgroundColor: '#DD0000'
                                 }}
                             />
@@ -1006,15 +1059,19 @@ const mobileContentStyle = {
 const mapContainerStyle = {
     flex: 1,
     position: 'relative',
+    minWidth: 0,
     backgroundColor: '#e9ecef'
 };
 
 const mobileMapContainerStyle = {
     flex: '0 0 auto',
-    minHeight: '54dvh'
+    height: '56dvh',
+    minHeight: '320px'
 };
 
 const mapStyle = {
+    position: 'absolute',
+    inset: 0,
     width: '100%',
     height: '100%'
 };
@@ -1036,10 +1093,9 @@ const legendBoxStyle = {
 
 const mobileLegendBoxStyle = {
     left: '12px',
-    right: '12px',
     bottom: '12px',
-    padding: '12px',
-    gap: '8px'
+    padding: '9px 10px',
+    gap: '6px'
 };
 
 const legendRowStyle = {
@@ -1050,12 +1106,23 @@ const legendRowStyle = {
     fontWeight: '500'
 };
 
+const mobileLegendRowStyle = {
+    fontSize: '12px',
+    lineHeight: '1.25'
+};
+
 const legendDotStyle = {
     width: '14px',
     height: '14px',
     borderRadius: '50%',
     marginRight: '10px',
     flexShrink: 0
+};
+
+const mobileLegendDotStyle = {
+    width: '10px',
+    height: '10px',
+    marginRight: '7px'
 };
 
 const sidebarStyle = {

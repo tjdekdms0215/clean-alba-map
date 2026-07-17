@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import AppHeader from '../components/AppHeader';
 import useMediaQuery from '../hooks/useMediaQuery';
 
@@ -39,46 +39,6 @@ const guideData = {
 const Guide = () => {
     const isMobile = useMediaQuery('(max-width: 720px)');
     const [activeTab, setActiveTab] = useState(TAB_KEYS.WAGE);
-
-    useEffect(() => {
-        const html = document.documentElement;
-        const body = document.body;
-        const root = document.getElementById('root');
-
-        const previous = {
-            htmlHeight: html.style.height,
-            htmlOverflow: html.style.overflow,
-            bodyHeight: body.style.height,
-            bodyMargin: body.style.margin,
-            bodyOverflow: body.style.overflow,
-            rootHeight: root?.style.height || '',
-            rootMinHeight: root?.style.minHeight || ''
-        };
-
-        html.style.height = '100%';
-        html.style.overflow = 'hidden';
-        body.style.height = '100%';
-        body.style.margin = '0';
-        body.style.overflow = 'hidden';
-
-        if (root) {
-            root.style.height = '100%';
-            root.style.minHeight = '0';
-        }
-
-        return () => {
-            html.style.height = previous.htmlHeight;
-            html.style.overflow = previous.htmlOverflow;
-            body.style.height = previous.bodyHeight;
-            body.style.margin = previous.bodyMargin;
-            body.style.overflow = previous.bodyOverflow;
-
-            if (root) {
-                root.style.height = previous.rootHeight;
-                root.style.minHeight = previous.rootMinHeight;
-            }
-        };
-    }, []);
 
     const activeGuide = useMemo(() => guideData[activeTab], [activeTab]);
 
@@ -424,18 +384,13 @@ const pageStyle = {
     minHeight: '100dvh',
     display: 'flex',
     flexDirection: 'column',
-    overflow: 'hidden',
+    overflowX: 'hidden',
     backgroundColor: '#fafafa'
 };
 
 const scrollAreaStyle = {
     flex: '1 1 auto',
-    minHeight: 0,
     width: '100%',
-    overflowY: 'auto',
-    overflowX: 'hidden',
-    WebkitOverflowScrolling: 'touch',
-    overscrollBehaviorY: 'contain',
     backgroundColor: '#f7f8fa'
 };
 
