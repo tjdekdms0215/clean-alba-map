@@ -961,6 +961,18 @@ const ReviewWrite = () => {
     };
 
     const openPurifyModal = async () => {
+        const latestAuth = getStoredAuth();
+
+        setAuthState(latestAuth);
+
+        if (!latestAuth.isLoggedIn || !latestAuth.token) {
+            setFormErrorMessage(
+                'AI 후기 순화는 로그인 후 사용할 수 있습니다. 다시 로그인해 주세요.'
+            );
+            handleKakaoLogin();
+            return;
+        }
+
         if (reviewText.trim().length < MIN_REVIEW_LENGTH) {
             setFormErrorMessage(
                 `AI 후기 순화는 최소 ${MIN_REVIEW_LENGTH}자 이상 작성해야 사용할 수 있습니다.`

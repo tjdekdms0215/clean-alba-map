@@ -33,7 +33,10 @@ const AuthHandler = () => {
             if (code) {
                 try {
                     const response = await fetch(
-                        `${API_BASE_URL}/api/kakao/callback?code=${encodeURIComponent(code)}`
+                        `${API_BASE_URL}/api/kakao/callback?code=${encodeURIComponent(code)}`,
+                        {
+                            credentials: 'include'
+                        }
                     );
 
                     if (!response.ok) {

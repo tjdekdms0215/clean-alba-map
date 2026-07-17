@@ -52,6 +52,36 @@ export const REVIEW_INDICATORS = [
         ]
     },
     {
+        id: 'SCHEDULE_CHANGE',
+        label: '사전 협의 없는 스케줄 변경',
+        positiveLabel: '사전 협의 후 스케줄 변경',
+        requestKey: 'scheduleChangeViolation',
+        aliases: [
+            '스케줄변경',
+            '사전협의없는스케줄변경',
+            '사전 협의 없는 스케줄 변경',
+            'SCHEDULE_CHANGE',
+            'SCHEDULECHANGE',
+            'SCHEDULECHANGEVIOLATION'
+        ]
+    },
+    {
+        id: 'SUBSTITUTE_DEMAND',
+        label: '반복적이고 지속적인 대타요구 및 강요',
+        positiveLabel: '무리한 대타 요구 없음',
+        requestKey: 'substituteDemandViolation',
+        aliases: [
+            '대타요구',
+            '대타강요',
+            '반복적이고지속적인대타요구및강요',
+            '반복적이고 지속적인 대타요구 및 강요',
+            'SUBSTITUTE_DEMAND',
+            'SUBSTITUTEDEMAND',
+            'SUBSTITUTEDEMANDVIOLATION',
+            'SUBSTITUTEPRESSUREVIOLATION'
+        ]
+    },
+    {
         id: 'OVERTIME_PAY',
         label: '초과근무 급여 미지급',
         positiveLabel: '초과근무 급여 지급',
