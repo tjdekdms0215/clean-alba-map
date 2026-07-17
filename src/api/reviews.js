@@ -309,6 +309,133 @@ const buildUppercaseEnumReviewData = (
             : reviewData.timeSlot
 });
 
+const buildLegacyCompatibleReviewData = (
+    reviewData = {}
+) => {
+    const nextReviewData = {
+        ...reviewData
+    };
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            nextReviewData,
+            'weeklyHolidayAllowanceViolation'
+        )
+    ) {
+        nextReviewData.weeklyAllowanceViolation =
+            nextReviewData.weeklyHolidayAllowanceViolation;
+        delete nextReviewData.weeklyHolidayAllowanceViolation;
+    }
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            nextReviewData,
+            'substituteDemandViolation'
+        )
+    ) {
+        nextReviewData.substituteCoercionViolation =
+            nextReviewData.substituteDemandViolation;
+        delete nextReviewData.substituteDemandViolation;
+    }
+
+    delete nextReviewData.breakTimeViolation;
+
+    return nextReviewData;
+};
+
+const buildLegacyWorkerCountReviewData = (
+    reviewData = {}
+) => {
+    const nextReviewData = {
+        ...reviewData
+    };
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            nextReviewData,
+            'coworkerCount'
+        )
+    ) {
+        nextReviewData.simultaneousWorkers =
+            nextReviewData.coworkerCount;
+        delete nextReviewData.coworkerCount;
+    }
+
+    return nextReviewData;
+};
+
+const buildCreateReviewPayloadAttempts = (
+    reviewData = {}
+) => {
+    const exact = {
+        ...reviewData
+    };
+    const uppercaseEnum =
+        buildUppercaseEnumReviewData(exact);
+    const legacyCompatible =
+        buildLegacyCompatibleReviewData(exact);
+    const legacyUppercaseEnum =
+        buildUppercaseEnumReviewData(
+            legacyCompatible
+        );
+    const legacyWorkerCount =
+        buildLegacyWorkerCountReviewData(exact);
+    const legacyWorkerCountUppercaseEnum =
+        buildUppercaseEnumReviewData(
+            legacyWorkerCount
+        );
+    const legacyFullCompatible =
+        buildLegacyWorkerCountReviewData(
+            legacyCompatible
+        );
+    const legacyFullUppercaseEnum =
+        buildUppercaseEnumReviewData(
+            legacyFullCompatible
+        );
+
+    return [
+        {
+            label: 'exact',
+            data: exact
+        },
+        {
+            label: 'uppercase-enum',
+            data: uppercaseEnum
+        },
+        {
+            label: 'legacy-compatible',
+            data: legacyCompatible
+        },
+        {
+            label: 'legacy-uppercase-enum',
+            data: legacyUppercaseEnum
+        },
+        {
+            label: 'legacy-worker-count',
+            data: legacyWorkerCount
+        },
+        {
+            label: 'legacy-worker-count-uppercase-enum',
+            data: legacyWorkerCountUppercaseEnum
+        },
+        {
+            label: 'legacy-full-compatible',
+            data: legacyFullCompatible
+        },
+        {
+            label: 'legacy-full-uppercase-enum',
+            data: legacyFullUppercaseEnum
+        }
+    ].filter(
+        (attempt, index, attempts) =>
+            attempts.findIndex(
+                (candidate) =>
+                    JSON.stringify(candidate.data) ===
+                    JSON.stringify(attempt.data)
+            ) === index
+    );
+};
+
 const shouldRetryWithUppercaseEnums = (
     error,
     reviewData
@@ -705,76 +832,60 @@ const fetchAdminReviewPage = async (status) => {
 };
 
 const createReview = async (workspaceId, reviewData) => {
-    try {
-        const response = await api.post(
-            `/workspaces/${workspaceId}/reviews`,
+    const attempts =
+        buildCreateReviewPayloadAttempts(
             reviewData
         );
+    let lastError = null;
 
-        return response.data?.data || response.data;
-    } catch (error) {
-        if (
-            shouldRetryWithUppercaseEnums(
-                error,
-                reviewData
-            )
-        ) {
-            const fallbackReviewData =
-                buildUppercaseEnumReviewData(
-                    reviewData
-                );
+    for (const attempt of attempts) {
+        try {
+            const response = await api.post(
+                `/workspaces/${workspaceId}/reviews`,
+                attempt.data
+            );
 
-            try {
-                const retryResponse = await api.post(
-                    `/workspaces/${workspaceId}/reviews`,
-                    fallbackReviewData
-                );
+            return response.data?.data || response.data;
+        } catch (error) {
+            lastError = error;
 
-                return (
-                    retryResponse.data?.data ||
-                    retryResponse.data
-                );
-            } catch (retryError) {
-                console.error(
-                    '대문자 enum 재시도도 실패했습니다.',
-                    {
-                        url: `/workspaces/${workspaceId}/reviews`,
-                        workspaceId,
-                        requestBody:
-                            fallbackReviewData,
-                        responseData:
-                            retryError?.response?.data,
-                        status:
-                            retryError?.response?.status
-                    }
-                );
-                error = retryError;
+            console.error('리뷰 생성 요청 실패', {
+                attempt: attempt.label,
+                url: `/workspaces/${workspaceId}/reviews`,
+                workspaceId,
+                requestBody: attempt.data,
+                responseData: error?.response?.data,
+                status: error?.response?.status
+            });
+
+            const statusCode = error?.response?.status;
+            const apiMessage = extractApiErrorMessage(error);
+            const canRetry =
+                statusCode === 400 &&
+                isGenericBadRequestMessage(apiMessage) &&
+                attempt !==
+                    attempts[attempts.length - 1];
+
+            if (!canRetry) {
+                break;
             }
         }
-
-        console.error('리뷰 생성 요청 실패', {
-            url: `/workspaces/${workspaceId}/reviews`,
-            workspaceId,
-            requestBody: reviewData,
-            responseData: error?.response?.data,
-            status: error?.response?.status
-        });
-
-        const statusCode = error?.response?.status;
-        const apiMessage = extractApiErrorMessage(error);
-        const finalMessage =
-            statusCode === 400 &&
-            isGenericBadRequestMessage(apiMessage)
-                ? '리뷰 작성 요청이 거절되었습니다. 근무 시간대, 동시간대 업무자 수, 체크리스트 항목을 다시 확인해 주세요.'
-                : apiMessage;
-
-        throw new Error(
-            finalMessage ||
-                (statusCode
-                    ? `후기 등록에 실패했습니다. (HTTP ${statusCode})`
-                    : '후기 등록에 실패했습니다.')
-        );
     }
+
+    const statusCode = lastError?.response?.status;
+    const apiMessage = extractApiErrorMessage(lastError);
+    const finalMessage =
+        statusCode === 400 &&
+        isGenericBadRequestMessage(apiMessage)
+            ? '리뷰 작성 요청이 거절되었습니다. 근무 시간대, 동시간대 업무자 수, 체크리스트 항목을 다시 확인해 주세요.'
+            : apiMessage;
+
+    throw new Error(
+        finalMessage ||
+            (statusCode
+                ? `후기 등록에 실패했습니다. (HTTP ${statusCode})`
+                : '후기 등록에 실패했습니다.')
+    );
 };
 
 const resolveCreatedReviewId = (createdReview) =>
