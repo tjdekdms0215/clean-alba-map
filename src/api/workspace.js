@@ -57,28 +57,100 @@ export const searchWorkspacesNaturalLanguage = async (
     };
 };
 
-export const searchReviewTargets = async (keyword) => {
-    const response = await api.get(
-        '/workspaces/place-search',
-        {
-            params: {
-                keyword
-            },
-            useAuth: false
-        }
+const normalizeReviewTarget = (place) => {
+    const workspaceId = Number(
+        place?.workspaceId ??
+            place?.id ??
+            place?.workspace_id
     );
 
-    if (!Array.isArray(response.data)) {
-        throw new Error(
-            '사업장 검색 API 응답이 배열이 아닙니다.'
+    return {
+        ...place,
+        workspaceId: Number.isFinite(workspaceId)
+            ? workspaceId
+            : place?.workspaceId,
+        kakaoPlaceId:
+            place?.kakaoPlaceId ||
+            place?.providerPlaceId ||
+            place?.kakao_place_id ||
+            place?.placeId ||
+            place?.place_id ||
+            '',
+        name:
+            place?.name ||
+            place?.placeName ||
+            place?.place_name ||
+            '사업장 이름 없음',
+        address:
+            place?.address ||
+            place?.roadAddress ||
+            place?.addressName ||
+            place?.address_name ||
+            place?.road_address_name ||
+            '',
+        category:
+            place?.category?.trim?.() ||
+            place?.categoryName?.trim?.() ||
+            place?.category_name?.trim?.() ||
+            '기타',
+        latitude:
+            place?.latitude ??
+            place?.y ??
+            null,
+        longitude:
+            place?.longitude ??
+            place?.x ??
+            null,
+        existing:
+            place?.existing ??
+            Boolean(
+                Number.isFinite(workspaceId)
+                    ? workspaceId
+                    : place?.workspaceId
+            )
+    };
+};
+
+export const searchReviewTargets = async (keyword) => {
+    try {
+        const response = await api.get(
+            '/workspaces/place-search',
+            {
+                params: {
+                    keyword
+                },
+                useAuth: false
+            }
+        );
+
+        if (!Array.isArray(response.data)) {
+            throw new Error(
+                '사업장 검색 API 응답이 배열이 아닙니다.'
+            );
+        }
+
+        return response.data.map(normalizeReviewTarget);
+    } catch (error) {
+        if (![502, 503].includes(error?.response?.status)) {
+            throw error;
+        }
+
+        const fallbackResults = await getWorkspaces(
+            null,
+            keyword
+        );
+
+        if (!Array.isArray(fallbackResults)) {
+            throw error;
+        }
+
+        return fallbackResults.map((place) =>
+            normalizeReviewTarget({
+                ...place,
+                existing: true
+            })
         );
     }
-
-    return response.data.map((place) => ({
-        ...place,
-        category:
-            place.category?.trim() || '기타'
-    }));
 };
 
 export const getWorkspaceDetail = async (workspaceId) => {

@@ -337,6 +337,7 @@ const mapPurifyOptionKey = (item, index) => {
             '감정유지형',
             '공감호소형',
             '감정유지하되법적문제만제거',
+            '원문의감정을어느정도유지하되법적문제만제거한형태',
             'EMOTIONAL',
             'EMPATHY'
         ].includes(toneKey)
@@ -681,9 +682,6 @@ export const purifyReview = async (content) => {
         '/reviews/purity-preview',
         {
             reviewText: content
-        },
-        {
-            useAuth: false
         }
     );
 
