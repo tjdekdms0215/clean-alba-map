@@ -1129,11 +1129,14 @@ const profileCircleStyle = {
 const mainStyle = {
     display: 'grid',
     minHeight: 'calc(100vh - 64px)',
-    width: '100%',
-    alignItems: 'start'
+    width: '100%'
 };
 
 const sidebarStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignSelf: 'stretch',
+    minHeight: '100%',
     borderRight: '1px solid #E8ECF2',
     backgroundColor: '#FFFFFF',
     overflow: 'visible'
@@ -1173,6 +1176,8 @@ const mobileStatusTabStyle = {
 
 const listWrapStyle = {
     padding: '0 6px 10px',
+    flex: 1,
+    backgroundColor: '#FFFFFF',
     overflowY: 'auto'
 };
 
