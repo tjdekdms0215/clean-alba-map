@@ -230,6 +230,38 @@ const extractApiErrorMessage = (error) => {
         return responseData.trim();
     }
 
+    const objectFieldErrors = Object.entries(
+        responseData?.errors || {}
+    ).filter(
+        ([, value]) =>
+            typeof value === 'string' && value.trim()
+    );
+
+    if (objectFieldErrors.length > 0) {
+        return objectFieldErrors
+            .map(
+                ([field, message]) =>
+                    `${field}: ${message.trim()}`
+            )
+            .join(', ');
+    }
+
+    const arrayFieldErrorMessage =
+        responseData?.errors?.find?.(
+            (item) =>
+                typeof item?.defaultMessage === 'string' &&
+                item.defaultMessage.trim()
+        )?.defaultMessage ||
+        responseData?.errors?.find?.(
+            (item) =>
+                typeof item?.message === 'string' &&
+                item.message.trim()
+        )?.message;
+
+    if (arrayFieldErrorMessage) {
+        return arrayFieldErrorMessage.trim();
+    }
+
     const candidates = [
         responseData?.message,
         responseData?.error,
@@ -247,26 +279,6 @@ const extractApiErrorMessage = (error) => {
 
     if (firstMessage) {
         return firstMessage.trim();
-    }
-
-    const fieldErrorMessage =
-        responseData?.errors?.find?.(
-            (item) =>
-                typeof item?.defaultMessage === 'string' &&
-                item.defaultMessage.trim()
-        )?.defaultMessage ||
-        responseData?.errors?.find?.(
-            (item) =>
-                typeof item?.message === 'string' &&
-                item.message.trim()
-        )?.message ||
-        Object.values(responseData?.errors || {}).find(
-            (value) =>
-                typeof value === 'string' && value.trim()
-        );
-
-    if (fieldErrorMessage) {
-        return fieldErrorMessage.trim();
     }
 
     return '';
