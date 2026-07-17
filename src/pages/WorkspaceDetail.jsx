@@ -84,6 +84,46 @@ const pickFirstText = (source, keys) => {
 const clamp = (value, min, max) =>
     Math.min(max, Math.max(min, value));
 
+const getCleanGradeInfo = (score) => {
+    if (score === null || score === undefined) {
+        return {
+            accentColor: '#8A8A8A',
+            color: '#666666',
+            label: '미정'
+        };
+    }
+
+    if (score >= 80) {
+        return {
+            accentColor: '#009900',
+            color: '#08752A',
+            label: '우수'
+        };
+    }
+
+    if (score >= 60) {
+        return {
+            accentColor: '#FFC000',
+            color: '#9A6700',
+            label: '보통'
+        };
+    }
+
+    if (score >= 40) {
+        return {
+            accentColor: '#FF6600',
+            color: '#C94F00',
+            label: '주의'
+        };
+    }
+
+    return {
+        accentColor: '#DD0000',
+        color: '#B30000',
+        label: '위험'
+    };
+};
+
 const toPercent = (value) => {
     if (!Number.isFinite(value)) {
         return 0;
@@ -559,7 +599,9 @@ const buildReviews = (workspace) => {
 };
 
 const CircularScore = ({
-    score
+    score,
+    accentColor,
+    textColor
 }) => {
     const size = 98;
     const strokeWidth = 10;
@@ -598,7 +640,7 @@ const CircularScore = ({
                     cy={size / 2}
                     r={radius}
                     fill="none"
-                    stroke="#1FA84F"
+                    stroke={accentColor}
                     strokeWidth={strokeWidth}
                     strokeLinecap="round"
                     strokeDasharray={circumference}
@@ -608,7 +650,12 @@ const CircularScore = ({
             </svg>
 
             <div style={scoreInnerStyle}>
-                <strong style={scoreValueStyle}>
+                <strong
+                    style={{
+                        ...scoreValueStyle,
+                        color: textColor
+                    }}
+                >
                     {safeScore}
                 </strong>
                 <span style={scoreLabelStyle}>
@@ -688,6 +735,13 @@ const WorkspaceDetail = () => {
                 0,
                 100
             ),
+            cleanGradeInfo: getCleanGradeInfo(
+                clamp(
+                    Number(safeWorkspace?.cleanScore) || 0,
+                    0,
+                    100
+                )
+            ),
             indicatorStats:
                 buildIndicatorStats(safeWorkspace),
             shiftRows,
@@ -755,6 +809,14 @@ const WorkspaceDetail = () => {
                             <section style={heroStyle}>
                                 <CircularScore
                                     score={detailData.cleanScore}
+                                    accentColor={
+                                        detailData.cleanGradeInfo
+                                            .accentColor
+                                    }
+                                    textColor={
+                                        detailData.cleanGradeInfo
+                                            .color
+                                    }
                                 />
 
                                 <div style={heroTextStyle}>
