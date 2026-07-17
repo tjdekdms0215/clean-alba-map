@@ -1,0 +1,1572 @@
+import React, {
+    useEffect,
+    useMemo,
+    useState
+} from 'react';
+import {
+    useNavigate,
+    useParams
+} from 'react-router-dom';
+import { getWorkspaceDetail } from '../api/workspace';
+import {
+    REVIEW_INDICATORS,
+    findReviewIndicator,
+    getViolationIndicatorIds
+} from '../constants/reviewIndicators';
+import {
+    beginKakaoLogin,
+    clearStoredAuth,
+    getStoredAuth
+} from '../utils/auth';
+
+const DEFAULT_SHIFT_ORDER = ['morning', 'afternoon', 'night'];
+const SHIFT_LABELS = {
+    morning: '오전',
+    afternoon: '오후',
+    night: '야간'
+};
+
+const DAY_TYPE_LABELS = {
+    weekday: '평일',
+    weekend: '주말'
+};
+
+const coerceNumber = (value) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+    }
+
+    if (typeof value === 'string') {
+        const match = value.match(/-?\d+(\.\d+)?/);
+
+        if (match) {
+            return Number(match[0]);
+        }
+    }
+
+    return null;
+};
+
+const pickFirstNumber = (source, keys) => {
+    if (!source || typeof source !== 'object') {
+        return null;
+    }
+
+    for (const key of keys) {
+        const value = coerceNumber(source[key]);
+
+        if (value !== null) {
+            return value;
+        }
+    }
+
+    return null;
+};
+
+const pickFirstText = (source, keys) => {
+    if (!source || typeof source !== 'object') {
+        return '';
+    }
+
+    for (const key of keys) {
+        const value = source[key];
+
+        if (typeof value === 'string' && value.trim()) {
+            return value.trim();
+        }
+    }
+
+    return '';
+};
+
+const clamp = (value, min, max) =>
+    Math.min(max, Math.max(min, value));
+
+const toPercent = (value) => {
+    if (!Number.isFinite(value)) {
+        return 0;
+    }
+
+    if (value <= 1) {
+        return clamp(value * 100, 0, 100);
+    }
+
+    return clamp(value, 0, 100);
+};
+
+const formatDate = (value) => {
+    if (!value) {
+        return '';
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return String(value).slice(0, 10);
+    }
+
+    return date.toISOString().slice(0, 10);
+};
+
+const extractDistrict = (workspace) => {
+    const district =
+        workspace?.district ||
+        workspace?.region ||
+        workspace?.gu ||
+        workspace?.addressRegion;
+
+    if (district) {
+        return district;
+    }
+
+    const address =
+        workspace?.address ||
+        workspace?.roadAddress ||
+        workspace?.addressName ||
+        workspace?.address_name ||
+        '';
+    const segments = address.split(' ').filter(Boolean);
+
+    return segments.slice(0, 2).join(' ') || '지역 정보 없음';
+};
+
+const getWorkspaceName = (workspace) =>
+    workspace?.name ||
+    workspace?.placeName ||
+    workspace?.place_name ||
+    '사업장 이름 없음';
+
+const getWorkspaceCategory = (workspace) =>
+    workspace?.category ||
+    workspace?.categoryName ||
+    workspace?.category_name ||
+    '업종 정보 없음';
+
+const getReviewCount = (workspace) => {
+    const directCount = pickFirstNumber(workspace, [
+        'reviewCount',
+        'approvedReviewCount',
+        'reviewsCount'
+    ]);
+
+    if (directCount !== null) {
+        return directCount;
+    }
+
+    if (Array.isArray(workspace?.reviews)) {
+        return workspace.reviews.length;
+    }
+
+    if (Array.isArray(workspace?.approvedReviews)) {
+        return workspace.approvedReviews.length;
+    }
+
+    if (Array.isArray(workspace?.reviewList)) {
+        return workspace.reviewList.length;
+    }
+
+    return 0;
+};
+
+const getDetailStatsSource = (workspace) => {
+    const candidates = [
+        workspace?.checklistStats,
+        workspace?.indicatorStats,
+        workspace?.indicatorSummary,
+        workspace?.cleanScoreIndicators,
+        workspace?.cleanScoreEvidence,
+        workspace?.reviewStats,
+        workspace?.complianceStats,
+        workspace?.oxStats,
+        workspace?.ox_stats
+    ];
+
+    return (
+        candidates.find(
+            (candidate) =>
+                candidate &&
+                typeof candidate === 'object'
+        ) || null
+    );
+};
+
+const toEntries = (source) => {
+    if (!source) {
+        return [];
+    }
+
+    if (Array.isArray(source)) {
+        return source;
+    }
+
+    if (Array.isArray(source.items)) {
+        return source.items;
+    }
+
+    if (Array.isArray(source.entries)) {
+        return source.entries;
+    }
+
+    if (Array.isArray(source.stats)) {
+        return source.stats;
+    }
+
+    return Object.entries(source).map(([key, value]) => ({
+        key,
+        value
+    }));
+};
+
+const normalizeIndicatorStat = (indicator, entry) => {
+    const nested =
+        entry?.value &&
+        typeof entry.value === 'object' &&
+        !Array.isArray(entry.value)
+            ? entry.value
+            : entry;
+    const directValue =
+        nested === entry &&
+        typeof entry?.value !== 'object'
+            ? entry?.value
+            : null;
+
+    const complianceCount =
+        pickFirstNumber(nested, [
+            'complianceCount',
+            'compliantCount',
+            'positiveCount',
+            'safeCount',
+            'yesCount',
+            'trueCount'
+        ]) ??
+        (typeof directValue === 'boolean'
+            ? Number(directValue)
+            : null);
+    const violationCount =
+        pickFirstNumber(nested, [
+            'violationCount',
+            'violatedCount',
+            'negativeCount',
+            'riskCount',
+            'noCount',
+            'falseCount'
+        ]) ??
+        (typeof directValue === 'number'
+            ? directValue
+            : null);
+    const totalCount =
+        pickFirstNumber(nested, [
+            'totalCount',
+            'total',
+            'responseCount',
+            'responses',
+            'reviewCount'
+        ]) ||
+        (Number.isFinite(complianceCount) &&
+        Number.isFinite(violationCount)
+            ? complianceCount + violationCount
+            : null);
+    const violationRate = toPercent(
+        pickFirstNumber(nested, [
+            'violationRate',
+            'negativeRate',
+            'riskRate',
+            'falseRate'
+        ]) ??
+            (Number.isFinite(totalCount) &&
+            totalCount > 0 &&
+            Number.isFinite(violationCount)
+                ? (violationCount / totalCount) * 100
+                : 0)
+    );
+    const complianceRate = toPercent(
+        pickFirstNumber(nested, [
+            'complianceRate',
+            'positiveRate',
+            'safeRate',
+            'yesRate',
+            'trueRate'
+        ]) ??
+            (100 - violationRate)
+    );
+
+    return {
+        id: indicator.id,
+        label: indicator.label,
+        complianceCount:
+            Number.isFinite(complianceCount)
+                ? complianceCount
+                : Math.max(
+                      0,
+                      Math.round(
+                          ((100 - violationRate) / 100) *
+                              (totalCount || 0)
+                      )
+                  ),
+        violationCount:
+            Number.isFinite(violationCount)
+                ? violationCount
+                : Math.max(
+                      0,
+                      Math.round(
+                          (violationRate / 100) *
+                              (totalCount || 0)
+                      )
+                  ),
+        violationRate,
+        complianceRate,
+        color:
+            complianceRate >= 50
+                ? '#1FA84F'
+                : '#EF3B33'
+    };
+};
+
+const buildIndicatorStats = (workspace) => {
+    const source = getDetailStatsSource(workspace);
+    const entries = toEntries(source);
+    const mapped = new Map();
+
+    entries.forEach((entry) => {
+        const rawKey =
+            entry?.id ||
+            entry?.item ||
+            entry?.code ||
+            entry?.key ||
+            entry?.name ||
+            entry?.title ||
+            entry?.label;
+        const indicator = findReviewIndicator(rawKey);
+
+        if (indicator) {
+            mapped.set(
+                indicator.id,
+                normalizeIndicatorStat(indicator, entry)
+            );
+        }
+    });
+
+    return REVIEW_INDICATORS.map((indicator) =>
+        mapped.get(indicator.id) ||
+        normalizeIndicatorStat(indicator, {
+            complianceCount: 0,
+            violationCount: 0,
+            totalCount: 0,
+            complianceRate: 0,
+            violationRate: 0
+        })
+    );
+};
+
+const normalizeShiftKey = (value = '') => {
+    const normalized = String(value)
+        .trim()
+        .toLowerCase();
+
+    if (
+        ['오전', '아침', 'morning', 'am'].includes(
+            normalized
+        )
+    ) {
+        return 'morning';
+    }
+
+    if (
+        ['오후', '점심', 'afternoon', 'pm'].includes(
+            normalized
+        )
+    ) {
+        return 'afternoon';
+    }
+
+    if (
+        ['야간', '밤', 'night', 'evening'].includes(
+            normalized
+        )
+    ) {
+        return 'night';
+    }
+
+    return normalized;
+};
+
+const normalizeDayTypeKey = (value = '') => {
+    const normalized = String(value)
+        .trim()
+        .toLowerCase();
+
+    if (
+        ['평일', 'weekday', 'weekdays', 'daily'].includes(
+            normalized
+        )
+    ) {
+        return 'weekday';
+    }
+
+    if (
+        ['주말', 'weekend', 'weekends', 'holiday'].includes(
+            normalized
+        )
+    ) {
+        return 'weekend';
+    }
+
+    return normalized;
+};
+
+const buildShiftRowsFromObject = (source) => {
+    const result = {};
+
+    if (Array.isArray(source)) {
+        source.forEach((entry) => {
+            const shiftKey = normalizeShiftKey(
+                entry?.shift ||
+                    entry?.time ||
+                    entry?.slot ||
+                    entry?.label
+            );
+            const dayType = normalizeDayTypeKey(
+                entry?.dayType ||
+                    entry?.type ||
+                    entry?.category
+            );
+
+            if (
+                SHIFT_LABELS[shiftKey] &&
+                (dayType === 'weekday' ||
+                    dayType === 'weekend')
+            ) {
+                if (!result[shiftKey]) {
+                    result[shiftKey] = {
+                        id: shiftKey,
+                        label: SHIFT_LABELS[shiftKey],
+                        weekday: 0,
+                        weekend: 0
+                    };
+                }
+
+                result[shiftKey][dayType] =
+                    coerceNumber(
+                        entry?.count ??
+                            entry?.workers ??
+                            entry?.value
+                    ) || 0;
+            }
+        });
+
+        return result;
+    }
+
+    Object.entries(source || {}).forEach(([key, value]) => {
+        const shiftKey = normalizeShiftKey(key);
+
+        if (!SHIFT_LABELS[shiftKey]) {
+            return;
+        }
+
+        if (!result[shiftKey]) {
+            result[shiftKey] = {
+                id: shiftKey,
+                label: SHIFT_LABELS[shiftKey],
+                weekday: 0,
+                weekend: 0
+            };
+        }
+
+        if (
+            typeof value === 'object' &&
+            value !== null &&
+            !Array.isArray(value)
+        ) {
+            Object.entries(value).forEach(
+                ([dayTypeKey, dayTypeValue]) => {
+                    const normalizedDayType =
+                        normalizeDayTypeKey(dayTypeKey);
+
+                    if (
+                        normalizedDayType === 'weekday' ||
+                        normalizedDayType === 'weekend'
+                    ) {
+                        result[shiftKey][normalizedDayType] =
+                            coerceNumber(dayTypeValue) || 0;
+                    }
+                }
+            );
+        }
+    });
+
+    return result;
+};
+
+const buildShiftRows = (workspace) => {
+    const source =
+        workspace?.simultaneousWorkerStats ||
+        workspace?.staffingStats ||
+        workspace?.timeSlotWorkerStats ||
+        workspace?.workerStats ||
+        workspace?.shiftStats ||
+        workspace?.simultaneousWorkersStats ||
+        null;
+    const rowsMap = buildShiftRowsFromObject(source);
+    const rows = DEFAULT_SHIFT_ORDER.map((shiftKey) => ({
+        id: shiftKey,
+        label: SHIFT_LABELS[shiftKey],
+        weekday: rowsMap[shiftKey]?.weekday || 0,
+        weekend: rowsMap[shiftKey]?.weekend || 0
+    }));
+
+    return rows;
+};
+
+const buildReviews = (workspace) => {
+    const source =
+        workspace?.reviews ||
+        workspace?.approvedReviews ||
+        workspace?.reviewList ||
+        [];
+
+    if (!Array.isArray(source)) {
+        return [];
+    }
+
+    return source.map((review, index) => ({
+        id:
+            review?.id ||
+            review?.reviewId ||
+            `review-${index}`,
+        content:
+            review?.content ||
+            review?.reviewContent ||
+            review?.text ||
+            '',
+        violationItems: getViolationIndicatorIds(review),
+        coworkerCount: pickFirstNumber(review, [
+            'coworkerCount',
+            'workerCount'
+        ]),
+        createdAt:
+            review?.createdAt ||
+            review?.createdDate ||
+            review?.date ||
+            '',
+        status:
+            review?.status ||
+            review?.reviewStatus ||
+            'APPROVED'
+    }));
+};
+
+const CircularScore = ({
+    score
+}) => {
+    const size = 98;
+    const strokeWidth = 10;
+    const radius =
+        (size - strokeWidth) / 2;
+    const circumference =
+        2 * Math.PI * radius;
+    const safeScore = clamp(
+        Number(score) || 0,
+        0,
+        100
+    );
+    const dashOffset =
+        circumference -
+        (safeScore / 100) * circumference;
+
+    return (
+        <div style={scoreWrapStyle}>
+            <svg
+                width={size}
+                height={size}
+                viewBox={`0 0 ${size} ${size}`}
+                style={scoreSvgStyle}
+                aria-hidden="true"
+            >
+                <circle
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={radius}
+                    fill="none"
+                    stroke="#EEF0F2"
+                    strokeWidth={strokeWidth}
+                />
+                <circle
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={radius}
+                    fill="none"
+                    stroke="#1FA84F"
+                    strokeWidth={strokeWidth}
+                    strokeLinecap="round"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={dashOffset}
+                    transform={`rotate(-90 ${size / 2} ${size / 2})`}
+                />
+            </svg>
+
+            <div style={scoreInnerStyle}>
+                <strong style={scoreValueStyle}>
+                    {safeScore}
+                </strong>
+                <span style={scoreLabelStyle}>
+                    클린점수
+                </span>
+            </div>
+        </div>
+    );
+};
+
+const WorkspaceDetail = () => {
+    const navigate = useNavigate();
+    const { workspaceId } = useParams();
+    const [authState, setAuthState] = useState(
+        getStoredAuth()
+    );
+    const [workspace, setWorkspace] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [errorMessage, setErrorMessage] = useState('');
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const fetchDetail = async () => {
+            setIsLoading(true);
+            setErrorMessage('');
+
+            try {
+                const data = await getWorkspaceDetail(
+                    workspaceId
+                );
+
+                if (isMounted) {
+                    setWorkspace(data);
+                }
+            } catch (error) {
+                console.error(
+                    '사업장 상세 정보를 불러오지 못했습니다.',
+                    error
+                );
+
+                if (isMounted) {
+                    setErrorMessage(
+                        '사업장 상세 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
+                    );
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        fetchDetail();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [workspaceId]);
+
+    const detailData = useMemo(() => {
+        const safeWorkspace = workspace || {};
+        const shiftRows = buildShiftRows(safeWorkspace);
+        const maxWorkers = Math.max(
+            1,
+            ...shiftRows.flatMap((row) => [
+                row.weekday,
+                row.weekend
+            ])
+        );
+
+        return {
+            workspaceName: getWorkspaceName(safeWorkspace),
+            district: extractDistrict(safeWorkspace),
+            category: getWorkspaceCategory(safeWorkspace),
+            reviewCount: getReviewCount(safeWorkspace),
+            cleanScore: clamp(
+                Number(safeWorkspace?.cleanScore) || 0,
+                0,
+                100
+            ),
+            indicatorStats:
+                buildIndicatorStats(safeWorkspace),
+            shiftRows,
+            maxWorkers,
+            reviews: buildReviews(safeWorkspace)
+        };
+    }, [workspace]);
+
+    const handleLogin = () => {
+        const started = beginKakaoLogin();
+
+        if (!started) {
+            alert('카카오 로그인 설정을 확인해 주세요.');
+        }
+    };
+
+    const handleLogout = () => {
+        clearStoredAuth();
+        setAuthState(getStoredAuth());
+        navigate('/');
+    };
+
+    return (
+        <div style={pageStyle}>
+            <header style={headerStyle}>
+                <div style={headerLeftStyle}>
+                    <button
+                        type="button"
+                        style={logoButtonStyle}
+                        onClick={() => navigate('/')}
+                    >
+                        전남대 클린알바맵
+                    </button>
+
+                    <button
+                        type="button"
+                        style={navButtonStyle}
+                        onClick={() => navigate('/')}
+                    >
+                        서비스 소개
+                    </button>
+
+                    <button
+                        type="button"
+                        style={navButtonStyle}
+                        onClick={() => navigate('/guide')}
+                    >
+                        근로기준법 안내
+                    </button>
+                </div>
+
+                <div style={headerRightStyle}>
+                    {authState.isLoggedIn ? (
+                        <button
+                            type="button"
+                            style={plainHeaderButtonStyle}
+                            onClick={handleLogout}
+                        >
+                            로그아웃
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            style={loginButtonStyle}
+                            onClick={handleLogin}
+                        >
+                            카카오 로그인
+                        </button>
+                    )}
+                </div>
+            </header>
+
+            <main style={mainStyle}>
+                <div style={contentWrapStyle}>
+                    <button
+                        type="button"
+                        style={backButtonStyle}
+                        onClick={() => navigate('/')}
+                    >
+                        ‹ 지도로 돌아가기
+                    </button>
+
+                    {isLoading ? (
+                        <section style={feedbackCardStyle}>
+                            사업장 정보를 불러오는 중입니다.
+                        </section>
+                    ) : errorMessage ? (
+                        <section style={feedbackCardStyle}>
+                            {errorMessage}
+                        </section>
+                    ) : (
+                        <>
+                            <section style={heroStyle}>
+                                <CircularScore
+                                    score={detailData.cleanScore}
+                                />
+
+                                <div style={heroTextStyle}>
+                                    <h1 style={titleStyle}>
+                                        {
+                                            detailData.workspaceName
+                                        }
+                                    </h1>
+
+                                    <p style={metaStyle}>
+                                        {
+                                            detailData.district
+                                        }
+                                        <span
+                                            style={
+                                                metaDotStyle
+                                            }
+                                        >
+                                            ·
+                                        </span>
+                                        {
+                                            detailData.category
+                                        }
+                                        <span
+                                            style={
+                                                metaDotStyle
+                                            }
+                                        >
+                                            ·
+                                        </span>
+                                        후기{' '}
+                                        {
+                                            detailData.reviewCount
+                                        }
+                                        개
+                                    </p>
+                                </div>
+                            </section>
+
+                            <section style={sectionStyle}>
+                                <h2 style={sectionTitleStyle}>
+                                    항목별 준수 현황
+                                </h2>
+
+                                <div
+                                    style={
+                                        indicatorGridStyle
+                                    }
+                                >
+                                    {detailData.indicatorStats.map(
+                                        (item) => (
+                                            <article
+                                                key={item.id}
+                                                style={
+                                                    indicatorCardStyle
+                                                }
+                                            >
+                                                <strong
+                                                    style={
+                                                        indicatorTitleStyle
+                                                    }
+                                                >
+                                                    {
+                                                        item.label
+                                                    }
+                                                </strong>
+
+                                                <div
+                                                    style={
+                                                        progressTrackStyle
+                                                    }
+                                                >
+                                                    <div
+                                                        style={{
+                                                            ...progressFillStyle,
+                                                            width: `${item.complianceRate}%`,
+                                                            backgroundColor:
+                                                                item.color
+                                                        }}
+                                                    />
+                                                </div>
+
+                                                <p
+                                                    style={
+                                                        indicatorMetaStyle
+                                                    }
+                                                >
+                                                    {
+                                                        item.complianceCount
+                                                    }
+                                                    건 준수 /{' '}
+                                                    {
+                                                        item.violationCount
+                                                    }
+                                                    건 위반
+                                                    <span
+                                                        style={
+                                                            indicatorSubMetaStyle
+                                                        }
+                                                    >
+                                                        {' '}
+                                                        (위반율{' '}
+                                                        {Math.round(
+                                                            item.violationRate
+                                                        )}
+                                                        %)
+                                                    </span>
+                                                </p>
+                                            </article>
+                                        )
+                                    )}
+                                </div>
+                            </section>
+
+                            <section style={sectionStyle}>
+                                <h2 style={sectionTitleStyle}>
+                                    동시간대 근무자 수
+                                </h2>
+
+                                <div style={workerCardStyle}>
+                                    <div style={legendStyle}>
+                                        <span
+                                            style={
+                                                legendItemStyle
+                                            }
+                                        >
+                                            <span
+                                                style={{
+                                                    ...legendDotStyle,
+                                                    backgroundColor:
+                                                        '#1FA84F'
+                                                }}
+                                            />
+                                            평일
+                                        </span>
+
+                                        <span
+                                            style={
+                                                legendItemStyle
+                                            }
+                                        >
+                                            <span
+                                                style={{
+                                                    ...legendDotStyle,
+                                                    backgroundColor:
+                                                        '#316AE8'
+                                                }}
+                                            />
+                                            주말
+                                        </span>
+                                    </div>
+
+                                    <div
+                                        style={
+                                            workerRowsStyle
+                                        }
+                                    >
+                                        {detailData.shiftRows.map(
+                                            (row) => (
+                                                <div
+                                                    key={row.id}
+                                                    style={
+                                                        shiftRowStyle
+                                                    }
+                                                >
+                                                    <div
+                                                        style={
+                                                            shiftLabelStyle
+                                                        }
+                                                    >
+                                                        {
+                                                            row.label
+                                                        }
+                                                    </div>
+
+                                                    <div
+                                                        style={
+                                                            shiftBarsStyle
+                                                        }
+                                                    >
+                                                        {[
+                                                            'weekday',
+                                                            'weekend'
+                                                        ].map(
+                                                            (
+                                                                dayType
+                                                            ) => {
+                                                                const value =
+                                                                    row[
+                                                                        dayType
+                                                                    ];
+
+                                                                return (
+                                                                    <div
+                                                                        key={`${row.id}-${dayType}`}
+                                                                        style={
+                                                                            shiftBarLineStyle
+                                                                        }
+                                                                    >
+                                                                        <span
+                                                                            style={
+                                                                                dayTypeLabelStyle
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                DAY_TYPE_LABELS[
+                                                                                    dayType
+                                                                                ]
+                                                                            }
+                                                                        </span>
+
+                                                                        <div
+                                                                            style={
+                                                                                shiftTrackStyle
+                                                                            }
+                                                                        >
+                                                                            <div
+                                                                                style={{
+                                                                                    ...shiftFillStyle,
+                                                                                    width: `${(value / detailData.maxWorkers) * 100}%`,
+                                                                                    backgroundColor:
+                                                                                        dayType ===
+                                                                                        'weekday'
+                                                                                            ? '#1FA84F'
+                                                                                            : '#316AE8'
+                                                                                }}
+                                                                            />
+                                                                        </div>
+
+                                                                        <strong
+                                                                            style={
+                                                                                workerValueStyle
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                value
+                                                                            }
+                                                                            명
+                                                                        </strong>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section style={sectionStyle}>
+                                <div
+                                    style={
+                                        reviewHeaderStyle
+                                    }
+                                >
+                                    <h2
+                                        style={
+                                            sectionTitleStyle
+                                        }
+                                    >
+                                        후기 목록
+                                        <span
+                                            style={
+                                                reviewCountStyle
+                                            }
+                                        >
+                                            (
+                                            {
+                                                detailData.reviews
+                                                    .length
+                                            }
+                                            )
+                                        </span>
+                                    </h2>
+
+                                    <button
+                                        type="button"
+                                        style={
+                                            reviewWriteButtonStyle
+                                        }
+                                        onClick={() =>
+                                            navigate(
+                                                `/review/write/${workspaceId}`
+                                            )
+                                        }
+                                    >
+                                        후기 남기기
+                                    </button>
+                                </div>
+
+                                <div
+                                    style={reviewListStyle}
+                                >
+                                    {detailData.reviews.length ? (
+                                        detailData.reviews.map(
+                                            (
+                                                review
+                                            ) => (
+                                                <article
+                                                    key={
+                                                        review.id
+                                                    }
+                                                    style={
+                                                        reviewCardStyle
+                                                    }
+                                                >
+                                                    <p
+                                                        style={
+                                                            reviewContentStyle
+                                                        }
+                                                    >
+                                                        {
+                                                            review.content
+                                                        }
+                                                    </p>
+
+                                                    {review.violationItems
+                                                        ?.length ? (
+                                                        <div
+                                                            style={
+                                                                reviewTagListStyle
+                                                            }
+                                                        >
+                                                            {review.violationItems.map(
+                                                                (
+                                                                    item
+                                                                ) => {
+                                                                    const matched =
+                                                                        findReviewIndicator(
+                                                                            item
+                                                                        );
+
+                                                                    return (
+                                                                        <span
+                                                                            key={`${review.id}-${item}`}
+                                                                            style={
+                                                                                reviewTagStyle
+                                                                            }
+                                                                        >
+                                                                            {matched?.label ||
+                                                                                item}
+                                                                        </span>
+                                                                    );
+                                                                }
+                                                            )}
+                                                        </div>
+                                                    ) : null}
+
+                                                    <span
+                                                        style={
+                                                            reviewDateStyle
+                                                        }
+                                                    >
+                                                        {formatDate(
+                                                            review.createdAt
+                                                        )}
+                                                    </span>
+                                                </article>
+                                            )
+                                        )
+                                    ) : (
+                                        <div
+                                            style={
+                                                emptyStateStyle
+                                            }
+                                        >
+                                            아직 등록된 후기가 없습니다.
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+                        </>
+                    )}
+                </div>
+            </main>
+        </div>
+    );
+};
+
+const pageStyle = {
+    minHeight: '100vh',
+    backgroundColor: '#FFFFFF'
+};
+
+const headerStyle = {
+    height: '64px',
+    padding: '0 22px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '20px',
+    borderBottom: '1px solid #ECEFF4',
+    backgroundColor: '#FFFFFF',
+    boxSizing: 'border-box'
+};
+
+const headerLeftStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    flexWrap: 'wrap'
+};
+
+const headerRightStyle = {
+    display: 'flex',
+    alignItems: 'center'
+};
+
+const logoButtonStyle = {
+    padding: 0,
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#121826',
+    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: '900'
+};
+
+const navButtonStyle = {
+    padding: '0 6px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#5F6775',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '600'
+};
+
+const plainHeaderButtonStyle = {
+    padding: 0,
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#5F6775',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '700'
+};
+
+const loginButtonStyle = {
+    height: '36px',
+    padding: '0 16px',
+    backgroundColor: '#FEE500',
+    border: 'none',
+    borderRadius: '18px',
+    color: '#191919',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '800'
+};
+
+const mainStyle = {
+    width: '100%',
+    overflowX: 'hidden'
+};
+
+const contentWrapStyle = {
+    width: '100%',
+    maxWidth: '744px',
+    margin: '0 auto',
+    padding: '28px 20px 40px',
+    boxSizing: 'border-box'
+};
+
+const backButtonStyle = {
+    marginBottom: '26px',
+    padding: 0,
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#B2B8C2',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '600'
+};
+
+const feedbackCardStyle = {
+    padding: '20px',
+    border: '1px solid #ECEFF4',
+    borderRadius: '16px',
+    color: '#5F6775',
+    fontSize: '14px'
+};
+
+const heroStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '26px',
+    marginBottom: '34px',
+    flexWrap: 'wrap'
+};
+
+const heroTextStyle = {
+    minWidth: 0,
+    flex: 1
+};
+
+const titleStyle = {
+    margin: 0,
+    color: '#171C24',
+    fontSize: '22px',
+    fontWeight: '900',
+    letterSpacing: '-0.4px'
+};
+
+const metaStyle = {
+    margin: '10px 0 0',
+    color: '#8C94A0',
+    fontSize: '14px',
+    fontWeight: '500'
+};
+
+const metaDotStyle = {
+    margin: '0 8px',
+    color: '#C1C7D0'
+};
+
+const scoreWrapStyle = {
+    position: 'relative',
+    width: '104px',
+    height: '104px',
+    flexShrink: 0
+};
+
+const scoreSvgStyle = {
+    display: 'block',
+    width: '100%',
+    height: '100%'
+};
+
+const scoreInnerStyle = {
+    position: 'absolute',
+    inset: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center'
+};
+
+const scoreValueStyle = {
+    color: '#1FA84F',
+    fontSize: '28px',
+    fontWeight: '900',
+    lineHeight: 1
+};
+
+const scoreLabelStyle = {
+    marginTop: '4px',
+    color: '#A4A9B1',
+    fontSize: '11px',
+    fontWeight: '700'
+};
+
+const sectionStyle = {
+    marginBottom: '34px'
+};
+
+const sectionTitleStyle = {
+    margin: '0 0 18px',
+    color: '#171C24',
+    fontSize: '17px',
+    fontWeight: '900',
+    letterSpacing: '-0.3px'
+};
+
+const indicatorGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '12px'
+};
+
+const indicatorCardStyle = {
+    padding: '18px 18px 16px',
+    border: '1px solid #E6EAF0',
+    borderRadius: '16px',
+    backgroundColor: '#FFFFFF'
+};
+
+const indicatorTitleStyle = {
+    display: 'block',
+    marginBottom: '14px',
+    color: '#232933',
+    fontSize: '14px',
+    fontWeight: '800'
+};
+
+const progressTrackStyle = {
+    width: '100%',
+    height: '5px',
+    borderRadius: '999px',
+    backgroundColor: '#EEF0F2',
+    overflow: 'hidden'
+};
+
+const progressFillStyle = {
+    height: '100%',
+    borderRadius: '999px'
+};
+
+const indicatorMetaStyle = {
+    margin: '12px 0 0',
+    color: '#B0B6C0',
+    fontSize: '12px',
+    fontWeight: '500'
+};
+
+const indicatorSubMetaStyle = {
+    color: '#A0A8B3'
+};
+
+const workerCardStyle = {
+    padding: '18px 20px 20px',
+    border: '1px solid #E6EAF0',
+    borderRadius: '16px',
+    backgroundColor: '#FFFFFF'
+};
+
+const legendStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    marginBottom: '20px',
+    flexWrap: 'wrap'
+};
+
+const legendItemStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    color: '#666E7A',
+    fontSize: '12px',
+    fontWeight: '600'
+};
+
+const legendDotStyle = {
+    width: '10px',
+    height: '10px',
+    borderRadius: '999px'
+};
+
+const workerRowsStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px'
+};
+
+const shiftRowStyle = {
+    display: 'grid',
+    gridTemplateColumns: '44px minmax(0, 1fr)',
+    gap: '12px',
+    alignItems: 'start'
+};
+
+const shiftLabelStyle = {
+    paddingTop: '18px',
+    color: '#2C313A',
+    fontSize: '14px',
+    fontWeight: '700',
+    textAlign: 'right'
+};
+
+const shiftBarsStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+};
+
+const shiftBarLineStyle = {
+    display: 'grid',
+    gridTemplateColumns: '26px minmax(0, 1fr) 34px',
+    gap: '10px',
+    alignItems: 'center'
+};
+
+const dayTypeLabelStyle = {
+    color: '#B0B6C0',
+    fontSize: '11px',
+    fontWeight: '700'
+};
+
+const shiftTrackStyle = {
+    width: '100%',
+    height: '10px',
+    borderRadius: '999px',
+    backgroundColor: '#EEF0F2',
+    overflow: 'hidden'
+};
+
+const shiftFillStyle = {
+    height: '100%',
+    borderRadius: '999px'
+};
+
+const workerValueStyle = {
+    color: '#232933',
+    fontSize: '14px',
+    fontWeight: '800'
+};
+
+const reviewHeaderStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '16px',
+    marginBottom: '16px',
+    flexWrap: 'wrap'
+};
+
+const reviewCountStyle = {
+    color: '#A6ADB8',
+    fontSize: '15px',
+    fontWeight: '700',
+    marginLeft: '2px'
+};
+
+const reviewWriteButtonStyle = {
+    height: '32px',
+    padding: '0 16px',
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #D8DEE7',
+    borderRadius: '16px',
+    color: '#4A515C',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '700'
+};
+
+const reviewListStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '14px'
+};
+
+const reviewCardStyle = {
+    padding: '18px 18px 16px',
+    border: '1px solid #E6EAF0',
+    borderRadius: '16px',
+    backgroundColor: '#FFFFFF'
+};
+
+const reviewContentStyle = {
+    margin: 0,
+    color: '#2A2F38',
+    fontSize: '14px',
+    fontWeight: '500',
+    lineHeight: '1.8',
+    wordBreak: 'keep-all'
+};
+
+const reviewTagListStyle = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px',
+    marginTop: '12px'
+};
+
+const reviewTagStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    minHeight: '24px',
+    padding: '0 10px',
+    border: '1px solid #FFB7B5',
+    borderRadius: '999px',
+    backgroundColor: '#FFF5F4',
+    color: '#FF5048',
+    fontSize: '11px',
+    fontWeight: '800'
+};
+
+const reviewDateStyle = {
+    display: 'block',
+    marginTop: '12px',
+    color: '#B5BBC4',
+    fontSize: '12px',
+    fontWeight: '500'
+};
+
+const emptyStateStyle = {
+    padding: '24px 18px',
+    border: '1px dashed #DCE1E8',
+    borderRadius: '16px',
+    color: '#8C94A0',
+    fontSize: '14px',
+    textAlign: 'center'
+};
+
+export default WorkspaceDetail;

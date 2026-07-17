@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import {
+    useLocation,
+    useNavigate
+} from 'react-router-dom';
 import { searchReviewTargets, resolveWorkspace } from '../api/workspace';
 
 
@@ -8,6 +11,7 @@ const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
 
 const ReviewSelect = () => {
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [nickname, setNickname] = useState('');
@@ -31,6 +35,20 @@ const ReviewSelect = () => {
             setIsAdmin(userRole === 'ADMIN');
         }
     }, []);
+
+    useEffect(() => {
+        if (location.state?.authRequired) {
+            setErrorMessage(
+                '후기 작성은 로그인 후 이용할 수 있습니다. 먼저 로그인해 주세요.'
+            );
+        }
+
+        if (location.state?.missingWorkspace) {
+            setErrorMessage(
+                '선택된 사업장 정보가 없어 다시 선택 화면으로 이동했습니다.'
+            );
+        }
+    }, [location.state]);
 
     const handleKakaoLogin = () => {
         if (!KAKAO_REST_API_KEY || !KAKAO_REDIRECT_URI) {
@@ -115,6 +133,17 @@ const ReviewSelect = () => {
             return;
         }
 
+        if (!isLoggedIn) {
+            sessionStorage.setItem(
+                'selected_kakao_place',
+                JSON.stringify(place)
+            );
+            navigate('/review/write/new', {
+                state: { workspace: place }
+            });
+            return;
+        }
+
         // 2. 미등록 사업장인 경우 - Resolve API 호출
         try {
             setIsLoading(true);
@@ -141,6 +170,18 @@ const ReviewSelect = () => {
 
         } catch (error) {
             console.error('사업장 Resolve 에러:', error);
+
+            if (error?.response?.status === 401) {
+                sessionStorage.setItem(
+                    'selected_kakao_place',
+                    JSON.stringify(place)
+                );
+                navigate('/review/write/new', {
+                    state: { workspace: place }
+                });
+                return;
+            }
+
             alert('사업장 정보를 동기화하는 데 실패했습니다. 다시 시도해 주세요.');
         } finally {
             setIsLoading(false);

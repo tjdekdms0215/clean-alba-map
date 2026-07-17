@@ -1,0 +1,29 @@
+--- PAGE 1 ---
+리뷰 상세 검수 조회
+Last
+Updat
+e
+2
+26년 7월 13일 오전 9:28
+Me
+t
+hod GET
+url /admin/reviews/{review
+id}
+_
+기능설명 체크리스트·원문·순화텍스트·인증자료 파일 URL 포함 상세 조회. 응답 구
+조는 검수 대기/상태별 리뷰 목록의 con
+t
+en
+t원소와 동일
+도메인
+태그 관리자
+응답 구조는 검수 대기/상태별 리뷰 목록 조회 의 content[] 원소와 동일
+Pat
+h Variable
+Key Type 설명
+reviewId Long 리뷰 ID
+0
+Response Body
+응답 타입: AdminReviewResponse
+리뷰 상세 검수 조회 1

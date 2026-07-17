@@ -52,6 +52,48 @@ export const searchReviewTargets = async (keyword) => {
             place.category?.trim() || '기타'
     }));
 };
+
+export const getWorkspaceDetail = async (workspaceId) => {
+    const response = await api.get(
+        `/workspaces/${workspaceId}`,
+        {
+            useAuth: false
+        }
+    );
+
+    return response.data;
+};
+
+export const getWorkspaceSummary = async (workspaceId) => {
+    const response = await api.get(
+        `/workspaces/${workspaceId}/summary`,
+        {
+            useAuth: false
+        }
+    );
+
+    return response.data;
+};
+
+export const createWorkspace = async (payload) => {
+    const response = await api.post(
+        '/workspaces',
+        payload
+    );
+
+    return response.data;
+};
+
+export const recalculateWorkspaceCleanScore = async (
+    workspaceId
+) => {
+    const response = await api.post(
+        `/workspaces/${workspaceId}/clean-score/recalculate`
+    );
+
+    return response.data;
+};
+
 /**
  * 미등록 카카오 장소를 내부 사업장으로 등록합니다.
  *

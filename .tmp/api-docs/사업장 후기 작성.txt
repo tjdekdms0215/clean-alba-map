@@ -1,0 +1,82 @@
+--- PAGE 1 ---
+사업장 후기 작성
+Last
+Updat
+e
+2
+26년 7월 13일 오전 9:24
+Me
+t
+hod PO
+ST
+url /workspaces/{workspaceId}/reviews
+/X 체크리스트 8개 항목 + 동시간대 근무자 수 + 주관식 후기 제출. 관
+기능설명O
+리자 검수 후 노출
+도메인 태
+그 후기
+0
+Pat
+h Variable
+Key Type 설명
+workspaceId Long 사업장 ID
+Requ
+est
+Body
+요청 타입: ReviewCreateRequest
+Key Type 필수 여부 설명
+contractViolationBoo
+lean Y
+minimumWageViolationBoo
+weeklyHolidayAllowanceViolationBoo
+wageDelayViolationBoo
+overtimePayViolationBoo
+lean Y
+lean Y
+lean Y
+lean Y
+근로계약서 관련
+위반 여부
+최저임금 관련 위
+반 여부
+주휴수당 관련 위
+반 여부
+임금체불 관련 위
+반 여부
+연장근로수당 관
+련 위반 여부
+coworkerCount In
+t
+eger N 동시간대 근무자
+수. 0 이상
+content S
+tring N 주관식 후기
+사업장 후기 작성 1
+
+--- PAGE 2 ---
+Response Body
+응답 타입: ReviewCreateResponse
+성공 시 201 Created 를 반환합니다.
+Key Type 설명
+reviewId Long 생성된 리뷰 ID
+workspaceId Long 사업장 ID
+status S
+tring
+리뷰 상태. 최초 생성 시
+PENDING
+createdAt S
+tring 작성 시각
+Response Example
+{
+"reviewId": 10,
+"workspaceId": 1,
+"status": "PENDING"
+,
+"createdAt": "2026-07-12T16:00:00"
+}
+No
+t
+e
+작성 직후 리뷰는 바로 공개되지 않습니다.
+관리자가 승인한 뒤에만 공개 목록에 노출되고, 클린점수 집계에도 반영됩니다.
+사업장 후기 작성 2

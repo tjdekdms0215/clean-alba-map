@@ -1,0 +1,65 @@
+--- PAGE 1 ---
+사업장 요약 팝업
+Last Updat
+e
+2
+26년 7월 12일 오후 11:11
+Me
+t
+hod GET
+url /workspaces/{workspaceId}/summary
+기능설명 상세 페이지용 사업장 전체 정보 조회.
+사업장 요약 정보와 공개용 승인 리뷰 목록 반환.
+도메인 태그 사업장
+인증: 필요 없음
+응답 타입: WorkspaceSummaryResponse
+2-1. 지도 핀/리스트 조회 응답 필드에 아래 필드가 추가됩니다.
+Key Type 설명
+reviewCount Number 승인 리뷰 수
+checklistStats
+Array 체크리스트 항목별 통계
+0
+checklistStats[]
+Key Type 설명
+item S
+tring 체크리스트 항목 코드
+compliantCount Number 해당 항목 준수 건수
+violationCount Number 해당 항목 위반 건수
+호출 예시:
+GET /workspaces/1/summary
+Response Example
+{
+"workspaceId": 1,
+"name": "스타벅스 전남대후문점"
+,
+"address": "광주 북구 용봉로 105"
+"category": "카페"
+"district": "후문"
+,
+,
+"latitude": 35.1812,
+,
+사업장 요약 팝업 1
+
+--- PAGE 2 ---
+"longitude": 126.9088,
+"cleanScore": 94,
+"status": "EXCELLENT"
+,
+"reviewCount": 4,
+"checklistStats": [
+{
+"item": "CONTRACT"
+,
+"compliantCount": 3,
+"violationCount": 1
+}
+]
+}
+실패 응답
+404 No
+t Fo
+u
+nd
+해당 사업장이 없는 경우
+사업장 요약 팝업 2

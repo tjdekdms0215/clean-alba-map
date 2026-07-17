@@ -1,0 +1,92 @@
+--- PAGE 1 ---
+사업장 상세 조회
+Last Updat
+e
+2
+26년 7월 12일 오후 11:12
+Me
+t
+hod GET
+url /workspaces/{workspaceId}
+기능설명 상세 페이지용 사업장 전체 정보 조회.
+사업장 요약 정보와 공개용 승인 리뷰 목록 함께 반환
+도메인 태그 사업장
+0
+Pat
+h Variable
+Key Type 설명
+workspaceId Long 사업장 ID
+Response Body
+응답 타입: WorkspaceDetailResponse
+사업장 요약 팝업 응답 필드에 reviews 배열이 추가됩니다.
+Key Type 설명
+reviews
+Array 공개용 승인 리뷰 목록
+reviews[]
+응답 타입: PublicReviewResponse
+Key Type 설명
+reviewId Long 리뷰 ID
+contractViolationBoo
+minimumWageViolationBoo
+weeklyHolidayAllowanceViolationBoo
+wageDelayViolationBoo
+overtimePayViolationBoo
+lean 근로계약서 관련 위반 여부
+lean 최저임금 관련 위반 여부
+lean 주휴수당 관련 위반 여부
+lean 임금체불 관련 위반 여부
+lean 연장근로수당 관련 위반 여부
+사업장 상세 조회 1
+
+--- PAGE 2 ---
+coworkerCount In
+t
+eger | n
+ull 동시간대 근무자 수
+content S
+tring | n
+ull 주관식 후기
+createdAt S
+tring 작성 시각
+Response Example
+{
+"workspaceId": 1,
+"name": "스타벅스 전남대후문점"
+,
+"address": "광주 북구 용봉로 105"
+"category": "카페"
+,
+"district": "후문"
+,
+"latitude": 35.1812,
+"longitude": 126.9088,
+"cleanScore": 94,
+"status": "EXCELLENT"
+,
+"reviewCount": 4,
+"checklistStats": [
+{
+,
+"item": "CONTRACT"
+,
+"compliantCount": 3,
+"violationCount": 1
+}
+],
+"reviews": [
+{
+"reviewId": 10,
+"contractViolation": false,
+"minimumWageViolation": true,
+"weeklyHolidayAllowanceViolation": false,
+"wageDelayViolation": false,
+"overtimePayViolation": false,
+"coworkerCount": 2,
+"content": "근무 환경은 전반적으로 괜찮았습니다.
+"createdAt": "2026-07-12T16:00:00"
+"
+,
+}
+]
+}
+사업장 상세 조회 2

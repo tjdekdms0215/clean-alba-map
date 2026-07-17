@@ -1,0 +1,857 @@
+import api from './axios';
+import {
+    getViolationIndicatorIds,
+    normalizeIndicatorKey
+} from '../constants/reviewIndicators';
+
+const ADMIN_STATUSES = [
+    'PENDING',
+    'APPROVED',
+    'REJECTED'
+];
+
+const DEFAULT_ADMIN_PAGE_SIZE = 50;
+
+const deepClone = (value) =>
+    JSON.parse(JSON.stringify(value));
+
+const MOCK_ADMIN_REVIEWS = [
+    {
+        reviewId: 'mock-pending-1',
+        status: 'PENDING',
+        workspaceId: 101,
+        workspaceName: 'GS25 상대점',
+        category: '편의점',
+        district: '상대 상권',
+        submitterId: 'user_b3k9',
+        submittedAt: '2026-06-27T09:05:00+09:00',
+        violationItems: [
+            'NO_CONTRACT',
+            'MINIMUM_WAGE',
+            'PAY_DELAY'
+        ],
+        coworkerCount: 3,
+        simultaneousWorkers: '3명',
+        reviewText:
+            '혼자 일하는 경우가 많고 쉬는 시간도 제대로 못 쉬었어요.',
+        evidenceFiles: [
+            {
+                id: 'file-1',
+                name: '출퇴근기록.png',
+                type: 'IMAGE'
+            },
+            {
+                id: 'file-2',
+                name: '보험가입내역.pdf',
+                type: 'PDF'
+            },
+            {
+                id: 'file-3',
+                name: '유니폼착용.jpg',
+                type: 'IMAGE'
+            }
+        ],
+        rejectionReason: ''
+    },
+    {
+        reviewId: 'mock-pending-2',
+        status: 'PENDING',
+        workspaceId: 102,
+        workspaceName: '더벤티 후문점',
+        category: '카페',
+        district: '전남대 후문',
+        submitterId: 'user_c1m4',
+        submittedAt: '2026-06-27T08:00:00+09:00',
+        violationItems: ['WEEKLY_ALLOWANCE'],
+        coworkerCount: 1,
+        simultaneousWorkers: '1명',
+        reviewText:
+            '피크타임에는 혼자 일하는 시간이 길었고 주휴수당 정산이 불분명했습니다.',
+        evidenceFiles: [
+            {
+                id: 'file-4',
+                name: '근무표캡처.png',
+                type: 'IMAGE'
+            }
+        ],
+        rejectionReason: ''
+    },
+    {
+        reviewId: 'mock-approved-1',
+        status: 'APPROVED',
+        workspaceId: 103,
+        workspaceName: '노래방 별빛',
+        category: '노래방',
+        district: '전남우 상권',
+        submitterId: 'user_a7f2',
+        submittedAt: '2026-06-27T10:23:00+09:00',
+        violationItems: [
+            'NO_CONTRACT',
+            'MINIMUM_WAGE',
+            'PAY_DELAY'
+        ],
+        coworkerCount: 3,
+        simultaneousWorkers: '3명',
+        reviewText:
+            '사장님이 급여를 계속 미루고 계약서도 안 써줬어요. 개선이 필요할 것 같아요.',
+        evidenceFiles: [
+            {
+                id: 'file-5',
+                name: '급여입금내역.jpg',
+                type: 'IMAGE'
+            },
+            {
+                id: 'file-6',
+                name: '근로계약서사본.pdf',
+                type: 'PDF'
+            }
+        ],
+        rejectionReason: ''
+    },
+    {
+        reviewId: 'mock-approved-2',
+        status: 'APPROVED',
+        workspaceId: 104,
+        workspaceName: 'BHC치킨 전남대후문점',
+        category: '식당',
+        district: '전남대 후문',
+        submitterId: 'user_d8p2',
+        submittedAt: '2026-06-26T18:10:00+09:00',
+        violationItems: ['OVERTIME_PAY'],
+        coworkerCount: 4,
+        simultaneousWorkers: '4명',
+        reviewText:
+            '마감 연장근무가 잦았고 초과근무 수당 정산이 애매했습니다.',
+        evidenceFiles: [
+            {
+                id: 'file-7',
+                name: '근무기록.jpg',
+                type: 'IMAGE'
+            },
+            {
+                id: 'file-8',
+                name: '급여명세서.pdf',
+                type: 'PDF'
+            }
+        ],
+        rejectionReason: ''
+    },
+    {
+        reviewId: 'mock-rejected-1',
+        status: 'REJECTED',
+        workspaceId: 105,
+        workspaceName: '이디야커피 전남대정문점',
+        category: '카페',
+        district: '정문 상권',
+        submitterId: 'user_e5r7',
+        submittedAt: '2026-06-25T11:30:00+09:00',
+        violationItems: [
+            'NO_CONTRACT',
+            'MINIMUM_WAGE',
+            'PAY_DELAY'
+        ],
+        coworkerCount: 1,
+        simultaneousWorkers: '1명',
+        reviewText:
+            '혼자 일하는 경우가 많고 쉬는 시간도 제대로 못 쉬었어요.',
+        evidenceFiles: [
+            {
+                id: 'file-9',
+                name: '캡쳐사진.jpg',
+                type: 'IMAGE'
+            }
+        ],
+        rejectionReason:
+            '제출된 인증 자료만으로는 근로 여부를 확인하기 어렵습니다. 급여 입금 내역 또는 근로계약서를 추가로 제출해주세요.'
+    }
+];
+
+let mockAdminReviews = deepClone(MOCK_ADMIN_REVIEWS);
+
+const normalizeToneKey = (value = '') =>
+    normalizeIndicatorKey(value);
+
+const buildLocalPurifyResult = (content) => {
+    const normalized = content.trim();
+
+    return {
+        source: 'fallback',
+        objective: `근로 조건과 실제 업무 환경을 기준으로 정리하면 다음과 같습니다. ${normalized} 임금 지급 기준과 근로계약서 작성 여부를 사전에 확인하면 유사한 상황을 줄이는 데 도움이 될 수 있습니다.`,
+        soft: `근무하면서 몇 가지 아쉬운 점이 있었습니다. ${normalized} 관련 절차와 소통 방식이 조금 더 정비된다면 전반적인 근무 경험이 더 나아질 것으로 보입니다.`,
+        emotional: `비슷한 상황을 겪을 분들을 위해 경험을 남깁니다. ${normalized} 걱정되는 부분은 근무 전에 한 번 더 확인하고 기록으로 남겨두는 것이 도움이 될 것 같습니다.`
+    };
+};
+
+const pickFirstString = (source, keys) => {
+    if (!source || typeof source !== 'object') {
+        return '';
+    }
+
+    for (const key of keys) {
+        const value = source[key];
+
+        if (typeof value === 'string' && value.trim()) {
+            return value.trim();
+        }
+    }
+
+    return '';
+};
+
+const pickFirstArray = (source, keys) => {
+    if (!source || typeof source !== 'object') {
+        return [];
+    }
+
+    for (const key of keys) {
+        const value = source[key];
+
+        if (Array.isArray(value)) {
+            return value;
+        }
+    }
+
+    return [];
+};
+
+const toInteger = (value) => {
+    if (typeof value === 'number' && Number.isInteger(value)) {
+        return value;
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+        const parsed = Number(value);
+
+        if (Number.isInteger(parsed)) {
+            return parsed;
+        }
+    }
+
+    return null;
+};
+
+const shouldUseMockFallback = (error) =>
+    !error?.response ||
+    [404, 405, 501].includes(error?.response?.status);
+
+const normalizeAdminStatus = (value = '') => {
+    const normalized = String(value)
+        .trim()
+        .toUpperCase();
+
+    if (
+        ['APPROVED', 'APPROVE', '승인', '승인됨'].includes(
+            normalized
+        )
+    ) {
+        return 'APPROVED';
+    }
+
+    if (
+        ['REJECTED', 'REJECT', '반려', '거절', '거절됨'].includes(
+            normalized
+        )
+    ) {
+        return 'REJECTED';
+    }
+
+    return 'PENDING';
+};
+
+const normalizeEvidenceFile = (item, index) => {
+    if (typeof item === 'string') {
+        const fileName =
+            item.split('/').pop() || `인증자료_${index + 1}`;
+
+        return {
+            id: `${fileName}-${index}`,
+            name: fileName,
+            url: item,
+            type: /\.pdf$/i.test(fileName) ? 'PDF' : 'IMAGE'
+        };
+    }
+
+    const name =
+        item?.name ||
+        item?.fileName ||
+        item?.originalFileName ||
+        item?.filename ||
+        `인증자료_${index + 1}`;
+    const contentType =
+        item?.type ||
+        item?.fileType ||
+        item?.contentType ||
+        item?.mimeType ||
+        '';
+    const normalizedType = String(contentType).toUpperCase();
+
+    return {
+        id:
+            item?.attachmentId ||
+            item?.id ||
+            item?.fileId ||
+            `${name}-${index}`,
+        name,
+        url:
+            item?.url ||
+            item?.fileUrl ||
+            item?.downloadUrl ||
+            item?.path ||
+            '',
+        type:
+            normalizedType.includes('PDF') ||
+            String(name).toLowerCase().endsWith('.pdf')
+                ? 'PDF'
+                : 'IMAGE'
+    };
+};
+
+const mapPurifyOptionKey = (item, index) => {
+    const toneKey = normalizeToneKey(
+        item?.style ||
+            item?.tone ||
+            item?.type ||
+            item?.label ||
+            item?.title
+    );
+    const optionId =
+        item?.optionId ??
+        item?.option_id ??
+        item?.id ??
+        index + 1;
+
+    if (
+        [
+            '객관형',
+            '객관적사실전달형',
+            '객관적사실형',
+            '매우건조하고객관적인사실전달형',
+            'OBJECTIVE'
+        ].includes(toneKey)
+    ) {
+        return 'objective';
+    }
+
+    if (
+        [
+            '완곡형',
+            '부드럽고완곡한경험공유형',
+            'GENTLE',
+            'SOFT'
+        ].includes(toneKey)
+    ) {
+        return 'soft';
+    }
+
+    if (
+        [
+            '감정유지형',
+            '공감호소형',
+            '감정유지하되법적문제만제거',
+            'EMOTIONAL',
+            'EMPATHY'
+        ].includes(toneKey)
+    ) {
+        return 'emotional';
+    }
+
+    if (Number(optionId) === 1) {
+        return 'objective';
+    }
+
+    if (Number(optionId) === 2) {
+        return 'soft';
+    }
+
+    if (Number(optionId) === 3) {
+        return 'emotional';
+    }
+
+    if (index === 0) {
+        return 'soft';
+    }
+
+    if (index === 1) {
+        return 'objective';
+    }
+
+    return 'emotional';
+};
+
+const normalizePurifyResponse = (payload, sourceText) => {
+    const raw = payload?.data || payload?.result || payload;
+
+    if (!raw || typeof raw !== 'object') {
+        return buildLocalPurifyResult(sourceText);
+    }
+
+    const options = pickFirstArray(raw, [
+        'purifiedOptions',
+        'purified_options',
+        'options',
+        'suggestions'
+    ]);
+
+    const mapped = {
+        source: 'remote',
+        originalText:
+            pickFirstString(raw, [
+                'originalText',
+                'original_text',
+                'reviewText'
+            ]) || sourceText,
+        riskLevel: pickFirstString(
+            raw?.riskAssessment || raw?.risk_assessment,
+            ['riskLevel', 'risk_level']
+        ),
+        detectedIssues: pickFirstArray(
+            raw?.riskAssessment || raw?.risk_assessment,
+            ['detectedIssues', 'detected_issues']
+        ),
+        reasoning: pickFirstString(
+            raw?.riskAssessment || raw?.risk_assessment,
+            ['reasoning']
+        ),
+        soft: '',
+        objective: '',
+        emotional: ''
+    };
+
+    options.forEach((item, index) => {
+        const key = mapPurifyOptionKey(item, index);
+        const text = pickFirstString(item, [
+            'text',
+            'content',
+            'value'
+        ]);
+
+        if (text) {
+            mapped[key] = text;
+        }
+    });
+
+    if (
+        mapped.objective &&
+        mapped.soft &&
+        mapped.emotional
+    ) {
+        return mapped;
+    }
+
+    return buildLocalPurifyResult(sourceText);
+};
+
+const toCoworkerText = (value) => {
+    if (Number.isInteger(value) && value >= 0) {
+        return `${value}명`;
+    }
+
+    return '';
+};
+
+const normalizeAdminReview = (item) => {
+    const workspace =
+        item?.workspace ||
+        item?.externalWorkspace ||
+        item?.place ||
+        {};
+    const review =
+        item?.review || item?.reviewData || {};
+    const reviewSource = {
+        ...review,
+        ...item
+    };
+    const coworkerCount =
+        toInteger(
+            reviewSource?.coworkerCount ??
+                reviewSource?.workerCount
+        ) ?? null;
+    const evidenceFiles = pickFirstArray(item, [
+        'attachments',
+        'evidenceFiles',
+        'proofFiles',
+        'files'
+    ]);
+
+    return {
+        reviewId:
+            item?.reviewId ||
+            item?.id ||
+            review?.reviewId ||
+            review?.id ||
+            '',
+        workspaceId:
+            item?.workspaceId ||
+            workspace?.workspaceId ||
+            workspace?.id ||
+            null,
+        workspaceName:
+            item?.workspaceName ||
+            workspace?.name ||
+            workspace?.placeName ||
+            '사업장 이름 없음',
+        category:
+            item?.category ||
+            item?.workspaceCategory ||
+            workspace?.category ||
+            workspace?.categoryName ||
+            '업종 정보 없음',
+        district:
+            item?.district ||
+            item?.workspaceDistrict ||
+            workspace?.district ||
+            workspace?.region ||
+            workspace?.address ||
+            workspace?.roadAddress ||
+            '지역 정보 없음',
+        submitterId:
+            item?.submitterId ||
+            item?.authorEmail ||
+            item?.userId ||
+            item?.writerId ||
+            item?.memberId ||
+            item?.createdBy ||
+            'unknown_user',
+        authorEmail:
+            item?.authorEmail ||
+            item?.submitterId ||
+            '',
+        submittedAt:
+            item?.submittedAt ||
+            item?.createdAt ||
+            item?.createdDate ||
+            review?.createdAt ||
+            '',
+        status: normalizeAdminStatus(
+            item?.status ||
+                item?.reviewStatus ||
+                item?.moderationStatus
+        ),
+        violationItems: getViolationIndicatorIds(reviewSource),
+        coworkerCount,
+        simultaneousWorkers:
+            toCoworkerText(coworkerCount) ||
+            pickFirstString(reviewSource, [
+                'simultaneousWorkers',
+                'workerCountText',
+                'workersSummary'
+            ]),
+        reviewText:
+            pickFirstString(reviewSource, [
+                'content',
+                'reviewText',
+                'subjectiveReview',
+                'originalText',
+                'original_text'
+            ]) || '',
+        purifiedText: pickFirstString(reviewSource, [
+            'purifiedText',
+            'purifiedContent',
+            'sanitizedContent'
+        ]),
+        evidenceFiles: evidenceFiles.map(
+            normalizeEvidenceFile
+        ),
+        rejectionReason:
+            pickFirstString(item, [
+                'rejectionReason',
+                'rejectReason',
+                'adminMemo'
+            ]) || '',
+        cleanScore: toInteger(item?.cleanScore),
+        workspaceStatus:
+            pickFirstString(item, [
+                'workspaceStatus'
+            ]) || ''
+    };
+};
+
+const sortAdminReviews = (reviews) =>
+    reviews.slice().sort((left, right) => {
+        const leftTime = new Date(
+            left.submittedAt || 0
+        ).getTime();
+        const rightTime = new Date(
+            right.submittedAt || 0
+        ).getTime();
+
+        return rightTime - leftTime;
+    });
+
+const fetchAdminReviewPage = async (status) => {
+    const response = await api.get('/admin/reviews', {
+        params: {
+            status,
+            page: 0,
+            size: DEFAULT_ADMIN_PAGE_SIZE
+        }
+    });
+    const raw = response.data?.data || response.data;
+    const content = Array.isArray(raw?.content)
+        ? raw.content
+        : [];
+
+    return {
+        reviews: content.map(normalizeAdminReview),
+        totalElements:
+            toInteger(raw?.totalElements) ||
+            content.length
+    };
+};
+
+const createReview = async (workspaceId, reviewData) => {
+    const response = await api.post(
+        `/workspaces/${workspaceId}/reviews`,
+        reviewData
+    );
+
+    return response.data?.data || response.data;
+};
+
+const uploadReviewAttachment = async (reviewId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await api.post(
+        `/reviews/${reviewId}/attachments`,
+        formData
+    );
+
+    return response.data?.data || response.data;
+};
+
+export const submitReview = async ({
+    workspaceId,
+    reviewData,
+    evidenceFiles = []
+}) => {
+    if (!workspaceId) {
+        throw new Error(
+            '리뷰를 작성할 사업장 ID가 없습니다.'
+        );
+    }
+
+    const createdReview = await createReview(
+        workspaceId,
+        reviewData
+    );
+
+    const uploadedAttachments = [];
+
+    for (const file of evidenceFiles) {
+        uploadedAttachments.push(
+            await uploadReviewAttachment(
+                createdReview.reviewId,
+                file
+            )
+        );
+    }
+
+    return {
+        ...createdReview,
+        attachments: uploadedAttachments
+    };
+};
+
+export const purifyReview = async (content) => {
+    try {
+        const response = await api.post(
+            '/reviews/purity-preview',
+            {
+                reviewText: content
+            },
+            {
+                useAuth: false
+            }
+        );
+
+        return normalizePurifyResponse(
+            response.data,
+            content
+        );
+    } catch (error) {
+        console.warn(
+            'AI 순화 API 응답을 받지 못해 예비 문안을 사용합니다.',
+            error
+        );
+
+        return buildLocalPurifyResult(content);
+    }
+};
+
+export const getAdminReviews = async (status = null) => {
+    try {
+        if (status) {
+            const result = await fetchAdminReviewPage(
+                normalizeAdminStatus(status)
+            );
+
+            return sortAdminReviews(result.reviews);
+        }
+
+        const results = await Promise.all(
+            ADMIN_STATUSES.map(fetchAdminReviewPage)
+        );
+
+        return sortAdminReviews(
+            results.flatMap((result) => result.reviews)
+        );
+    } catch (error) {
+        if (!shouldUseMockFallback(error)) {
+            throw error;
+        }
+
+        console.warn(
+            '관리자 리뷰 목록 API 응답을 받지 못해 목업 데이터를 사용합니다.',
+            error
+        );
+
+        const filtered = status
+            ? mockAdminReviews.filter(
+                  (item) =>
+                      item.status ===
+                      normalizeAdminStatus(status)
+              )
+            : mockAdminReviews;
+
+        return sortAdminReviews(deepClone(filtered));
+    }
+};
+
+export const getAdminReviewDetail = async (reviewId) => {
+    try {
+        const response = await api.get(
+            `/admin/reviews/${reviewId}`
+        );
+
+        return normalizeAdminReview(
+            response.data?.data || response.data
+        );
+    } catch (error) {
+        if (!shouldUseMockFallback(error)) {
+            throw error;
+        }
+
+        console.warn(
+            '관리자 리뷰 상세 API 응답을 받지 못해 목업 데이터를 사용합니다.',
+            error
+        );
+
+        const matched = mockAdminReviews.find(
+            (item) =>
+                String(item.reviewId) === String(reviewId)
+        );
+
+        if (!matched) {
+            throw new Error(
+                '검수 상세 데이터를 찾을 수 없습니다.'
+            );
+        }
+
+        return deepClone(matched);
+    }
+};
+
+export const updateAdminReviewStatus = async ({
+    reviewId,
+    status,
+    rejectionReason = ''
+}) => {
+    const normalizedStatus =
+        normalizeAdminStatus(status);
+
+    try {
+        const response = await api.patch(
+            `/admin/reviews/${reviewId}/status`,
+            {
+                status: normalizedStatus
+            }
+        );
+        const raw = response.data?.data || response.data;
+
+        return {
+            reviewId:
+                raw?.reviewId || Number(reviewId) || reviewId,
+            status: normalizeAdminStatus(raw?.status),
+            cleanScore: toInteger(raw?.cleanScore),
+            workspaceStatus:
+                pickFirstString(raw, [
+                    'workspaceStatus'
+                ]) || ''
+        };
+    } catch (error) {
+        if (!shouldUseMockFallback(error)) {
+            throw error;
+        }
+
+        console.warn(
+            '관리자 상태 변경 API 응답을 받지 못해 로컬 목업 상태를 갱신합니다.',
+            error
+        );
+
+        mockAdminReviews = mockAdminReviews.map((item) =>
+            String(item.reviewId) === String(reviewId)
+                ? {
+                      ...item,
+                      status: normalizedStatus,
+                      rejectionReason:
+                          normalizedStatus ===
+                          'REJECTED'
+                              ? rejectionReason
+                              : ''
+                  }
+                : item
+        );
+
+        return {
+            reviewId,
+            status: normalizedStatus,
+            cleanScore: null,
+            workspaceStatus: ''
+        };
+    }
+};
+
+export const getAdminStats = async () => {
+    try {
+        const response = await api.get('/admin/stats');
+        const raw = response.data?.data || response.data;
+
+        return {
+            totalReviews:
+                toInteger(raw?.totalReviews) || 0,
+            pendingReviews:
+                toInteger(raw?.pendingReviews) || 0,
+            approvedReviews:
+                toInteger(raw?.approvedReviews) || 0,
+            rejectedReviews:
+                toInteger(raw?.rejectedReviews) || 0,
+            totalWorkspaces:
+                toInteger(raw?.totalWorkspaces) || 0
+        };
+    } catch (error) {
+        if (!shouldUseMockFallback(error)) {
+            throw error;
+        }
+
+        const pendingReviews = mockAdminReviews.filter(
+            (item) => item.status === 'PENDING'
+        ).length;
+        const approvedReviews = mockAdminReviews.filter(
+            (item) => item.status === 'APPROVED'
+        ).length;
+        const rejectedReviews = mockAdminReviews.filter(
+            (item) => item.status === 'REJECTED'
+        ).length;
+
+        return {
+            totalReviews: mockAdminReviews.length,
+            pendingReviews,
+            approvedReviews,
+            rejectedReviews,
+            totalWorkspaces: new Set(
+                mockAdminReviews.map((item) => item.workspaceId)
+            ).size
+        };
+    }
+};

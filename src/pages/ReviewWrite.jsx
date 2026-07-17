@@ -1,485 +1,941 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+    useEffect,
+    useMemo,
+    useRef,
+    useState
+} from 'react';
 import {
     useLocation,
     useNavigate,
     useParams
 } from 'react-router-dom';
+import { submitReview, purifyReview } from '../api/reviews';
+import {
+    getWorkspaceDetail,
+    resolveWorkspace
+} from '../api/workspace';
+import {
+    buildReviewRequestPayload,
+    REVIEW_FORM_INDICATORS
+} from '../constants/reviewIndicators';
+import ReviewPurifyModal from '../components/ai/ReviewPurifyModal';
+import {
+    beginKakaoLogin,
+    clearStoredAuth,
+    getStoredAuth
+} from '../utils/auth';
 
-const API_BASE_URL = 'https://cleanalb-map.duckdns.org';
-
-const KAKAO_REST_API_KEY =
-    import.meta.env.VITE_KAKAO_REST_API_KEY;
-
-const KAKAO_REDIRECT_URI =
-    import.meta.env.VITE_KAKAO_REDIRECT_URI;
-
-const VIOLATION_ITEMS = [
-    { id: 'NO_CONTRACT', label: '근로계약서 미작성' },
-    { id: 'MINIMUM_WAGE', label: '최저시급 미준수' },
-    { id: 'WEEKLY_ALLOWANCE', label: '주휴수당 미지급' },
-    { id: 'BREAK_TIME', label: '휴게시간 부족' },
-    { id: 'PAY_DELAY', label: '급여 지급 지연' },
-    { id: 'SCHEDULE_CHANGE', label: '사전 협의 없는 스케줄 변경' },
-    { id: 'VERBAL_ABUSE', label: '반복적이고 지속적인 대타 요구 및 강요' },
-    { id: 'OVERTIME_PAY', label: '초과근무 급여 미지급' }
+const MIN_REVIEW_LENGTH = 10;
+const MAX_EVIDENCE_FILES = 5;
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const ALLOWED_FILE_EXTENSIONS = [
+    'jpg',
+    'jpeg',
+    'png',
+    'pdf'
 ];
 
-const AI_REWRITE_OPTIONS = [
+const PURIFY_OPTIONS = [
     {
         id: 'soft',
         title: '완곡형',
-        description: '부드럽고 완화된 표현으로 감정 충돌 없이 전달',
-        accentColor: '#19b977'
+        subtitle: '부드럽고 완화된 표현으로 감정 충돌 없이 전달',
+        accentColor: '#1fd19a'
     },
     {
         id: 'objective',
-        title: '객관적 사실형',
-        description: '감정 없이 사실만 간결하게 기록한 진술체',
-        accentColor: '#4169e1'
+        title: '객관형',
+        subtitle: '감정 없이 사실만 간결하게 기록한 진술체',
+        accentColor: '#4a72ff'
     },
     {
-        id: 'empathy',
-        title: '공감호소형',
-        description: '같은 처지의 아르바이트생에게 공감을 이끄는 문체',
-        accentColor: '#ff7a00'
+        id: 'emotional',
+        title: '감정유지형',
+        subtitle: '원문 뉘앙스를 살리되 표현을 한층 순화',
+        accentColor: '#ff7b1a'
     }
 ];
 
-const safelyParseJson = (value) => {
-    try {
-        return JSON.parse(value);
-    } catch {
-        return null;
+const isImageFile = (file) =>
+    file.type.startsWith('image/');
+
+const formatFileSize = (bytes) => {
+    if (bytes < 1024 * 1024) {
+        return `${Math.round(bytes / 1024)}KB`;
+    }
+
+    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+};
+
+const getFileExtension = (fileName = '') =>
+    fileName.split('.').pop()?.toLowerCase() || '';
+
+const isAllowedEvidenceFile = (file) => {
+    const extension = getFileExtension(file.name);
+
+    return (
+        ALLOWED_FILE_EXTENSIONS.includes(extension) ||
+        ['image/jpeg', 'image/png', 'application/pdf'].includes(
+            file.type
+        )
+    );
+};
+
+const readWorkspaceName = (workspace) =>
+    workspace?.name ||
+    workspace?.placeName ||
+    workspace?.place_name ||
+    '선택한 사업장';
+
+const readWorkspaceCategory = (workspace) =>
+    workspace?.category ||
+    workspace?.categoryName ||
+    workspace?.category_name ||
+    '업종 정보 없음';
+
+const readWorkspaceAddress = (workspace) =>
+    workspace?.address ||
+    workspace?.roadAddress ||
+    workspace?.addressName ||
+    workspace?.address_name ||
+    workspace?.road_address_name ||
+    '주소 정보 없음';
+
+const buildResolveWorkspacePayload = (workspace) => ({
+    kakaoPlaceId:
+        String(
+            workspace?.kakaoPlaceId ||
+                workspace?.providerPlaceId ||
+                workspace?.id ||
+                ''
+        ).trim(),
+    name: readWorkspaceName(workspace),
+    address:
+        workspace?.address ||
+        workspace?.addressName ||
+        workspace?.address_name ||
+        '',
+    category: readWorkspaceCategory(workspace),
+    latitude: Number(
+        workspace?.latitude ?? workspace?.y
+    ),
+    longitude: Number(
+        workspace?.longitude ?? workspace?.x
+    )
+});
+
+const createEvidenceItem = (file) => ({
+    id: `${file.name}-${file.size}-${file.lastModified}`,
+    file,
+    isImage: isImageFile(file),
+    previewUrl: isImageFile(file)
+        ? URL.createObjectURL(file)
+        : null
+});
+
+const revokeEvidencePreview = (item) => {
+    if (item?.previewUrl) {
+        URL.revokeObjectURL(item.previewUrl);
     }
 };
+
+const useIsMobile = () => {
+    const getInitialValue = () =>
+        typeof window !== 'undefined'
+            ? window.matchMedia('(max-width: 720px)').matches
+            : false;
+
+    const [isMobile, setIsMobile] = useState(getInitialValue);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') {
+            return undefined;
+        }
+
+        const mediaQuery = window.matchMedia(
+            '(max-width: 720px)'
+        );
+
+        const handleChange = (event) => {
+            setIsMobile(event.matches);
+        };
+
+        setIsMobile(mediaQuery.matches);
+
+        if (mediaQuery.addEventListener) {
+            mediaQuery.addEventListener(
+                'change',
+                handleChange
+            );
+
+            return () =>
+                mediaQuery.removeEventListener(
+                    'change',
+                    handleChange
+                );
+        }
+
+        mediaQuery.addListener(handleChange);
+
+        return () => mediaQuery.removeListener(handleChange);
+    }, []);
+
+    return isMobile;
+};
+
+const EvidencePreviewList = ({
+    evidenceItems,
+    onRemove,
+    isMobile
+}) => (
+    <div
+        style={{
+            ...previewGridStyle,
+            gridTemplateColumns: isMobile
+                ? '1fr'
+                : 'repeat(2, minmax(0, 1fr))'
+        }}
+    >
+        {evidenceItems.map((item) => (
+            <article
+                key={item.id}
+                style={previewCardStyle}
+            >
+                <div style={previewThumbStyle}>
+                    {item.isImage ? (
+                        <img
+                            src={item.previewUrl}
+                            alt={item.file.name}
+                            style={previewImageStyle}
+                        />
+                    ) : (
+                        <div style={pdfThumbStyle}>PDF</div>
+                    )}
+                </div>
+
+                <div style={previewMetaStyle}>
+                    <strong style={previewNameStyle}>
+                        {item.file.name}
+                    </strong>
+                    <span style={previewSubTextStyle}>
+                        {formatFileSize(item.file.size)}
+                    </span>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => onRemove(item.id)}
+                    style={previewRemoveButtonStyle}
+                >
+                    삭제
+                </button>
+            </article>
+        ))}
+    </div>
+);
+
+const PurifyModal = ({
+    isOpen,
+    isLoading,
+    selectedTone,
+    suggestions,
+    onSelect,
+    onApply,
+    onClose
+}) => {
+    if (!isOpen) {
+        return null;
+    }
+
+    return (
+        <div
+            style={modalOverlayStyle}
+            onClick={onClose}
+        >
+            <section
+                role="dialog"
+                aria-modal="true"
+                aria-label="AI 후기 순화"
+                style={modalCardStyle}
+                onClick={(event) => event.stopPropagation()}
+            >
+                <div style={modalHandleStyle} />
+
+                <div style={modalHeaderStyle}>
+                    <h2 style={modalTitleStyle}>AI 후기 순화</h2>
+
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        style={modalCloseButtonStyle}
+                        aria-label="AI 후기 순화 닫기"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <div style={modalBodyStyle}>
+                    {isLoading ? (
+                        <div style={modalLoadingStyle}>
+                            AI가 표현을 정리하고 있습니다.
+                        </div>
+                    ) : (
+                        PURIFY_OPTIONS.map((option) => {
+                            const isSelected =
+                                selectedTone === option.id;
+
+                            return (
+                                <button
+                                    type="button"
+                                    key={option.id}
+                                    onClick={() =>
+                                        onSelect(option.id)
+                                    }
+                                    style={{
+                                        ...toneCardStyle,
+                                        borderColor: isSelected
+                                            ? option.accentColor
+                                            : '#e6e9ee',
+                                        backgroundColor: isSelected
+                                            ? `${option.accentColor}14`
+                                            : '#ffffff'
+                                    }}
+                                >
+                                    <div
+                                        style={toneCardHeaderStyle}
+                                    >
+                                        <div>
+                                            <div
+                                                style={{
+                                                    ...toneTitleStyle,
+                                                    color: isSelected
+                                                        ? option.accentColor
+                                                        : '#1f2430'
+                                                }}
+                                            >
+                                                {option.title}
+                                            </div>
+                                            <p
+                                                style={{
+                                                    ...toneSubtitleStyle,
+                                                    color: isSelected
+                                                        ? option.accentColor
+                                                        : '#98a0ab'
+                                                }}
+                                            >
+                                                {option.subtitle}
+                                            </p>
+                                        </div>
+
+                                        <span
+                                            style={{
+                                                ...toneRadioStyle,
+                                                borderColor: isSelected
+                                                    ? option.accentColor
+                                                    : '#d2d8e0',
+                                                backgroundColor: isSelected
+                                                    ? option.accentColor
+                                                    : '#ffffff'
+                                            }}
+                                        >
+                                            {isSelected ? '✓' : ''}
+                                        </span>
+                                    </div>
+
+                                    <div style={toneTextStyle}>
+                                        {suggestions[option.id] ||
+                                            '순화 결과를 준비하고 있습니다.'}
+                                    </div>
+                                </button>
+                            );
+                        })
+                    )}
+                </div>
+
+                <div style={modalFooterStyle}>
+                    <button
+                        type="button"
+                        onClick={onApply}
+                        disabled={isLoading}
+                        style={{
+                            ...applyButtonStyle,
+                            opacity: isLoading ? 0.6 : 1
+                        }}
+                    >
+                        이 버전으로 적용하기
+                        <span aria-hidden="true">›</span>
+                    </button>
+                </div>
+            </section>
+        </div>
+    );
+};
+
+const SubmissionOverlay = ({
+    onGoHome
+}) => (
+    <div style={submissionOverlayStyle}>
+        <div style={submissionCardStyle}>
+            <div style={submissionBadgeStyle}>
+                관리자 검수 중
+            </div>
+
+            <div style={submissionIconStyle}>✓</div>
+
+            <h2 style={submissionTitleStyle}>
+                후기 제출이 완료되었습니다.
+            </h2>
+
+            <p style={submissionTextStyle}>
+                관리자에 의해 검수중입니다
+            </p>
+
+            <button
+                type="button"
+                onClick={onGoHome}
+                style={submissionButtonStyle}
+            >
+                홈으로 돌아가기
+            </button>
+        </div>
+    </div>
+);
 
 const ReviewWrite = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { workspaceId } = useParams();
+    const { workspaceId: workspaceIdParam } = useParams();
     const fileInputRef = useRef(null);
+    const evidenceItemsRef = useRef([]);
+    const isMobile = useIsMobile();
 
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [nickname, setNickname] = useState('');
-    const [isAdmin, setIsAdmin] = useState(false);
-
+    const [authState, setAuthState] = useState(
+        getStoredAuth()
+    );
     const [workspace, setWorkspace] = useState(
         location.state?.workspace || null
     );
-    const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(false);
+    const [workspaceError, setWorkspaceError] = useState('');
+    const [isWorkspaceLoading, setIsWorkspaceLoading] =
+        useState(false);
+    const [isWorkspaceResolving, setIsWorkspaceResolving] =
+        useState(false);
 
-    const [violations, setViolations] = useState([]);
-    const [simultaneousWorkers, setSimultaneousWorkers] = useState('');
-    const [evidenceFiles, setEvidenceFiles] = useState([]);
+    const [selectedViolations, setSelectedViolations] =
+        useState([]);
+    const [simultaneousWorkers, setSimultaneousWorkers] =
+        useState('');
     const [reviewText, setReviewText] = useState('');
+    const [evidenceItems, setEvidenceItems] = useState([]);
 
-    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-    const [selectedAiOption, setSelectedAiOption] = useState('objective');
-    const [aiCandidates, setAiCandidates] = useState({});
-    const [isAiLoading, setIsAiLoading] = useState(false);
+    const [uploadMessage, setUploadMessage] = useState('');
+    const [formErrorMessage, setFormErrorMessage] =
+        useState('');
+    const [aiNoticeMessage, setAiNoticeMessage] =
+        useState('');
+
+    const [isPurifyModalOpen, setIsPurifyModalOpen] =
+        useState(false);
+    const [isPurifyLoading, setIsPurifyLoading] =
+        useState(false);
+    const [selectedTone, setSelectedTone] = useState('soft');
+    const [purifySuggestions, setPurifySuggestions] =
+        useState({});
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
+    const [isSubmissionComplete, setIsSubmissionComplete] =
+        useState(false);
 
-    const isNewWorkspace = workspaceId === 'new';
-
-    useEffect(() => {
-        const token = localStorage.getItem('jwt_token');
-        const savedNickname = localStorage.getItem('user_nickname');
-        const userRole = localStorage.getItem('user_role');
-
-        if (token) {
-            setIsLoggedIn(true);
-            setNickname(savedNickname || '');
-            setIsAdmin(userRole === 'ADMIN');
+    const numericWorkspaceId = useMemo(() => {
+        if (
+            !workspaceIdParam ||
+            workspaceIdParam === 'new'
+        ) {
+            return null;
         }
-    }, []);
+
+        const parsed = Number(workspaceIdParam);
+
+        return Number.isFinite(parsed) ? parsed : null;
+    }, [workspaceIdParam]);
+
+    const resolvedWorkspaceId = useMemo(() => {
+        if (numericWorkspaceId) {
+            return numericWorkspaceId;
+        }
+
+        const fallbackId = Number(
+            workspace?.workspaceId || workspace?.id
+        );
+
+        return Number.isFinite(fallbackId)
+            ? fallbackId
+            : null;
+    }, [numericWorkspaceId, workspace]);
+
+    const coworkerCount = useMemo(() => {
+        if (!simultaneousWorkers.trim()) {
+            return null;
+        }
+
+        const parsed = Number(simultaneousWorkers);
+
+        return Number.isInteger(parsed) && parsed >= 0
+            ? parsed
+            : null;
+    }, [simultaneousWorkers]);
+
+    const isFormValid = useMemo(
+        () =>
+            coworkerCount !== null &&
+            evidenceItems.length > 0 &&
+            reviewText.trim().length >= MIN_REVIEW_LENGTH,
+        [
+            coworkerCount,
+            evidenceItems.length,
+            reviewText
+        ]
+    );
 
     useEffect(() => {
-        if (workspace) return;
+        if (location.state?.workspace) {
+            setWorkspace(location.state.workspace);
+        }
+    }, [location.state]);
 
-        if (isNewWorkspace) {
-            const savedPlace = safelyParseJson(
-                sessionStorage.getItem('selected_kakao_place')
+    useEffect(() => {
+        if (workspace) {
+            return undefined;
+        }
+
+        if (!numericWorkspaceId) {
+            const savedPlace = sessionStorage.getItem(
+                'selected_kakao_place'
             );
 
             if (savedPlace) {
-                setWorkspace(savedPlace);
+                try {
+                    setWorkspace(JSON.parse(savedPlace));
+                    return undefined;
+                } catch (error) {
+                    console.warn(
+                        '선택한 사업장 임시 정보를 복원하지 못했습니다.',
+                        error
+                    );
+                }
             }
 
-            return;
+            setWorkspaceError(
+                '선택된 사업장 정보가 없습니다. 다시 선택해 주세요.'
+            );
+            return undefined;
         }
 
-        if (!workspaceId) return;
+        let isMounted = true;
 
         const fetchWorkspace = async () => {
+            setWorkspaceError('');
             setIsWorkspaceLoading(true);
 
             try {
-                const response = await fetch(
-                    `${API_BASE_URL}/workspaces/${workspaceId}`
+                const data = await getWorkspaceDetail(
+                    numericWorkspaceId
                 );
 
-                if (!response.ok) {
-                    throw new Error(
-                        `사업장 정보 조회 실패: ${response.status}`
+                if (isMounted) {
+                    setWorkspace(data);
+                }
+            } catch (error) {
+                console.error(
+                    '사업장 상세 정보를 불러오지 못했습니다.',
+                    error
+                );
+
+                if (isMounted) {
+                    setWorkspaceError(
+                        '사업장 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
                     );
                 }
-
-                const data = await response.json();
-                setWorkspace(data);
-            } catch (error) {
-                console.error('사업장 정보 조회 오류:', error);
             } finally {
-                setIsWorkspaceLoading(false);
+                if (isMounted) {
+                    setIsWorkspaceLoading(false);
+                }
             }
         };
 
         fetchWorkspace();
-    }, [isNewWorkspace, workspace, workspaceId]);
 
-    const handleKakaoLogin = () => {
-        if (!KAKAO_REST_API_KEY || !KAKAO_REDIRECT_URI) {
-            alert('카카오 로그인 설정을 확인해 주세요.');
-            return;
+        return () => {
+            isMounted = false;
+        };
+    }, [numericWorkspaceId, workspace]);
+
+    useEffect(() => {
+        if (
+            !authState.isLoggedIn ||
+            !workspace ||
+            resolvedWorkspaceId ||
+            isWorkspaceResolving
+        ) {
+            return undefined;
         }
 
-        const state = window.crypto?.randomUUID
-            ? window.crypto.randomUUID()
-            : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const resolvePayload =
+            buildResolveWorkspacePayload(workspace);
 
-        sessionStorage.setItem('kakao_oauth_state', state);
+        if (
+            !resolvePayload.kakaoPlaceId ||
+            !Number.isFinite(resolvePayload.latitude) ||
+            !Number.isFinite(resolvePayload.longitude)
+        ) {
+            return undefined;
+        }
 
-        const params = new URLSearchParams({
-            response_type: 'code',
-            client_id: KAKAO_REST_API_KEY,
-            redirect_uri: KAKAO_REDIRECT_URI,
-            state
-        });
+        let isMounted = true;
 
-        window.location.assign(
-            `https://kauth.kakao.com/oauth/authorize?${params.toString()}`
-        );
+        const syncWorkspace = async () => {
+            setIsWorkspaceResolving(true);
+            setWorkspaceError('');
+
+            try {
+                const data = await resolveWorkspace(
+                    resolvePayload
+                );
+
+                if (!isMounted) {
+                    return;
+                }
+
+                setWorkspace((current) => ({
+                    ...current,
+                    workspaceId: data.workspaceId,
+                    existing: true
+                }));
+            } catch (error) {
+                console.error(
+                    '사업장 정보를 동기화하지 못했습니다.',
+                    error
+                );
+
+                if (isMounted) {
+                    setWorkspaceError(
+                        '사업장 정보를 등록하지 못했습니다. 다시 시도해 주세요.'
+                    );
+                }
+            } finally {
+                if (isMounted) {
+                    setIsWorkspaceResolving(false);
+                }
+            }
+        };
+
+        syncWorkspace();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [
+        authState.isLoggedIn,
+        isWorkspaceResolving,
+        resolvedWorkspaceId,
+        workspace
+    ]);
+
+    useEffect(() => {
+        evidenceItemsRef.current = evidenceItems;
+    }, [evidenceItems]);
+
+    useEffect(
+        () => () => {
+            evidenceItemsRef.current.forEach(
+                revokeEvidencePreview
+            );
+        },
+        []
+    );
+
+    const handleKakaoLogin = () => {
+        const hasStarted = beginKakaoLogin();
+
+        if (!hasStarted) {
+            alert('카카오 로그인 설정을 확인해 주세요.');
+        }
     };
 
     const handleLogout = () => {
-        localStorage.clear();
-        setIsLoggedIn(false);
-        setNickname('');
-        setIsAdmin(false);
+        clearStoredAuth();
+        setAuthState(getStoredAuth());
         navigate('/');
     };
 
     const toggleViolation = (itemId) => {
-        setViolations((current) =>
+        setSelectedViolations((current) =>
             current.includes(itemId)
                 ? current.filter((id) => id !== itemId)
                 : [...current, itemId]
         );
+        setFormErrorMessage('');
     };
 
-    const addEvidenceFiles = (files) => {
-        const acceptedFiles = Array.from(files).filter((file) => {
-            const isAcceptedType =
-                file.type.startsWith('image/') ||
-                file.type === 'application/pdf';
+    const handleAddFiles = (files) => {
+        const warnings = [];
 
-            return isAcceptedType;
+        setEvidenceItems((current) => {
+            const nextItems = [...current];
+
+            Array.from(files).forEach((file) => {
+                if (!isAllowedEvidenceFile(file)) {
+                    warnings.push(
+                        `${file.name}은(는) JPG, JPEG, PNG, PDF만 업로드할 수 있습니다.`
+                    );
+                    return;
+                }
+
+                if (file.size > MAX_FILE_SIZE_BYTES) {
+                    warnings.push(
+                        `${file.name}은(는) 10MB 이하 파일만 업로드할 수 있습니다.`
+                    );
+                    return;
+                }
+
+                const nextId = `${file.name}-${file.size}-${file.lastModified}`;
+                const isDuplicate = nextItems.some(
+                    (item) => item.id === nextId
+                );
+
+                if (isDuplicate) {
+                    warnings.push(
+                        `${file.name}은(는) 이미 추가된 파일입니다.`
+                    );
+                    return;
+                }
+
+                if (nextItems.length >= MAX_EVIDENCE_FILES) {
+                    warnings.push(
+                        `증빙 자료는 최대 ${MAX_EVIDENCE_FILES}개까지 업로드할 수 있습니다.`
+                    );
+                    return;
+                }
+
+                nextItems.push(createEvidenceItem(file));
+            });
+
+            return nextItems;
         });
 
-        setEvidenceFiles((current) => {
-            const merged = [...current, ...acceptedFiles];
-
-            return merged
-                .filter(
-                    (file, index, list) =>
-                        list.findIndex(
-                            (candidate) =>
-                                candidate.name === file.name &&
-                                candidate.size === file.size
-                        ) === index
-                )
-                .slice(0, 10);
-        });
+        setUploadMessage(warnings[0] || '');
+        setFormErrorMessage('');
     };
 
     const handleFileChange = (event) => {
-        addEvidenceFiles(event.target.files);
+        if (event.target.files?.length) {
+            handleAddFiles(event.target.files);
+        }
+
         event.target.value = '';
     };
 
     const handleFileDrop = (event) => {
         event.preventDefault();
-        addEvidenceFiles(event.dataTransfer.files);
+
+        if (event.dataTransfer.files?.length) {
+            handleAddFiles(event.dataTransfer.files);
+        }
     };
 
-    const removeEvidenceFile = (targetIndex) => {
-        setEvidenceFiles((current) =>
-            current.filter((_, index) => index !== targetIndex)
-        );
+    const handleRemoveEvidence = (itemId) => {
+        setEvidenceItems((current) => {
+            const target = current.find(
+                (item) => item.id === itemId
+            );
+
+            revokeEvidencePreview(target);
+
+            return current.filter(
+                (item) => item.id !== itemId
+            );
+        });
     };
 
-    const isFormValid = useMemo(() => {
-        return (
-            violations.length > 0 &&
-            simultaneousWorkers.trim().length > 0 &&
-            evidenceFiles.length > 0 &&
-            reviewText.trim().length >= 10
-        );
-    }, [
-        evidenceFiles.length,
-        reviewText,
-        simultaneousWorkers,
-        violations.length
-    ]);
-
-    const buildLocalAiCandidates = (sourceText) => {
-        const normalized = sourceText.trim();
-
-        return {
-            soft: `근무 환경에서 다소 아쉬운 점이 있었습니다. ${normalized} 전반적으로 관련 절차와 근무 여건이 조금 더 체계적으로 정비된다면 더 나은 근무 환경이 될 것 같습니다.`,
-            objective: `근로계약서 작성 여부, 임금 지급 기준, 초과근무 수당 지급 여부 등 근로 조건과 관련된 사실을 확인할 필요가 있습니다. 작성자가 경험한 내용은 다음과 같습니다. ${normalized}`,
-            empathy: `비슷한 환경에서 근무하는 분들이 참고할 수 있도록 경험을 공유합니다. ${normalized} 근무를 시작하기 전에 계약 조건과 급여 지급 기준을 미리 확인하는 것이 도움이 될 것 같습니다.`
-        };
-    };
-
-    const openAiRewriteModal = async () => {
-        if (reviewText.trim().length < 10) {
-            setErrorMessage('AI 후기 순화를 사용하려면 후기를 10자 이상 작성해 주세요.');
+    const openPurifyModal = async () => {
+        if (reviewText.trim().length < MIN_REVIEW_LENGTH) {
+            setFormErrorMessage(
+                `AI 후기 순화는 최소 ${MIN_REVIEW_LENGTH}자 이상 작성해야 사용할 수 있습니다.`
+            );
             return;
         }
 
-        setErrorMessage('');
-        setIsAiLoading(true);
-        setIsAiModalOpen(true);
+        setAiNoticeMessage('');
+        setFormErrorMessage('');
+        setIsPurifyLoading(true);
+        setIsPurifyModalOpen(true);
+        setSelectedTone('soft');
 
         try {
-            // 백엔드 AI 순화 API가 준비되면 이 요청으로 교체할 수 있습니다.
-            // const response = await fetch(`${API_BASE_URL}/api/reviews/rewrite`, {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ content: reviewText })
-            // });
-            // const data = await response.json();
-            // setAiCandidates(data);
+            const result = await purifyReview(
+                reviewText.trim()
+            );
 
-            await new Promise((resolve) => setTimeout(resolve, 250));
-            setAiCandidates(buildLocalAiCandidates(reviewText));
+            setPurifySuggestions({
+                objective: result.objective,
+                soft: result.soft,
+                emotional: result.emotional
+            });
+
+            if (result.source === 'fallback') {
+                setAiNoticeMessage(
+                    'AI 응답이 지연되어 예비 순화 문안을 먼저 보여드리고 있습니다.'
+                );
+            }
+        } catch (error) {
+            console.error(
+                'AI 후기 순화 요청에 실패했습니다.',
+                error
+            );
+            setFormErrorMessage(
+                'AI 후기 순화 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+            );
+            setIsPurifyModalOpen(false);
         } finally {
-            setIsAiLoading(false);
+            setIsPurifyLoading(false);
         }
     };
 
-    const applyAiRewrite = () => {
-        const selectedText = aiCandidates[selectedAiOption];
+    const handleApplyPurifiedText = () => {
+        const selectedText =
+            purifySuggestions[selectedTone];
 
         if (selectedText) {
             setReviewText(selectedText);
+            setFormErrorMessage('');
         }
 
-        setIsAiModalOpen(false);
+        setIsPurifyModalOpen(false);
     };
 
     const handleSubmit = async () => {
-        if (!isLoggedIn) {
-            alert('후기를 제출하려면 먼저 로그인해 주세요.');
+        if (!authState.isLoggedIn) {
             handleKakaoLogin();
             return;
         }
 
+        if (!workspace && !resolvedWorkspaceId) {
+            setFormErrorMessage(
+                '사업장 정보가 없어 제출할 수 없습니다. 다시 선택해 주세요.'
+            );
+            return;
+        }
+
+        if (!resolvedWorkspaceId) {
+            setFormErrorMessage(
+                '사업장 정보를 동기화하는 중입니다. 잠시 후 다시 시도해 주세요.'
+            );
+            return;
+        }
+
         if (!isFormValid) {
-            setErrorMessage('필수 항목을 모두 입력해 주세요.');
+            setFormErrorMessage(
+                '필수 항목을 모두 입력한 뒤 제출해 주세요.'
+            );
             return;
         }
 
         setIsSubmitting(true);
-        setErrorMessage('');
+        setFormErrorMessage('');
 
         try {
-            const payload = {
-                workspaceId: isNewWorkspace
-                    ? null
-                    : Number(workspaceId),
-                externalWorkspace: isNewWorkspace
-                    ? {
-                          provider: 'KAKAO',
-                          providerPlaceId:
-                              workspace?.kakaoPlaceId ||
-                              workspace?.providerPlaceId ||
-                              workspace?.id,
-                          name:
-                              workspace?.name ||
-                              workspace?.placeName ||
-                              workspace?.place_name,
-                          category:
-                              workspace?.category ||
-                              workspace?.categoryName ||
-                              workspace?.category_name,
-                          address:
-                              workspace?.address ||
-                              workspace?.addressName ||
-                              workspace?.address_name,
-                          roadAddress:
-                              workspace?.roadAddress ||
-                              workspace?.road_address_name,
-                          latitude:
-                              workspace?.latitude ||
-                              workspace?.y,
-                          longitude:
-                              workspace?.longitude ||
-                              workspace?.x,
-                          phone: workspace?.phone || '',
-                          placeUrl:
-                              workspace?.kakaoPlaceUrl ||
-                              workspace?.placeUrl ||
-                              workspace?.place_url
-                      }
-                    : null,
-                review: {
-                    violationItems: violations,
-                    simultaneousWorkers,
+            await submitReview({
+                workspaceId: resolvedWorkspaceId,
+                reviewData: buildReviewRequestPayload({
+                    selectedIndicatorIds: selectedViolations,
+                    coworkerCount,
                     content: reviewText
-                }
-            };
+                }),
+                evidenceFiles: evidenceItems.map(
+                    (item) => item.file
+                )
+            });
 
-            console.log('후기 제출 payload:', payload);
-            console.log('첨부 파일:', evidenceFiles);
-
-            // 실제 후기 제출 API가 준비되면 FormData 전송으로 교체하세요.
-            // const formData = new FormData();
-            // formData.append(
-            //     'request',
-            //     new Blob([JSON.stringify(payload)], {
-            //         type: 'application/json'
-            //     })
-            // );
-            // evidenceFiles.forEach((file) =>
-            //     formData.append('evidenceFiles', file)
-            // );
-            //
-            // const token = localStorage.getItem('jwt_token');
-            // const response = await fetch(`${API_BASE_URL}/api/reviews`, {
-            //     method: 'POST',
-            //     headers: {
-            //         Authorization: `Bearer ${token}`
-            //     },
-            //     body: formData
-            // });
-            //
-            // if (!response.ok) {
-            //     throw new Error(`후기 제출 실패: ${response.status}`);
-            // }
-
-            await new Promise((resolve) => setTimeout(resolve, 400));
-
-            sessionStorage.removeItem('selected_kakao_place');
-            alert('후기 작성 화면 검증이 완료되었습니다. 제출 API 연결 후 실제 등록됩니다.');
+            sessionStorage.removeItem(
+                'selected_kakao_place'
+            );
+            setIsSubmissionComplete(true);
         } catch (error) {
-            console.error('후기 제출 오류:', error);
-            setErrorMessage('후기 제출 중 문제가 발생했습니다.');
+            console.error('후기 제출에 실패했습니다.', error);
+            setFormErrorMessage(
+                '후기 제출 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+            );
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const workspaceName =
-        workspace?.name ||
-        workspace?.placeName ||
-        workspace?.place_name ||
-        (isWorkspaceLoading
-            ? '사업장 정보를 불러오는 중입니다'
-            : '선택한 사업장');
+    const workspaceName = isWorkspaceLoading
+        ? '사업장 정보를 불러오는 중입니다.'
+        : isWorkspaceResolving
+            ? '사업장 정보를 등록하는 중입니다.'
+            : readWorkspaceName(workspace);
 
     const workspaceCategory =
-        workspace?.category ||
-        workspace?.categoryName ||
-        workspace?.category_name ||
-        '업종 정보 없음';
-
-    const workspaceAddress =
-        workspace?.address ||
-        workspace?.roadAddress ||
-        workspace?.addressName ||
-        workspace?.address_name ||
-        workspace?.road_address_name ||
-        '주소 정보 없음';
+        readWorkspaceCategory(workspace);
+    const workspaceAddress = readWorkspaceAddress(workspace);
 
     return (
         <div style={pageStyle}>
             <header style={headerStyle}>
-                <div style={headerLeftStyle}>
-                    <button
-                        type="button"
-                        style={logoBtnStyle}
-                        onClick={() => navigate('/')}
-                    >
-                        전남대 클린알바맵
-                    </button>
+                <button
+                    type="button"
+                    style={brandButtonStyle}
+                    onClick={() => navigate('/')}
+                >
+                    전남대 클린알바맵
+                </button>
 
+                <div style={headerActionsStyle}>
                     <button
                         type="button"
-                        style={navBtnStyle}
+                        style={headerLinkButtonStyle}
                         onClick={() => navigate('/guide')}
                     >
                         근로기준법 안내
                     </button>
-                </div>
 
-                <div style={headerRightStyle}>
-                    {isLoggedIn ? (
-                        <>
-                            <button
-                                type="button"
-                                style={profileButtonStyle}
-                                onClick={() => navigate('/profile')}
-                            >
-                                <div style={profileCircleStyle}>
-                                    <img
-                                        src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
-                                        alt="프로필"
-                                        style={profileImageStyle}
-                                    />
-                                </div>
-
-                                {nickname && (
-                                    <span style={profileTextStyle}>
-                                        {nickname}님
-                                    </span>
-                                )}
-                            </button>
-
-                            {isAdmin && (
-                                <button
-                                    type="button"
-                                    onClick={() => navigate('/admin')}
-                                    style={adminBtnStyle}
-                                >
-                                    ⚙️ 관리자
-                                </button>
-                            )}
-
-                            <button
-                                type="button"
-                                onClick={handleLogout}
-                                style={btnStyle}
-                            >
-                                로그아웃
-                            </button>
-                        </>
-                    ) : (
-                        <button
-                            type="button"
-                            onClick={handleKakaoLogin}
-                            style={kakaoLoginBtnStyle}
-                        >
-                            카카오 로그인
-                        </button>
+                    {authState.isLoggedIn && (
+                        <div style={profileChipStyle}>
+                            <span style={profileIconStyle}>
+                                ○
+                            </span>
+                            <span>
+                                {authState.nickname || '사용자'}
+                            </span>
+                        </div>
                     )}
+
+                    <button
+                        type="button"
+                        style={headerLinkButtonStyle}
+                        onClick={
+                            authState.isLoggedIn
+                                ? handleLogout
+                                : handleKakaoLogin
+                        }
+                    >
+                        {authState.isLoggedIn
+                            ? '로그아웃'
+                            : '카카오 로그인'}
+                    </button>
                 </div>
             </header>
 
-            <main style={mainScrollStyle}>
-                <section style={formContainerStyle}>
+            <main style={mainStyle}>
+                <section
+                    style={{
+                        ...formShellStyle,
+                        padding: isMobile
+                            ? '26px 20px 80px'
+                            : '28px 0 96px'
+                    }}
+                >
                     <button
                         type="button"
                         onClick={() => navigate('/review/select')}
@@ -488,495 +944,466 @@ const ReviewWrite = () => {
                         ‹ 돌아가기
                     </button>
 
-                    <div style={workspaceHeaderStyle}>
-                        <h1 style={workspaceTitleStyle}>
-                            {workspaceName}
-                        </h1>
-
-                        <p style={workspaceMetaStyle}>
-                            {workspaceCategory} · {workspaceAddress}
-                        </p>
-                    </div>
-
-                    <section style={formSectionStyle}>
-                        <div style={sectionHeadingRowStyle}>
-                            <h2 style={sectionTitleStyle}>
-                                근로기준법 준수 체크리스트
-                            </h2>
-                            <span style={requiredTextStyle}>*필수</span>
-                        </div>
-
-                        <p style={sectionHelpStyle}>
-                            위반한 항목을 체크해주세요. (체크 = 위반)
-                        </p>
-
-                        <div style={checklistStyle}>
-                            {VIOLATION_ITEMS.map((item) => {
-                                const isChecked = violations.includes(
-                                    item.id
-                                );
-
-                                return (
-                                    <label
-                                        key={item.id}
-                                        style={{
-                                            ...checkItemStyle,
-                                            borderColor: isChecked
-                                                ? '#4169e1'
-                                                : '#e4e8ed',
-                                            backgroundColor: isChecked
-                                                ? '#fbfcff'
-                                                : '#ffffff'
-                                        }}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={isChecked}
-                                            onChange={() =>
-                                                toggleViolation(item.id)
-                                            }
-                                            style={checkboxStyle}
-                                        />
-                                        <span>{item.label}</span>
-                                    </label>
-                                );
-                            })}
-                        </div>
-                    </section>
-
-                    <section style={formSectionStyle}>
-                        <div style={sectionHeadingRowStyle}>
-                            <h2 style={sectionTitleStyle}>
-                                동시간대 업무자 수
-                            </h2>
-                            <span style={requiredTextStyle}>*필수</span>
-                        </div>
-
-                        <p style={sectionHelpStyle}>
-                            근무 중 함께 일하는 인원을 자유롭게 적어주세요.
-                        </p>
-
-                        <input
-                            type="text"
-                            value={simultaneousWorkers}
-                            onChange={(event) =>
-                                setSimultaneousWorkers(event.target.value)
-                            }
-                            placeholder="예: 보통 2~3명, 혼자 일할 때도 있었음"
-                            style={textInputStyle}
-                        />
-                    </section>
-
-                    <section style={formSectionStyle}>
-                        <div style={sectionHeadingRowStyle}>
-                            <h2 style={sectionTitleStyle}>
-                                근로 인증 자료
-                            </h2>
-                            <span style={requiredTextStyle}>*필수</span>
-                        </div>
-
-                        <p style={sectionHelpStyle}>
-                            근로계약서, 급여 입금 내역, 보험 내역 등
-                            (jpg, jpeg, png, pdf / 최대 10개)
-                        </p>
-
-                        <div
-                            style={uploadBoxStyle}
-                            onDragOver={(event) => event.preventDefault()}
-                            onDrop={handleFileDrop}
-                            onClick={() => fileInputRef.current?.click()}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(event) => {
-                                if (
-                                    event.key === 'Enter' ||
-                                    event.key === ' '
-                                ) {
-                                    fileInputRef.current?.click();
-                                }
-                            }}
-                        >
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept=".jpg,.jpeg,.png,.pdf,image/*,application/pdf"
-                                multiple
-                                onChange={handleFileChange}
-                                style={{ display: 'none' }}
-                            />
-
-                            <div style={uploadIconStyle}>⇧</div>
-                            <strong style={uploadTitleStyle}>
-                                파일을 드래그하거나 클릭해서 업로드
+                    {workspaceError && !workspace ? (
+                        <div style={emptyCardStyle}>
+                            <strong style={emptyTitleStyle}>
+                                사업장 정보를 확인할 수 없습니다.
                             </strong>
-                            <span style={uploadSubTextStyle}>
-                                JPG · JPEG · PNG · PDF 지원
-                            </span>
-                        </div>
-
-                        {evidenceFiles.length > 0 && (
-                            <div style={fileListStyle}>
-                                {evidenceFiles.map((file, index) => (
-                                    <div
-                                        key={`${file.name}-${file.size}`}
-                                        style={fileRowStyle}
-                                    >
-                                        <span style={fileNameStyle}>
-                                            {file.name}
-                                        </span>
-
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                removeEvidenceFile(index)
-                                            }
-                                            style={fileRemoveButtonStyle}
-                                            aria-label={`${file.name} 삭제`}
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </section>
-
-                    <section style={formSectionStyle}>
-                        <div style={sectionHeadingRowStyle}>
-                            <h2 style={sectionTitleStyle}>
-                                주관식 후기
-                            </h2>
-                            <span style={requiredTextStyle}>*필수</span>
-                        </div>
-
-                        <p style={sectionHelpStyle}>
-                            자유롭게 작성하면 AI가 법적 위험 표현을
-                            순화해드립니다.
-                        </p>
-
-                        <div style={textareaWrapperStyle}>
-                            <textarea
-                                value={reviewText}
-                                onChange={(event) =>
-                                    setReviewText(event.target.value)
-                                }
-                                placeholder="근무 경험을 자유롭게 작성해주세요"
-                                maxLength={1000}
-                                style={textareaStyle}
-                            />
-
-                            <span style={characterCountStyle}>
-                                {reviewText.length}/최소 10자
-                            </span>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={openAiRewriteModal}
-                            style={aiRewriteButtonStyle}
-                        >
-                            ✨ AI 후기 순화
-                        </button>
-                    </section>
-
-                    <div style={warningBoxStyle}>
-                        <span style={warningIconStyle}>!</span>
-                        <span>
-                            허위 정보 작성 시 법적 책임이 발생할 수
-                            있습니다. 인증 자료는 관리자 검수 후
-                            폐기됩니다.
-                        </span>
-                    </div>
-
-                    {errorMessage && (
-                        <p style={errorMessageStyle}>
-                            {errorMessage}
-                        </p>
-                    )}
-
-                    <button
-                        type="button"
-                        onClick={handleSubmit}
-                        disabled={!isFormValid || isSubmitting}
-                        style={{
-                            ...submitButtonStyle,
-                            backgroundColor:
-                                isFormValid && !isSubmitting
-                                    ? '#4169e1'
-                                    : '#cbd0d8',
-                            cursor:
-                                isFormValid && !isSubmitting
-                                    ? 'pointer'
-                                    : 'not-allowed'
-                        }}
-                    >
-                        {isSubmitting
-                            ? '제출 중입니다'
-                            : '후기 제출하기'}
-                    </button>
-
-                    <p style={submitHelpStyle}>
-                        관리자 검수 후 지도에 반영됩니다.
-                    </p>
-                </section>
-            </main>
-
-            {isAiModalOpen && (
-                <div
-                    style={modalOverlayStyle}
-                    onClick={() => setIsAiModalOpen(false)}
-                >
-                    <section
-                        role="dialog"
-                        aria-modal="true"
-                        aria-label="AI 후기 순화"
-                        style={aiModalStyle}
-                        onClick={(event) => event.stopPropagation()}
-                    >
-                        <div style={modalDragHandleStyle} />
-
-                        <div style={aiModalHeaderStyle}>
-                            <h2 style={aiModalTitleStyle}>
-                                AI 후기 순화
-                            </h2>
-
+                            <p style={emptyTextStyle}>
+                                {workspaceError}
+                            </p>
                             <button
                                 type="button"
                                 onClick={() =>
-                                    setIsAiModalOpen(false)
+                                    navigate('/review/select', {
+                                        replace: true
+                                    })
                                 }
-                                style={modalCloseButtonStyle}
-                                aria-label="AI 후기 순화 닫기"
+                                style={emptyActionStyle}
                             >
-                                ✕
+                                사업장 다시 선택하기
                             </button>
                         </div>
+                    ) : (
+                        <>
+                            <div style={workspaceHeaderStyle}>
+                                <h1 style={workspaceTitleStyle}>
+                                    {workspaceName}
+                                </h1>
+                                <p style={workspaceMetaStyle}>
+                                    {workspaceCategory} ·{' '}
+                                    {workspaceAddress}
+                                </p>
+                            </div>
 
-                        <div style={aiModalBodyStyle}>
-                            {isAiLoading ? (
-                                <div style={aiLoadingStyle}>
-                                    AI가 후기를 순화하고 있습니다.
+                            <section style={sectionStyle}>
+                                <div
+                                    style={sectionTitleRowStyle}
+                                >
+                                    <h2 style={sectionTitleStyle}>
+                                        근로기준법 준수 체크리스트
+                                    </h2>
+                                    <span
+                                        style={
+                                            requiredBadgeStyle
+                                        }
+                                    >
+                                        *필수
+                                    </span>
                                 </div>
-                            ) : (
-                                AI_REWRITE_OPTIONS.map((option) => {
-                                    const isSelected =
-                                        selectedAiOption === option.id;
+                                <p style={sectionHelpStyle}>
+                                    위반한 항목을 체크해주세요.
+                                    (체크 = 위반, 해당 없으면 체크하지 않아도 됩니다.)
+                                </p>
 
-                                    return (
-                                        <button
-                                            type="button"
-                                            key={option.id}
-                                            onClick={() =>
-                                                setSelectedAiOption(
-                                                    option.id
-                                                )
-                                            }
-                                            style={{
-                                                ...aiOptionCardStyle,
-                                                borderColor: isSelected
-                                                    ? option.accentColor
-                                                    : '#e1e5ea',
-                                                backgroundColor: isSelected
-                                                    ? `${option.accentColor}0D`
-                                                    : '#ffffff'
-                                            }}
-                                        >
-                                            <div style={aiOptionTopStyle}>
-                                                <div>
-                                                    <strong
-                                                        style={{
-                                                            ...aiOptionTitleStyle,
-                                                            color: isSelected
-                                                                ? option.accentColor
-                                                                : '#333333'
-                                                        }}
-                                                    >
-                                                        {option.title}
-                                                    </strong>
+                                <div style={checklistStyle}>
+                                    {REVIEW_FORM_INDICATORS.map(
+                                        (item) => {
+                                            const isChecked =
+                                                selectedViolations.includes(
+                                                    item.id
+                                                );
 
-                                                    <p
-                                                        style={{
-                                                            ...aiOptionDescriptionStyle,
-                                                            color: isSelected
-                                                                ? option.accentColor
-                                                                : '#8a929d'
-                                                        }}
-                                                    >
-                                                        {option.description}
-                                                    </p>
-                                                </div>
-
-                                                <span
+                                            return (
+                                                <label
+                                                    key={item.id}
                                                     style={{
-                                                        ...radioStyle,
+                                                        ...checkItemStyle,
                                                         borderColor:
-                                                            isSelected
-                                                                ? option.accentColor
-                                                                : '#cfd5dc',
+                                                            isChecked
+                                                                ? '#4a72ff'
+                                                                : '#e7ebf1',
                                                         backgroundColor:
-                                                            isSelected
-                                                                ? option.accentColor
+                                                            isChecked
+                                                                ? '#f9fbff'
                                                                 : '#ffffff'
                                                     }}
                                                 >
-                                                    {isSelected ? '✓' : ''}
-                                                </span>
-                                            </div>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={
+                                                            isChecked
+                                                        }
+                                                        onChange={() =>
+                                                            toggleViolation(
+                                                                item.id
+                                                            )
+                                                        }
+                                                        style={
+                                                            checkboxStyle
+                                                        }
+                                                    />
+                                                    <span
+                                                        style={
+                                                            checkLabelStyle
+                                                        }
+                                                    >
+                                                        {item.label}
+                                                    </span>
+                                                </label>
+                                            );
+                                        }
+                                    )}
+                                </div>
+                            </section>
 
-                                            <div style={aiCandidateTextStyle}>
-                                                {aiCandidates[option.id] ||
-                                                    '순화된 문장을 준비하고 있습니다.'}
-                                            </div>
-                                        </button>
-                                    );
-                                })
+                            <section style={sectionStyle}>
+                                <div
+                                    style={sectionTitleRowStyle}
+                                >
+                                    <h2 style={sectionTitleStyle}>
+                                        동시간대 업무자 수
+                                    </h2>
+                                    <span
+                                        style={
+                                            requiredBadgeStyle
+                                        }
+                                    >
+                                        *필수
+                                    </span>
+                                </div>
+                                <p style={sectionHelpStyle}>
+                                    근무 중 같은 시간대에 함께 일한 인원을 숫자로 적어주세요.
+                                </p>
+
+                                <input
+                                    type="number"
+                                    min="0"
+                                    inputMode="numeric"
+                                    value={simultaneousWorkers}
+                                    onChange={(event) => {
+                                        setSimultaneousWorkers(
+                                            event.target.value
+                                        );
+                                        setFormErrorMessage(
+                                            ''
+                                        );
+                                    }}
+                                    placeholder="예: 3"
+                                    style={textInputStyle}
+                                />
+                            </section>
+
+                            <section style={sectionStyle}>
+                                <div
+                                    style={sectionTitleRowStyle}
+                                >
+                                    <h2 style={sectionTitleStyle}>
+                                        근로 인증 자료
+                                    </h2>
+                                    <span
+                                        style={
+                                            requiredBadgeStyle
+                                        }
+                                    >
+                                        *필수
+                                    </span>
+                                </div>
+                                <p style={sectionHelpStyle}>
+                                    근로계약서, 급여 입금 내역, 보험 내역 등
+                                    (jpg, jpeg, png, pdf / 파일당 최대
+                                    10MB / 최대 5개)
+                                </p>
+
+                                <div
+                                    style={uploadBoxStyle}
+                                    onDragOver={(event) =>
+                                        event.preventDefault()
+                                    }
+                                    onDrop={handleFileDrop}
+                                    onClick={() =>
+                                        fileInputRef.current?.click()
+                                    }
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(event) => {
+                                        if (
+                                            event.key ===
+                                                'Enter' ||
+                                            event.key === ' '
+                                        ) {
+                                            fileInputRef.current?.click();
+                                        }
+                                    }}
+                                >
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept=".jpg,.jpeg,.png,.pdf"
+                                        multiple
+                                        onChange={
+                                            handleFileChange
+                                        }
+                                        style={{
+                                            display: 'none'
+                                        }}
+                                    />
+
+                                    <div style={uploadIconStyle}>
+                                        ⇪
+                                    </div>
+                                    <strong
+                                        style={uploadTitleStyle}
+                                    >
+                                        파일을 드래그하거나 클릭해서 업로드
+                                    </strong>
+                                    <span
+                                        style={uploadTextStyle}
+                                    >
+                                        JPG · JPEG · PNG · PDF 지원
+                                    </span>
+                                </div>
+
+                                <div style={uploadMetaRowStyle}>
+                                    <span>
+                                        업로드 {evidenceItems.length}/
+                                        {MAX_EVIDENCE_FILES}
+                                    </span>
+                                    <span>
+                                        이미지 파일은 미리보기가 제공됩니다.
+                                    </span>
+                                </div>
+
+                                {uploadMessage && (
+                                    <p
+                                        style={
+                                            inlineWarningTextStyle
+                                        }
+                                    >
+                                        {uploadMessage}
+                                    </p>
+                                )}
+
+                                {evidenceItems.length > 0 && (
+                                    <EvidencePreviewList
+                                        evidenceItems={
+                                            evidenceItems
+                                        }
+                                        onRemove={
+                                            handleRemoveEvidence
+                                        }
+                                        isMobile={isMobile}
+                                    />
+                                )}
+                            </section>
+
+                            <section style={sectionStyle}>
+                                <div
+                                    style={sectionTitleRowStyle}
+                                >
+                                    <h2 style={sectionTitleStyle}>
+                                        주관식 후기
+                                    </h2>
+                                    <span
+                                        style={
+                                            requiredBadgeStyle
+                                        }
+                                    >
+                                        *필수
+                                    </span>
+                                </div>
+                                <p style={sectionHelpStyle}>
+                                    자유롭게 작성하면 AI가 법적 위험 표현을 순화해드립니다.
+                                </p>
+
+                                <div
+                                    style={
+                                        textareaWrapperStyle
+                                    }
+                                >
+                                    <textarea
+                                        value={reviewText}
+                                        onChange={(event) => {
+                                            setReviewText(
+                                                event.target.value
+                                            );
+                                            setFormErrorMessage(
+                                                ''
+                                            );
+                                        }}
+                                        placeholder="근무 경험을 자유롭게 작성해주세요"
+                                        maxLength={1000}
+                                        style={textareaStyle}
+                                    />
+
+                                    <span
+                                        style={
+                                            characterCountStyle
+                                        }
+                                    >
+                                        {reviewText.length}/최소{' '}
+                                        {MIN_REVIEW_LENGTH}자
+                                    </span>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={openPurifyModal}
+                                    style={purifyButtonStyle}
+                                >
+                                    ✨ AI 후기 순화
+                                </button>
+
+                                {aiNoticeMessage && (
+                                    <p
+                                        style={
+                                            inlineNoticeTextStyle
+                                        }
+                                    >
+                                        {aiNoticeMessage}
+                                    </p>
+                                )}
+                            </section>
+
+                            <div style={warningBoxStyle}>
+                                <span style={warningIconStyle}>
+                                    !
+                                </span>
+                                <span>
+                                    허위 정보 작성 시 법적 책임이 발생할 수 있습니다.
+                                    인증 자료는 관리자 검수 후 폐기됩니다.
+                                </span>
+                            </div>
+
+                            {formErrorMessage && (
+                                <p style={errorTextStyle}>
+                                    {formErrorMessage}
+                                </p>
                             )}
-                        </div>
 
-                        <div style={aiModalFooterStyle}>
                             <button
                                 type="button"
-                                onClick={applyAiRewrite}
-                                disabled={isAiLoading}
-                                style={applyAiButtonStyle}
+                                onClick={handleSubmit}
+                                disabled={
+                                    !isFormValid ||
+                                    isSubmitting ||
+                                    isWorkspaceResolving
+                                }
+                                style={{
+                                    ...submitButtonStyle,
+                                    backgroundColor:
+                                        isFormValid &&
+                                        !isSubmitting &&
+                                        !isWorkspaceResolving
+                                            ? '#4a72ff'
+                                            : '#cfd5df',
+                                    cursor:
+                                        isFormValid &&
+                                        !isSubmitting &&
+                                        !isWorkspaceResolving
+                                            ? 'pointer'
+                                            : 'not-allowed'
+                                }}
                             >
-                                이 버전으로 적용하기
-                                <span aria-hidden="true">›</span>
+                                {isSubmitting
+                                    ? '제출 중입니다'
+                                    : isWorkspaceResolving
+                                        ? '사업장 동기화 중입니다'
+                                    : '후기 제출하기'}
                             </button>
-                        </div>
-                    </section>
-                </div>
+
+                            <p style={submitHelpStyle}>
+                                관리자 검수 후 지도에 반영됩니다.
+                            </p>
+                        </>
+                    )}
+                </section>
+            </main>
+
+            <ReviewPurifyModal
+                isOpen={isPurifyModalOpen}
+                isLoading={isPurifyLoading}
+                selectedTone={selectedTone}
+                suggestions={purifySuggestions}
+                onSelect={setSelectedTone}
+                onApply={handleApplyPurifiedText}
+                onClose={() => setIsPurifyModalOpen(false)}
+            />
+
+            {isSubmissionComplete && (
+                <SubmissionOverlay
+                    onGoHome={() => navigate('/')}
+                />
             )}
         </div>
     );
 };
 
 const pageStyle = {
-    width: '100vw',
-    height: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    backgroundColor: '#f7f8fa',
-    overflow: 'hidden'
+    minHeight: '100vh',
+    backgroundColor: '#f6f8fb'
 };
 
 const headerStyle = {
-    minHeight: '64px',
     height: '64px',
-    padding: '0 24px',
+    padding: '0 clamp(16px, 2.4vw, 28px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    boxSizing: 'border-box',
+    gap: '16px',
     backgroundColor: '#ffffff',
-    borderBottom: '1px solid #e1e4e8',
-    zIndex: 10
+    borderBottom: '1px solid #eceff4',
+    boxSizing: 'border-box'
 };
 
-const headerLeftStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px'
-};
-
-const headerRightStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px'
-};
-
-const logoBtnStyle = {
+const brandButtonStyle = {
     padding: 0,
     backgroundColor: 'transparent',
     border: 'none',
-    color: '#222831',
+    color: '#121826',
     cursor: 'pointer',
     fontSize: '18px',
-    fontWeight: '800'
+    fontWeight: '900',
+    letterSpacing: '-0.3px'
 };
 
-const navBtnStyle = {
-    padding: '8px 10px',
-    backgroundColor: 'transparent',
-    border: 'none',
-    color: '#596273',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '500'
-};
-
-const btnStyle = {
-    padding: '7px 12px',
-    backgroundColor: 'transparent',
-    border: '1px solid #dfe3e8',
-    borderRadius: '6px',
-    color: '#596273',
-    cursor: 'pointer',
-    fontSize: '14px'
-};
-
-const kakaoLoginBtnStyle = {
-    padding: '9px 16px',
-    backgroundColor: '#FEE500',
-    border: 'none',
-    borderRadius: '8px',
-    color: '#191919',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '700'
-};
-
-const adminBtnStyle = {
-    ...btnStyle,
-    color: '#d7263d',
-    borderColor: '#d7263d',
-    fontWeight: '700'
-};
-
-const profileButtonStyle = {
+const headerActionsStyle = {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
+    gap: '14px',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end'
+};
+
+const headerLinkButtonStyle = {
     padding: 0,
     backgroundColor: 'transparent',
     border: 'none',
-    cursor: 'pointer'
+    color: '#7d8593',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '600'
 };
 
-const profileCircleStyle = {
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    overflow: 'hidden',
-    border: '1px solid #e3e6ea'
+const profileChipStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    color: '#8c94a0',
+    fontSize: '13px',
+    fontWeight: '600'
 };
 
-const profileImageStyle = {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover'
+const profileIconStyle = {
+    width: '24px',
+    height: '24px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: '1px solid #dce1e8',
+    borderRadius: '999px',
+    fontSize: '11px',
+    lineHeight: 1
 };
 
-const profileTextStyle = {
-    color: '#333333',
-    fontSize: '14px',
-    fontWeight: '700'
+const mainStyle = {
+    minHeight: 'calc(100vh - 64px)',
+    overflowY: 'auto'
 };
 
-const mainScrollStyle = {
-    flex: 1,
-    minHeight: 0,
-    overflowY: 'auto',
-    overflowX: 'hidden',
-    WebkitOverflowScrolling: 'touch'
-};
-
-const formContainerStyle = {
-    width: '100%',
-    maxWidth: '640px',
-    margin: '0 auto',
-    padding: '34px 24px 72px',
-    boxSizing: 'border-box'
+const formShellStyle = {
+    width: 'min(100%, 472px)',
+    margin: '0 auto'
 };
 
 const backButtonStyle = {
@@ -984,34 +1411,37 @@ const backButtonStyle = {
     padding: 0,
     backgroundColor: 'transparent',
     border: 'none',
-    color: '#9aa2ad',
+    color: '#adb4bf',
     cursor: 'pointer',
-    fontSize: '13px'
+    fontSize: '12px',
+    fontWeight: '600'
 };
 
 const workspaceHeaderStyle = {
-    marginBottom: '26px'
+    marginBottom: '28px'
 };
 
 const workspaceTitleStyle = {
     margin: '0 0 6px',
-    color: '#222831',
-    fontSize: '24px',
+    color: '#121826',
+    fontSize: 'clamp(28px, 2vw, 38px)',
     fontWeight: '900',
-    letterSpacing: '-0.5px'
+    lineHeight: '1.18',
+    letterSpacing: '-0.8px'
 };
 
 const workspaceMetaStyle = {
     margin: 0,
-    color: '#9aa2ad',
-    fontSize: '13px'
+    color: '#9ba3af',
+    fontSize: '13px',
+    fontWeight: '500'
 };
 
-const formSectionStyle = {
-    marginBottom: '28px'
+const sectionStyle = {
+    marginBottom: '30px'
 };
 
-const sectionHeadingRowStyle = {
+const sectionTitleRowStyle = {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
@@ -1020,22 +1450,23 @@ const sectionHeadingRowStyle = {
 
 const sectionTitleStyle = {
     margin: 0,
-    color: '#222831',
-    fontSize: '17px',
-    fontWeight: '900'
+    color: '#1d2433',
+    fontSize: '18px',
+    fontWeight: '900',
+    letterSpacing: '-0.3px'
 };
 
-const requiredTextStyle = {
-    color: '#ff4d4f',
+const requiredBadgeStyle = {
+    color: '#ff5a5a',
     fontSize: '12px',
     fontWeight: '800'
 };
 
 const sectionHelpStyle = {
     margin: '0 0 13px',
-    color: '#9aa2ad',
+    color: '#a3aab5',
     fontSize: '12px',
-    lineHeight: '1.5'
+    lineHeight: '1.55'
 };
 
 const checklistStyle = {
@@ -1045,101 +1476,162 @@ const checklistStyle = {
 };
 
 const checkItemStyle = {
-    minHeight: '46px',
+    minHeight: '40px',
     padding: '0 14px',
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
     border: '1px solid',
-    boxSizing: 'border-box',
-    color: '#525b67',
+    borderRadius: '2px',
     cursor: 'pointer',
-    fontSize: '13px'
+    boxSizing: 'border-box'
 };
 
 const checkboxStyle = {
     width: '16px',
     height: '16px',
-    accentColor: '#4169e1'
+    accentColor: '#4a72ff'
+};
+
+const checkLabelStyle = {
+    color: '#606977',
+    fontSize: '13px',
+    fontWeight: '500'
 };
 
 const textInputStyle = {
     width: '100%',
-    height: '46px',
+    height: '38px',
     padding: '0 14px',
     boxSizing: 'border-box',
     backgroundColor: '#ffffff',
-    border: '1px solid #dde2e7',
+    border: '1px solid #e4e8ef',
+    borderRadius: '2px',
     outline: 'none',
-    color: '#333333',
+    color: '#273142',
     fontSize: '13px'
 };
 
 const uploadBoxStyle = {
-    minHeight: '138px',
-    padding: '24px',
+    minHeight: '126px',
+    padding: '24px 18px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    boxSizing: 'border-box',
+    gap: '4px',
     backgroundColor: '#ffffff',
-    border: '1px dashed #d9dee5',
-    color: '#7e8793',
-    cursor: 'pointer',
-    textAlign: 'center'
+    border: '1px dashed #d8dee7',
+    borderRadius: '2px',
+    textAlign: 'center',
+    cursor: 'pointer'
 };
 
 const uploadIconStyle = {
-    marginBottom: '8px',
-    fontSize: '24px',
+    color: '#8e97a3',
+    fontSize: '20px',
     lineHeight: 1
 };
 
 const uploadTitleStyle = {
-    marginBottom: '5px',
-    color: '#67717e',
-    fontSize: '13px'
+    color: '#717b88',
+    fontSize: '13px',
+    fontWeight: '700'
 };
 
-const uploadSubTextStyle = {
-    color: '#a2a9b2',
-    fontSize: '11px'
+const uploadTextStyle = {
+    color: '#a0a8b3',
+    fontSize: '11px',
+    fontWeight: '500'
 };
 
-const fileListStyle = {
-    marginTop: '8px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px'
-};
-
-const fileRowStyle = {
-    minHeight: '34px',
-    padding: '0 10px',
+const uploadMetaRowStyle = {
+    marginTop: '10px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: '12px',
-    backgroundColor: '#eef0f3',
-    color: '#596273',
-    fontSize: '12px'
+    color: '#a1a8b3',
+    fontSize: '11px',
+    flexWrap: 'wrap'
 };
 
-const fileNameStyle = {
-    minWidth: 0,
+const previewGridStyle = {
+    marginTop: '10px',
+    display: 'grid',
+    gap: '10px'
+};
+
+const previewCardStyle = {
+    padding: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    backgroundColor: '#ffffff',
+    border: '1px solid #e8edf3',
+    borderRadius: '8px'
+};
+
+const previewThumbStyle = {
+    width: '60px',
+    height: '60px',
     overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap'
+    borderRadius: '8px',
+    backgroundColor: '#f3f5f8',
+    flexShrink: 0
 };
 
-const fileRemoveButtonStyle = {
+const previewImageStyle = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover'
+};
+
+const pdfThumbStyle = {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#ff6d3a',
+    fontSize: '13px',
+    fontWeight: '900',
+    backgroundColor: '#fff3ee'
+};
+
+const previewMetaStyle = {
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '3px',
+    flex: 1
+};
+
+const previewNameStyle = {
+    minWidth: 0,
+    color: '#273142',
+    fontSize: '12px',
+    fontWeight: '700',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
+};
+
+const previewSubTextStyle = {
+    color: '#9aa2ae',
+    fontSize: '11px'
+};
+
+const previewRemoveButtonStyle = {
     flexShrink: 0,
-    padding: '4px',
-    backgroundColor: 'transparent',
+    padding: '8px 10px',
+    backgroundColor: '#f4f6fa',
     border: 'none',
-    color: '#9aa2ad',
-    cursor: 'pointer'
+    borderRadius: '8px',
+    color: '#637083',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: '700'
 };
 
 const textareaWrapperStyle = {
@@ -1148,52 +1640,53 @@ const textareaWrapperStyle = {
 
 const textareaStyle = {
     width: '100%',
-    minHeight: '140px',
+    minHeight: '128px',
     padding: '14px 14px 34px',
-    boxSizing: 'border-box',
-    resize: 'vertical',
     backgroundColor: '#ffffff',
-    border: '1px solid #dde2e7',
+    border: '1px solid #e4e8ef',
+    borderRadius: '2px',
+    resize: 'vertical',
     outline: 'none',
-    color: '#333333',
-    fontFamily: 'inherit',
+    color: '#273142',
     fontSize: '13px',
-    lineHeight: '1.65'
+    lineHeight: '1.7',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box'
 };
 
 const characterCountStyle = {
     position: 'absolute',
     right: '12px',
     bottom: '10px',
-    color: '#a1a8b1',
+    color: '#a4acb7',
     fontSize: '11px'
 };
 
-const aiRewriteButtonStyle = {
+const purifyButtonStyle = {
     width: '100%',
-    height: '42px',
-    marginTop: '10px',
+    height: '38px',
+    marginTop: '12px',
     backgroundColor: '#ffffff',
-    border: '1px solid #dde2e7',
-    color: '#6b7480',
+    border: '1px solid #e4e8ef',
+    borderRadius: '2px',
+    color: '#848d99',
     cursor: 'pointer',
     fontSize: '13px',
     fontWeight: '600'
 };
 
 const warningBoxStyle = {
-    minHeight: '46px',
+    minHeight: '44px',
     marginBottom: '14px',
-    padding: '11px 14px',
+    padding: '12px 14px',
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: '10px',
-    boxSizing: 'border-box',
-    backgroundColor: '#fff7ec',
-    border: '1px solid #ffd5a5',
-    color: '#bf6500',
+    backgroundColor: '#fff7ee',
+    border: '1px solid #ffd9af',
+    color: '#c36b15',
     fontSize: '12px',
-    lineHeight: '1.5'
+    lineHeight: '1.6'
 };
 
 const warningIconStyle = {
@@ -1202,16 +1695,28 @@ const warningIconStyle = {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
+    border: '1px solid #ff8f38',
+    borderRadius: '999px',
     flexShrink: 0,
-    border: '1px solid #ff8a00',
-    borderRadius: '50%',
     fontSize: '11px',
-    fontWeight: '800'
+    fontWeight: '900'
 };
 
-const errorMessageStyle = {
-    margin: '0 0 12px',
-    color: '#d64040',
+const inlineWarningTextStyle = {
+    margin: '10px 0 0',
+    color: '#d25f33',
+    fontSize: '12px'
+};
+
+const inlineNoticeTextStyle = {
+    margin: '10px 0 0',
+    color: '#72809a',
+    fontSize: '12px'
+};
+
+const errorTextStyle = {
+    margin: '0 0 14px',
+    color: '#dc4a4a',
     fontSize: '12px',
     textAlign: 'center'
 };
@@ -1220,166 +1725,268 @@ const submitButtonStyle = {
     width: '100%',
     height: '48px',
     border: 'none',
+    borderRadius: '2px',
     color: '#ffffff',
-    fontSize: '15px',
-    fontWeight: '800'
+    fontSize: '16px',
+    fontWeight: '800',
+    transition: 'background-color 0.2s ease'
 };
 
 const submitHelpStyle = {
     margin: '12px 0 0',
-    color: '#a1a8b1',
+    color: '#a6aeb9',
     fontSize: '11px',
     textAlign: 'center'
+};
+
+const emptyCardStyle = {
+    padding: '26px 22px',
+    backgroundColor: '#ffffff',
+    border: '1px solid #e6ebf1',
+    borderRadius: '12px',
+    textAlign: 'center'
+};
+
+const emptyTitleStyle = {
+    display: 'block',
+    marginBottom: '8px',
+    color: '#1f2430',
+    fontSize: '16px',
+    fontWeight: '800'
+};
+
+const emptyTextStyle = {
+    margin: '0 0 18px',
+    color: '#77808d',
+    fontSize: '13px',
+    lineHeight: '1.6'
+};
+
+const emptyActionStyle = {
+    padding: '11px 18px',
+    backgroundColor: '#4a72ff',
+    border: 'none',
+    borderRadius: '10px',
+    color: '#ffffff',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '700'
 };
 
 const modalOverlayStyle = {
     position: 'fixed',
     inset: 0,
     zIndex: 2000,
-    backgroundColor: 'rgba(0, 0, 0, 0.52)',
-    overflowY: 'auto'
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '16px',
+    backgroundColor: 'rgba(0, 0, 0, 0.48)'
 };
 
-const aiModalStyle = {
-    position: 'absolute',
-    left: '50%',
-    top: '58%',
-    transform: 'translate(-50%, -50%)',
-    width: 'min(560px, calc(100% - 32px))',
-    maxHeight: '78vh',
+const modalCardStyle = {
+    width: 'min(100%, 370px)',
+    maxHeight: 'min(80vh, 620px)',
     display: 'flex',
     flexDirection: 'column',
     backgroundColor: '#ffffff',
-    borderRadius: '16px 16px 0 0',
-    boxShadow: '0 18px 50px rgba(0,0,0,0.26)',
+    borderRadius: '14px',
+    boxShadow: '0 20px 56px rgba(0, 0, 0, 0.24)',
     overflow: 'hidden'
 };
 
-const modalDragHandleStyle = {
+const modalHandleStyle = {
     width: '34px',
     height: '4px',
-    margin: '10px auto 2px',
-    backgroundColor: '#e1e5ea',
-    borderRadius: '4px'
+    margin: '8px auto 0',
+    borderRadius: '999px',
+    backgroundColor: '#e5e8ed'
 };
 
-const aiModalHeaderStyle = {
-    minHeight: '56px',
-    padding: '0 20px',
+const modalHeaderStyle = {
+    minHeight: '48px',
+    padding: '0 14px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottom: '1px solid #edf0f3',
-    boxSizing: 'border-box'
+    borderBottom: '1px solid #eff2f6'
 };
 
-const aiModalTitleStyle = {
+const modalTitleStyle = {
     margin: 0,
-    color: '#222831',
-    fontSize: '17px',
+    color: '#121826',
+    fontSize: '14px',
     fontWeight: '900'
 };
 
 const modalCloseButtonStyle = {
-    width: '30px',
-    height: '30px',
+    width: '24px',
+    height: '24px',
     padding: 0,
-    backgroundColor: '#f5f6f8',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f4f6f9',
     border: 'none',
-    borderRadius: '50%',
-    color: '#9aa2ad',
-    cursor: 'pointer'
+    borderRadius: '999px',
+    color: '#a0a8b3',
+    cursor: 'pointer',
+    fontSize: '14px',
+    lineHeight: 1
 };
 
-const aiModalBodyStyle = {
-    minHeight: 0,
-    padding: '16px 20px 10px',
+const modalBodyStyle = {
+    padding: '14px 12px 10px',
     display: 'flex',
     flexDirection: 'column',
     gap: '10px',
     overflowY: 'auto'
 };
 
-const aiLoadingStyle = {
-    padding: '42px 20px',
-    color: '#7f8792',
+const modalLoadingStyle = {
+    padding: '48px 18px',
+    color: '#798391',
     fontSize: '13px',
     textAlign: 'center'
 };
 
-const aiOptionCardStyle = {
+const toneCardStyle = {
     width: '100%',
-    padding: '14px',
-    boxSizing: 'border-box',
+    padding: '14px 14px 16px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
     border: '1.5px solid',
     borderRadius: '12px',
+    backgroundColor: '#ffffff',
     textAlign: 'left',
     cursor: 'pointer'
 };
 
-const aiOptionTopStyle = {
+const toneCardHeaderStyle = {
     display: 'flex',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: '16px',
-    marginBottom: '10px'
+    gap: '10px'
 };
 
-const aiOptionTitleStyle = {
-    display: 'block',
-    marginBottom: '4px',
-    fontSize: '13px',
+const toneTitleStyle = {
+    fontSize: '12px',
     fontWeight: '900'
 };
 
-const aiOptionDescriptionStyle = {
-    margin: 0,
-    fontSize: '11px',
-    lineHeight: '1.4'
+const toneSubtitleStyle = {
+    margin: '4px 0 0',
+    fontSize: '10px',
+    fontWeight: '600',
+    lineHeight: '1.5'
 };
 
-const radioStyle = {
+const toneRadioStyle = {
     width: '18px',
     height: '18px',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
-    border: '1.5px solid',
-    borderRadius: '50%',
-    color: '#ffffff',
+    border: '1px solid',
+    borderRadius: '999px',
     fontSize: '10px',
-    fontWeight: '900'
+    color: '#ffffff',
+    lineHeight: 1,
+    flexShrink: 0
 };
 
-const aiCandidateTextStyle = {
-    padding: '12px',
-    backgroundColor: 'rgba(247,248,250,0.92)',
-    borderRadius: '8px',
-    color: '#4b5563',
+const toneTextStyle = {
+    color: '#3d4654',
     fontSize: '12px',
-    lineHeight: '1.65'
+    fontWeight: '500',
+    lineHeight: '1.7',
+    whiteSpace: 'pre-wrap'
 };
 
-const aiModalFooterStyle = {
-    padding: '10px 20px 16px',
-    backgroundColor: '#ffffff'
+const modalFooterStyle = {
+    padding: '0 12px 12px'
 };
 
-const applyAiButtonStyle = {
+const applyButtonStyle = {
     width: '100%',
-    height: '46px',
-    display: 'flex',
+    height: '42px',
+    display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '6px',
-    backgroundColor: '#4169e1',
+    backgroundColor: '#4668ec',
     border: 'none',
-    borderRadius: '9px',
+    borderRadius: '10px',
     color: '#ffffff',
     cursor: 'pointer',
-    fontSize: '14px',
+    fontSize: '13px',
     fontWeight: '800'
+};
+
+const submissionOverlayStyle = {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 2200,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '24px',
+    backgroundColor: 'rgba(246, 248, 251, 0.98)'
+};
+
+const submissionCardStyle = {
+    width: '100%',
+    maxWidth: '320px',
+    textAlign: 'center'
+};
+
+const submissionBadgeStyle = {
+    marginBottom: '18px',
+    color: '#6d7786',
+    fontSize: '12px',
+    fontWeight: '700'
+};
+
+const submissionIconStyle = {
+    width: '38px',
+    height: '38px',
+    margin: '0 auto 18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4a72ff',
+    borderRadius: '999px',
+    color: '#ffffff',
+    fontSize: '18px',
+    boxShadow: '0 14px 28px rgba(74, 114, 255, 0.26)'
+};
+
+const submissionTitleStyle = {
+    margin: '0 0 8px',
+    color: '#121826',
+    fontSize: '30px',
+    fontWeight: '900',
+    letterSpacing: '-0.8px'
+};
+
+const submissionTextStyle = {
+    margin: '0 0 20px',
+    color: '#9ca5b2',
+    fontSize: '13px'
+};
+
+const submissionButtonStyle = {
+    minWidth: '114px',
+    height: '32px',
+    padding: '0 18px',
+    backgroundColor: '#ffffff',
+    border: '1px solid #d7dce3',
+    borderRadius: '6px',
+    color: '#3f4753',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: '700'
 };
 
 export default ReviewWrite;

@@ -11,6 +11,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('jwt_token');
+    config.headers = config.headers ?? {};
 
     // 공개 API에서는 Authorization을 보내지 않음
     if (token && config.useAuth !== false) {
@@ -60,6 +61,8 @@ api.interceptors.response.use(
                     newToken
                 );
 
+                originalRequest.headers =
+                    originalRequest.headers ?? {};
                 originalRequest.headers.Authorization =
                     `Bearer ${newToken}`;
 
@@ -79,4 +82,4 @@ api.interceptors.response.use(
     }
 );
 
-export default axios;
+export default api;

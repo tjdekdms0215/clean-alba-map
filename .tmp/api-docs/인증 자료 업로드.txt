@@ -1,0 +1,67 @@
+--- PAGE 1 ---
+인증 자료 업로드
+Last Updat
+e
+2
+26년 7월 13일 오전 12:13
+Me
+t
+hod PO
+ST
+url /reviews/{review
+id}/attachments
+_
+기능설명
+근로계약서·급여내역 등 최대 5개 파일(각 10MB 이하) 업로드
+jpg, jpeg, png, pdf 파일만 허용.
+관리자 접근 가능
+도메인 태그 인증자료
+multipart/form-data
+본인 리뷰에만 첨부파일 업로드가 가능합니다.
+관리자는 예외적으로 접근할 수 있습니다.
+0
+제한 조건
+항목 제한
+허용 확장자 jpg , jpeg , png , pdf
+개별 파일 크기 10MB 이하
+리뷰당 첨부 개수 최대 5개
+사용자당 첨부 개수 최대 2
+0개
+사용자당 전체 용량 최대 50MB
+검증 방식 매직바이트 검증
+Pat
+h Variable
+Key Type 설명
+reviewId Long 리뷰 ID
+Requ
+est
+Part
+Key Type 필수 여부 설명
+인증 자료 업로드 1
+
+--- PAGE 2 ---
+file Mult
+ipartFi
+le 필수 업로드할 첨부파일
+Response Body
+응답 타입: ReviewAttachmentResponse
+성공 시 201 Created 반환
+Key Type 설명
+attachmentId Long 첨부파일 ID
+reviewId Long 리뷰 ID
+fileName S
+tring 파일명
+contentType S
+tring 파일 MIME 타입
+size Number 파일 크기
+Response Example
+{
+"attachmentId": 5,
+"reviewId": 10,
+"fileName": "계약서.pdf"
+,
+"contentType": "application/pdf"
+"size": 204800
+,
+}
+인증 자료 업로드 2

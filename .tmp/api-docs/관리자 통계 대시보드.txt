@@ -1,0 +1,35 @@
+--- PAGE 1 ---
+관리자 통계 대시보드
+Last
+Updat
+e
+2
+26년 7월 13일 오전 12:16
+Me
+t
+hod GET
+url /admin/stats
+기능설
+명
+관리자 페이지에서 사용할 전체 통계 정보를 조회합니다. 전체 리뷰 수, 검
+수 대기 리뷰 수, 승인 리뷰 수, 반려 리뷰 수, 전체 사업장 수를 반환합니다.
+도메인
+태그 관리자
+0
+Response Body
+응답 타입: AdminStatsResponse
+Key Type 설명
+totalReviews Number 전체 리뷰 수
+pendingReviews Number 검수 대기 리뷰 수
+approvedReviews Number 승인 리뷰 수
+rejectedReviews Number 반려 리뷰 수
+totalWorkspaces Number 전체 사업장 수
+Response Example
+{
+"totalReviews": 37,
+"pendingReviews": 5,
+"approvedReviews": 28,
+"rejectedReviews": 4,
+"totalWorkspaces": 42
+}
+관리자 통계 대시보드 1

@@ -6,6 +6,11 @@ import AuthHandler from './AuthHandler';
 import Guide from './pages/Guide';
 import ReviewSelect from './pages/ReviewSelect';
 import ReviewWrite from './pages/ReviewWrite';
+import RequireAuth from './components/RequireAuth';
+import RequireAdmin from './components/RequireAdmin';
+import WorkspaceDetail from './pages/WorkspaceDetail';
+import ContractAnalyzer from './pages/ContractAnalyzer';
+import AdminPage from './pages/AdminPage';
 
 const App = () => {
     return (
@@ -29,19 +34,48 @@ const App = () => {
                 />
 
                 <Route
+                    path="/contract/analyzer"
+                    element={<ContractAnalyzer />}
+                />
+
+                <Route
+                    path="/detail/:workspaceId"
+                    element={<WorkspaceDetail />}
+                />
+
+                <Route
+                    path="/workspaces/:workspaceId"
+                    element={<WorkspaceDetail />}
+                />
+
+                <Route
                     path="/review/select"
                     element={<ReviewSelect />}
                 />
 
-                <Route
-                    path="/review/write/:workspaceId"
-                    element={<ReviewWrite />}
-                />
+                <Route element={<RequireAdmin />}>
+                    <Route
+                        path="/admin"
+                        element={<AdminPage />}
+                    />
+                </Route>
 
-                <Route
-                    path="/review/write/new"
-                    element={<ReviewWrite />}
-                />
+                <Route element={<RequireAuth />}>
+                    <Route
+                        path="/review/write"
+                        element={<ReviewWrite />}
+                    />
+
+                    <Route
+                        path="/review/write/new"
+                        element={<ReviewWrite />}
+                    />
+
+                    <Route
+                        path="/review/write/:workspaceId"
+                        element={<ReviewWrite />}
+                    />
+                </Route>
             </Routes>
         </BrowserRouter>
     );

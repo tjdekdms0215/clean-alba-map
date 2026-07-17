@@ -281,6 +281,49 @@ const Guide = () => {
                     </ul>
                 </div>
 
+                <div
+                    style={{
+                        marginTop: '28px',
+                        padding: '22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '18px',
+                        flexWrap: 'wrap',
+                        border: '1px solid #dfe5ef',
+                        borderRadius: '18px',
+                        background: 'linear-gradient(135deg, #f5f8ff 0%, #ffffff 100%)'
+                    }}
+                >
+                    <div style={{ minWidth: 0 }}>
+                        <strong style={{ display: 'block', color: '#162033', fontSize: '16px', fontWeight: '900' }}>
+                            AI 계약서 분석
+                        </strong>
+                        <p style={{ margin: '8px 0 0', color: '#6f7b8d', fontSize: '13px', lineHeight: '1.7' }}>
+                            근로계약서 이미지를 업로드하면 임금, 근로시간, 휴게시간 같은 핵심 조항을 빠르게 점검할 수 있습니다.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => navigate('/contract/analyzer')}
+                        style={{
+                            height: '40px',
+                            padding: '0 16px',
+                            border: 'none',
+                            borderRadius: '12px',
+                            backgroundColor: '#4668ec',
+                            color: '#ffffff',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: '800',
+                            whiteSpace: 'nowrap'
+                        }}
+                    >
+                        AI로 계약서 분석하기
+                    </button>
+                </div>
+
                 {renderFAQ([
                     { question: '근로계약서를 안 쓰고 일하면 어떻게 되나요?', answer: '계약서 미작성은 사업주의 위법입니다. 근로관계는 성립하므로 임금 청구는 가능하나 분쟁 시 증거가 없어 불리할 수 있습니다.' },
                     { question: '계약 내용을 중간에 바꾸자고 하는데 거부할 수 있나요?', answer: '근로조건 변경은 양측 합의가 필요합니다. 사업주가 일방적으로 변경하는 것은 위법입니다.' },

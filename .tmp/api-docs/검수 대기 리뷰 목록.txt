@@ -1,0 +1,107 @@
+--- PAGE 1 ---
+검수 대기 리뷰 목록
+Last
+Updat
+e
+2
+26년 7월 13일 오전 12:14
+Me
+t
+hod GET
+url /admin/reviews
+기능설명 status 필터 + 페이지네이션. admin ro
+관리자 응답에 aut
+horEmai
+l이 포함됨.
+도메인 태
+그 관리자
+0
+le 필수, ADMIN 권한이 필요함.
+u
+Q
+ery Parame
+t
+er
+Key Type 기본값 설명
+status S
+tring PENDING 리뷰 상태. PENDING , APPROVED ,
+REJECTED
+page in
+t 0 페이지 번호. 0부터 시작
+size in
+t 20 페이지 크기. 1~50
+Response Body
+응답 타입: PagedResponse<AdminReviewResponse>
+Key Type 설명
+content
+Array 리뷰 목록
+page in
+t 현재 페이지 번호
+size in
+t 페이지 크기
+totalElements Number 전체 요소 수
+totalPages Number 전체 페이지 수
+content[]
+응답 타입: AdminReviewResponse
+검수 대기 리뷰 목록 1
+
+--- PAGE 2 ---
+Key Type 설명
+reviewId Long 리뷰 ID
+workspaceId Long 사업장 ID
+workspaceName S
+tring 사업장 이름
+authorEmail S
+tring 작성자 이메일
+contractViolationBoo
+lean 근로계약서 관련 위반 여부
+minimumWageViolationBoo
+lean 최저임금 관련 위반 여부
+weeklyHolidayAllowanceViolationBoo
+lean 주휴수당 관련 위반 여부
+wageDelayViolationBoo
+lean 임금체불 관련 위반 여부
+overtimePayViolationBoo
+lean 연장근로수당 관련 위반 여부
+coworkerCount In
+t
+eger | n
+ull 동시간대 근무자 수
+content S
+tring | n
+ull 주관식 후기
+status S
+tring 리뷰 상태
+createdAt S
+tring 작성 시각
+Response Example
+{
+"content": [
+{
+"reviewId": 10,
+"workspaceId": 1,
+"workspaceName": "스타벅스 전남대후문점"
+,
+"authorEmail": "user@kakao.com"
+,
+"contractViolation": false,
+"minimumWageViolation": true,
+"weeklyHolidayAllowanceViolation": false,
+"wageDelayViolation": false,
+"overtimePayViolation": false,
+"coworkerCount": 2,
+"content": "
+"
+...
+,
+"status": "PENDING"
+,
+"createdAt": "2026-07-12T16:00:00"
+}
+],
+"page": 0,
+"size": 20,
+"totalElements": 37,
+"totalPages": 2
+}
+검수 대기 리뷰 목록 2

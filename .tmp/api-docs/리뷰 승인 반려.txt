@@ -1,0 +1,60 @@
+--- PAGE 1 ---
+리뷰 승인 / 반려
+Last
+Updat
+e
+2
+26년 7월 14일 오후 1:27
+Me
+t
+hod PATCH
+url /admin/reviews/{review
+id}/status
+_
+기능설명 approve · reject 처리. 승인 시 해당 사업장의 클린점수가 재계산되어
+함께 반환.
+도메인 태그 관리자
+0
+Pat
+h Variable
+Key Type 설명
+reviewId Long 리뷰 ID
+Requ
+est
+Body
+Key Type 필수 여부 설명
+status S
+tring 필수 변경할 리뷰 상태. APPROVED 또는
+REJECTED
+Response Body
+응답 타입: ReviewStatusUpdateResponse
+Key Type 설명
+reviewId Long 리뷰 ID
+status S
+tring 변경된 리뷰 상태
+cleanScore In
+t
+eger 재계산된 클린점수
+workspaceStatus S
+tring 재계산된 사업장 등급
+Requ
+est Example
+리뷰 승인 / 반려 1
+
+--- PAGE 2 ---
+{
+"status": "APPROVED"
+}
+Response Example
+{
+"reviewId": 10,
+"status": "APPROVED"
+,
+"cleanScore": 88,
+"workspaceStatus": "EXCELLENT"
+}
+Error
+S
+tatus Code 설명
+409 Conflict 이미 검수된 리뷰를 다시 검수하려는 경우
+리뷰 승인 / 반려 2

@@ -1,0 +1,75 @@
+--- PAGE 1 ---
+신규 사업장 등록
+Last
+Updat
+e
+2
+26년 7월 12일 오후 10:33
+Me
+t
+hod PO
+ST
+url /workspaces
+기능설명
+관리자가 사업장을 수동으로 신규 등록함.
+name, address, cat
+egory, distric
+t, lat
+tu
+i
+며, 리뷰가 없으므로 최초 cleanScore는 n
+de, l
+tu
+ongi
+ull
+도메인
+태그 사업장
+인증: 필요, ADMIN만 가능
+Requ
+est Header
+Authorization: Bearer {JWT_TOKEN}
+Content-Type: application/json
+0
+de를 입력받으
+Requ
+{
+est
+Body
+"name": "사업장 이름"
+,
+"address": "광주광역시 북구 ...",
+"category": "카페"
+"district": "후문"
+,
+,
+"latitude": 35.1812,
+"longitude": 126.9088
+}
+→ 모든 필드 필수
+성공 응답
+HTTP 응답 상태 코드
+신규 사업장 등록 1
+
+--- PAGE 2 ---
+201 Created
+Response Body
+{
+"workspaceId": 11,
+"name": "사업장 이름"
+,
+"address": "광주광역시 북구 ...",
+"category": "카페"
+,
+"district": "후문"
+,
+"latitude": 35.1812,
+"longitude": 126.9088,
+"cleanScore": null,
+"status": null
+}
+실패 응답
+상태 조건 현재 응답
+400 필수 필드 누락 또는 빈 문자열 Spring 기본 오류 응답
+401jwt가 유효하지 않음 “유효하지 않은 토큰입니다.”
+403 USER 권한으로 요청 “관리자만 사업장을 등록할 수 있습니다.”
+신규 사업장 등록 2

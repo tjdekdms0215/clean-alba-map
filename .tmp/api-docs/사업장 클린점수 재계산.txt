@@ -1,0 +1,24 @@
+--- PAGE 1 ---
+사업장 클린점수 재계산
+Last
+Updat
+e
+2
+26년 7월 12일 오후 11:13
+Me
+t
+hod PO
+ST
+url /workspaces/{workspaceId}/clean-score/recalculate
+기능설명 특정 사업장의 승인된 리뷰와 체크리스트 결과를 기반으로 클린점수를 다
+시 계산하고 DB에 갱신. 갱신된 사업장 정보를 반환함.
+도메인
+태그 사업장
+0
+Pat
+h Variable
+Key Type 설명
+workspaceId Long 사업장 ID
+Response Body
+응답 타입: WorkspaceSummaryResponse
+사업장 클린점수 재계산 1

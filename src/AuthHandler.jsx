@@ -1,45 +1,80 @@
-import React, {useEffect} from 'react';
-import {useNavigate} from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    clearStoredOauthState,
+    consumePostLoginRedirectPath,
+    getStoredOauthState,
+    persistAuth
+} from './utils/auth';
+
+const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL ||
+    'https://cleanalb-map.duckdns.org';
 
 const AuthHandler = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const code = new URL(window.location.href).searchParams.get("code");
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get('code');
+        const state = url.searchParams.get('state');
+        const savedState = getStoredOauthState();
 
         const sendCodeToBackend = async () => {
-            if(code) {
-                try {
-                    console.log("kakaoLogin code:", code);
+            if (savedState && state && savedState !== state) {
+                clearStoredOauthState();
+                alert('로그인 상태 검증에 실패했습니다. 다시 시도해 주세요.');
+                navigate('/');
+                return;
+            }
 
-                    const response = await fetch(`https://cleanalb-map.duckdns.org/api/kakao/callback?code=${code}`);
+            clearStoredOauthState();
+
+            if (code) {
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/api/kakao/callback?code=${encodeURIComponent(code)}`
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(
+                            `kakaologin failed: ${response.status}`
+                        );
+                    }
+
                     const data = await response.json();
 
-                    console.log("backend response success", data);
+                    persistAuth({
+                        token: data.token,
+                        userEmail: data.userEmail,
+                        email: data.email,
+                        nickname: data.nickname,
+                        role: data.role,
+                        userRole: data.userRole
+                    });
 
-                    const userEmail = data.userEmail;
-                    const userNickname = data.nickname;
-                    const userRole = data.role;
-
-                    localStorage.setItem("jwt_token", data.token);
-                    localStorage.setItem("user_email", userEmail);
-                    localStorage.setItem("user_nickname", userNickname);
-                    localStorage.setItem("user_role", userRole); // ✨ 2. 금고에 권한 정보 보관!
+                    const userNickname =
+                        data.nickname || '사용자';
+                    const redirectPath =
+                        consumePostLoginRedirectPath() || '/';
 
                     alert(`${userNickname}님, 환영합니다.`);
-                    navigate("/");
+                    navigate(redirectPath, { replace: true });
 
                 } catch (error) {
-                    console.error("kakaologin error", error);
-                    alert("kakaologin Failed");
-                    navigate("/");
+                    console.error('kakaologin error', error);
+                    alert('카카오 로그인에 실패했습니다.');
+                    navigate('/', { replace: true });
                 }
+                return;
             }
+
+            navigate('/', { replace: true });
         };
 
         sendCodeToBackend();
     }, [navigate]);
-    
+
     return null;
 };
 

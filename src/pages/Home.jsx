@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getWorkspaces } from '../api/workspace';
+import {
+    getWorkspaceSummary,
+    getWorkspaces
+} from '../api/workspace';
+import { getWorkspaceEvidenceSummary } from '../utils/workspaceEvidence';
+import AlbaRecommendationPanel from '../components/ai/AlbaRecommendationPanel';
 
 const KAKAO_REST_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY;
 const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
@@ -86,22 +91,28 @@ const Home = () => {
     const [isAdmin, setIsAdmin] = useState(false);
 
     const [stores, setStores] = useState([]);
+    const [allStores, setAllStores] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStore, setSelectedStore] = useState(null);
+    const [selectedStoreSummary, setSelectedStoreSummary] =
+        useState(null);
     const [showIntroModal, setShowIntroModal] = useState(false);
 
 
 // 💡 기존의 fetchWorkspaces 함수를 이걸로 통째로 교체하세요!
-const fetchWorkspaces = async (keyword = '') => {
+const fetchWorkspaces = async (
+    keyword = '',
+    options = {}
+) => {
     try {
-        // [지워진 부분: url 생성 로직, fetch() 호출, response.ok 체크, response.json() 변환]
-        
-        // 1. 만들어둔 API 함수로 데이터 바로 가져오기 (status는 전체이므로 null)
         const data = await getWorkspaces(null, keyword);
 
-        // 2. 가져온 데이터 상태에 저장하기
         if (Array.isArray(data)) {
             setStores(data);
+
+            if (options.syncAll) {
+                setAllStores(data);
+            }
         } else {
             console.error('사업장 데이터가 배열 형태가 아닙니다.', data);
             setStores([]);
@@ -129,7 +140,7 @@ const fetchWorkspaces = async (keyword = '') => {
             }
         }
 
-        fetchWorkspaces();
+        fetchWorkspaces('', { syncAll: true });
     }, []);
 
     useEffect(() => {
@@ -203,6 +214,50 @@ const fetchWorkspaces = async (keyword = '') => {
         });
     }, [stores]);
 
+    useEffect(() => {
+        if (!selectedStore) {
+            setSelectedStoreSummary(null);
+            return undefined;
+        }
+
+        if (!selectedStore.workspaceId) {
+            setSelectedStoreSummary(selectedStore);
+            return undefined;
+        }
+
+        let isMounted = true;
+
+        const fetchSummary = async () => {
+            try {
+                const data = await getWorkspaceSummary(
+                    selectedStore.workspaceId
+                );
+
+                if (isMounted) {
+                    setSelectedStoreSummary({
+                        ...selectedStore,
+                        ...data
+                    });
+                }
+            } catch (error) {
+                console.error(
+                    '사업장 요약 정보를 불러오지 못했습니다.',
+                    error
+                );
+
+                if (isMounted) {
+                    setSelectedStoreSummary(selectedStore);
+                }
+            }
+        };
+
+        fetchSummary();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [selectedStore]);
+
     const handleKakaoLogin = () => {
         if (!KAKAO_REST_API_KEY || !KAKAO_REDIRECT_URI) {
             console.error('카카오 로그인 환경변수가 설정되지 않았습니다.');
@@ -238,8 +293,8 @@ const fetchWorkspaces = async (keyword = '') => {
         alert('로그아웃 되었습니다.');
     };
 
-    const executeSearch = () => {
-        const keyword = searchTerm.trim();
+    const executeSearch = (nextKeyword = searchTerm) => {
+        const keyword = nextKeyword.trim();
 
         fetchWorkspaces(keyword);
         setSelectedStore(null);
@@ -251,8 +306,48 @@ const fetchWorkspaces = async (keyword = '') => {
         }
     };
 
-    const selectedGrade = selectedStore
-        ? getCleanGradeInfo(selectedStore.cleanScore)
+    const handleApplyRecommendationQuery = (query) => {
+        setSearchTerm(query);
+        executeSearch(query);
+    };
+
+    const handleFocusRecommendation = (recommendation) => {
+        const pool =
+            allStores.length > 0 ? allStores : stores;
+        const target =
+            pool.find(
+                (store) =>
+                    String(store.workspaceId) ===
+                    String(recommendation.workspaceId)
+            ) ||
+            pool.find(
+                (store) =>
+                    store.name === recommendation.name
+            );
+
+        if (target) {
+            if (allStores.length > 0) {
+                setStores(allStores);
+            }
+
+            setSelectedStore(target);
+            return;
+        }
+
+        if (recommendation.workspaceId) {
+            navigate(
+                `/detail/${recommendation.workspaceId}`
+            );
+        }
+    };
+
+    const activeSelectedStore =
+        selectedStoreSummary || selectedStore;
+    const selectedGrade = activeSelectedStore
+        ? getCleanGradeInfo(activeSelectedStore.cleanScore)
+        : null;
+    const evidenceSummary = activeSelectedStore
+        ? getWorkspaceEvidenceSummary(activeSelectedStore)
         : null;
 
     return (
@@ -400,11 +495,12 @@ const fetchWorkspaces = async (keyword = '') => {
                         </div>
                     </div>
 
-                    {selectedStore && selectedGrade && (
+                    {activeSelectedStore &&
+                        selectedGrade && (
                         <div
                             role="dialog"
                             aria-modal="true"
-                            aria-label={`${selectedStore.name} 사업장 정보`}
+                            aria-label={`${activeSelectedStore.name} 사업장 정보`}
                             style={{
                                 ...popupStyle,
                                 backgroundColor: selectedGrade.softColor,
@@ -432,16 +528,19 @@ const fetchWorkspaces = async (keyword = '') => {
                             </div>
 
                             <h3 style={popupStoreNameStyle}>
-                                {selectedStore.name || '사업장 이름 없음'}
+                                {activeSelectedStore.name ||
+                                    '사업장 이름 없음'}
                             </h3>
 
                             <p style={popupMetaStyle}>
                                 <span>
-                                    {selectedStore.district || '지역 정보 없음'}
+                                    {activeSelectedStore.district ||
+                                        '지역 정보 없음'}
                                 </span>
                                 <span style={metaDividerStyle}>•</span>
                                 <span>
-                                    {selectedStore.category || '업종 정보 없음'}
+                                    {activeSelectedStore.category ||
+                                        '업종 정보 없음'}
                                 </span>
                             </p>
 
@@ -454,16 +553,99 @@ const fetchWorkspaces = async (keyword = '') => {
                                             color: selectedGrade.color
                                         }}
                                     >
-                                        {formatCleanScore(selectedStore.cleanScore)}
+                                        {formatCleanScore(
+                                            activeSelectedStore.cleanScore
+                                        )}
                                     </strong>
                                 </div>
 
                                 <div style={boxRowStyle}>
                                     <span style={boxLabelStyle}>산출 근거:</span>
-                                    <span style={boxTextStyle}>
-                                        {selectedStore.oxStats ||
-                                            '수집된 근거 데이터가 없습니다.'}
-                                    </span>
+                                    <div style={evidenceBlockStyle}>
+                                        <span
+                                            style={{
+                                                ...evidenceHeadingStyle,
+                                                color:
+                                                    evidenceSummary?.focus ===
+                                                    'positive'
+                                                        ? '#08752A'
+                                                        : '#B30000'
+                                            }}
+                                        >
+                                            {evidenceSummary?.heading}
+                                        </span>
+
+                                        {evidenceSummary?.items?.length ? (
+                                            evidenceSummary.items.map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    style={evidenceItemStyle}
+                                                >
+                                                    <span
+                                                        style={{
+                                                            ...evidenceTypeBadgeStyle,
+                                                            backgroundColor:
+                                                                evidenceSummary.focus ===
+                                                                'positive'
+                                                                    ? 'rgba(0, 153, 0, 0.12)'
+                                                                    : 'rgba(221, 0, 0, 0.12)',
+                                                            color:
+                                                                evidenceSummary.focus ===
+                                                                'positive'
+                                                                    ? '#08752A'
+                                                                    : '#B30000'
+                                                        }}
+                                                    >
+                                                        {evidenceSummary.focus ===
+                                                        'positive'
+                                                            ? 'O'
+                                                            : 'X'}
+                                                    </span>
+
+                                                    <div
+                                                        style={
+                                                            evidenceContentStyle
+                                                        }
+                                                    >
+                                                        <div
+                                                            style={
+                                                                evidenceItemTopStyle
+                                                            }
+                                                        >
+                                                            <strong
+                                                                style={
+                                                                    evidenceLabelStyle
+                                                                }
+                                                            >
+                                                                {item.label}
+                                                            </strong>
+
+                                                            {item.metric && (
+                                                                <span
+                                                                    style={
+                                                                        evidenceMetricStyle
+                                                                    }
+                                                                >
+                                                                    {item.metric}
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        <span
+                                                            style={boxTextStyle}
+                                                        >
+                                                            {item.description}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <span style={boxTextStyle}>
+                                                {evidenceSummary?.fallbackText ||
+                                                    '수집된 근거 데이터가 없습니다.'}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -471,14 +653,16 @@ const fetchWorkspaces = async (keyword = '') => {
                                 <div style={boxRowStyle}>
                                     <span style={boxLabelStyle}>누적 후기:</span>
                                     <span style={boxTextStyle}>
-                                        {selectedStore.reviewCount ?? 0}명 참여
+                                        {activeSelectedStore.reviewCount ??
+                                            0}
+                                        명 참여
                                     </span>
                                 </div>
 
                                 <div style={boxRowStyle}>
                                     <span style={boxLabelStyle}>후기 요약:</span>
                                     <span style={boxTextStyle}>
-                                        {selectedStore.reviewSummary ||
+                                        {activeSelectedStore.reviewSummary ||
                                             '아직 요약된 후기가 없습니다.'}
                                     </span>
                                 </div>
@@ -489,7 +673,7 @@ const fetchWorkspaces = async (keyword = '') => {
                                     type="button"
                                     onClick={() =>
                                         navigate(
-                                            `/detail/${selectedStore.workspaceId}`
+                                            `/detail/${activeSelectedStore.workspaceId}`
                                         )
                                     }
                                     style={{
@@ -539,6 +723,20 @@ const fetchWorkspaces = async (keyword = '') => {
                         <div style={searchExampleTextStyle}>
                              조건 예시: 클린점수 60점 넘는 카페 찾아줘
                         </div>
+
+                        <AlbaRecommendationPanel
+                            candidateStores={
+                                allStores.length > 0
+                                    ? allStores
+                                    : stores
+                            }
+                            onFocusWorkspace={
+                                handleFocusRecommendation
+                            }
+                            onApplyQuery={
+                                handleApplyRecommendationQuery
+                            }
+                        />
                     </div>
 
                     <div style={listTitleAreaStyle}>
@@ -1183,6 +1381,63 @@ const boxTextStyle = {
     lineHeight: '1.55',
 
     wordBreak: 'keep-all'
+};
+
+const evidenceBlockStyle = {
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+};
+
+const evidenceHeadingStyle = {
+    fontSize: '12px',
+    fontWeight: '900',
+    letterSpacing: '-0.2px'
+};
+
+const evidenceItemStyle = {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '10px'
+};
+
+const evidenceTypeBadgeStyle = {
+    width: '22px',
+    height: '22px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    borderRadius: '999px',
+    fontSize: '11px',
+    fontWeight: '900'
+};
+
+const evidenceContentStyle = {
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px'
+};
+
+const evidenceItemTopStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap'
+};
+
+const evidenceLabelStyle = {
+    color: '#333333',
+    fontSize: '13px',
+    fontWeight: '900'
+};
+
+const evidenceMetricStyle = {
+    color: '#6f7781',
+    fontSize: '11px',
+    fontWeight: '700'
 };
 
 const detailButtonAreaStyle = {

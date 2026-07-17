@@ -1,0 +1,185 @@
+--- PAGE 1 ---
+LLM 후기 텍스트 순화 미리보기
+Last
+Updat
+e
+2
+26년 7월 13일 오전 12:12
+Me
+t
+hod PO
+ST
+url /reviews/purity-preview
+기능설명 주관식 후기 원문을 LLM(Upstage So
+패 시 50
+2 반환
+lar LLM)이 순화, LLM 호출 실
+0
+도메인 태
+그 후기
+인증 : 현재는 필요 없음
+Requ
+est
+Body
+{
+}
+"reviewText": "사장이 최악이고 월급도 맨날 늦게 줬어요."
+LLM 생성 JS
+O
+N을 반환
+Key Type 설명
+original
+_
+text S
+tring 원문
+risk
+assessment
+_
+O
+bjec
+t 리스크 평가 결과
+purified
+options
+_
+Array 순화 문장 선택지 3개
+성공 응답
+HTTP 응답 상태 코드
+200 OK
+Requ
+est
+Body
+Key Type 필수 여부 설명
+LLM 후기 텍스트 순화 미리보기 1
+
+--- PAGE 2 ---
+reviewText S
+tring 필수 순화할 주관식 후기 원문
+Response Body
+LLM 생성 JS
+O
+N을 반환합니다.
+Key Type 설명
+original
+_
+text S
+tring 원문
+risk
+assessment
+_
+O
+bjec
+t 리스크 평가 결과
+purified
+options
+_
+Array 순화 문장 선택지 3개
+risk
+assessment
+_
+Key Type 설명
+risk
+_
+level S
+tring 리스크 등급. HIGH , MEDIUM , LOW , SAFE
+detected
+issues
+_
+Array 감지된 문제 목록
+reasoning S
+tring 판단 근거
+purified
+_
+options[]
+Key Type 설명
+option
+_
+id Number 선택지 번호
+style S
+tring 문장 스타일
+text S
+tring 순화된 문장
+Requ
+est Example
+{
+}
+"reviewText": "원문...
+"
+Response Example
+{
+"reviewText": "원문...
+"
+LLM 후기 텍스트 순화 미리보기 2
+
+--- PAGE 3 ---
+}
+Response Example
+{
+"original
+text": "
+...
+"
+,
+_
+"risk
+assessment": {
+_
+"risk
+level": "HIGH"
+,
+_
+"detected
+issues": ["
+...
+"],
+_
+"reasoning": "
+"
+...
+},
+"purified
+options": [
+_
+{
+"option
+id": 1,
+_
+"style": "매우 건조하고 객관적인 사실 전달형"
+,
+"text": "
+...
+"
+},
+{
+"option
+id": 2,
+_
+"style": "부드럽고 완곡한 경험 공유형"
+"text": "
+"
+...
+,
+},
+{
+"option
+id": 3,
+_
+"style": "감정 유지하되 법적 문제만 제거"
+"text": "
+"
+...
+,
+}
+]
+}
+risk_level 값:
+HIGH | MEDIUM | LOW | SAFE
+AI 응답이기 때문에 문장 내용은 매번 달라질 수 있지만, 위 JSON 구조
+는 유지
+실패 응답
+상태 조건
+400 reviewText 누락 또는 빈 문자열
+50
+2 Upstage API 호출•응답 해석 실패
+503 서버에 UPSTAGE_API_KEY가 설정되지
+않음
+LLM 후기 텍스트 순화 미리보기 3
