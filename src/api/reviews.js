@@ -578,7 +578,8 @@ const fetchAdminReviewPage = async (status) => {
             status,
             page: 0,
             size: DEFAULT_ADMIN_PAGE_SIZE
-        }
+        },
+        preserveAuthOnFailure: true
     });
     const raw = response.data?.data || response.data;
     const content = Array.isArray(raw?.content)
@@ -733,7 +734,10 @@ export const getAdminReviews = async (status = null) => {
 export const getAdminReviewDetail = async (reviewId) => {
     try {
         const response = await api.get(
-            `/admin/reviews/${reviewId}`
+            `/admin/reviews/${reviewId}`,
+            {
+                preserveAuthOnFailure: true
+            }
         );
 
         return normalizeAdminReview(
@@ -777,6 +781,9 @@ export const updateAdminReviewStatus = async ({
             `/admin/reviews/${reviewId}/status`,
             {
                 status: normalizedStatus
+            },
+            {
+                preserveAuthOnFailure: true
             }
         );
         const raw = response.data?.data || response.data;
@@ -826,7 +833,9 @@ export const updateAdminReviewStatus = async ({
 
 export const getAdminStats = async () => {
     try {
-        const response = await api.get('/admin/stats');
+        const response = await api.get('/admin/stats', {
+            preserveAuthOnFailure: true
+        });
         const raw = response.data?.data || response.data;
 
         return {

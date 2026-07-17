@@ -227,7 +227,11 @@ const AdminPage = () => {
                 error
             );
             setErrorMessage(
-                '관리자 리뷰 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
+                [401, 403].includes(
+                    error?.response?.status
+                )
+                    ? '관리자 인증이 만료되었거나 권한을 확인할 수 없습니다. 다시 로그인한 뒤 시도해 주세요.'
+                    : '관리자 리뷰 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
             );
         } finally {
             setIsListLoading(false);
@@ -379,7 +383,11 @@ const AdminPage = () => {
                 error
             );
             setErrorMessage(
-                '상태 변경 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+                [401, 403].includes(
+                    error?.response?.status
+                )
+                    ? '관리자 인증이 만료되었거나 권한을 확인할 수 없습니다. 다시 로그인한 뒤 시도해 주세요.'
+                    : '상태 변경 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
             );
         } finally {
             setIsUpdating(false);

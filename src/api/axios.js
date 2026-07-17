@@ -6,7 +6,8 @@ const API_BASE_URL =
 
 const api = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 15000
+    timeout: 15000,
+    withCredentials: true
 });
 
 api.interceptors.request.use((config) => {
@@ -68,7 +69,14 @@ api.interceptors.response.use(
 
                 return api(originalRequest);
             } catch (refreshError) {
+                if (
+                    originalRequest?.preserveAuthOnFailure
+                ) {
+                    return Promise.reject(error);
+                }
+
                 localStorage.removeItem('jwt_token');
+                localStorage.removeItem('user_email');
                 localStorage.removeItem('user_nickname');
                 localStorage.removeItem('user_role');
 
