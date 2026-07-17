@@ -297,9 +297,7 @@ const EvidencePreviewList = ({
     <div
         style={{
             ...previewGridStyle,
-            gridTemplateColumns: isMobile
-                ? '1fr'
-                : 'repeat(2, minmax(0, 1fr))'
+            gridTemplateColumns: '1fr'
         }}
     >
         {evidenceItems.map((item) => (
@@ -1056,7 +1054,8 @@ const ReviewWrite = () => {
         } catch (error) {
             console.error('후기 제출에 실패했습니다.', error);
             setFormErrorMessage(
-                '후기 제출 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+                error?.message ||
+                    '후기 제출 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
             );
         } finally {
             setIsSubmitting(false);

@@ -612,7 +612,7 @@ const resolveCreatedReviewId = (createdReview) =>
 
 const uploadReviewAttachment = async (reviewId, file) => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', file, file.name);
 
     const response = await api.post(
         `/reviews/${reviewId}/attachments`,
@@ -649,12 +649,24 @@ export const submitReview = async ({
     const uploadedAttachments = [];
 
     for (const file of evidenceFiles) {
-        uploadedAttachments.push(
-            await uploadReviewAttachment(
-                createdReviewId,
-                file
-            )
-        );
+        try {
+            uploadedAttachments.push(
+                await uploadReviewAttachment(
+                    createdReviewId,
+                    file
+                )
+            );
+        } catch (error) {
+            const fileName =
+                file?.name || '첨부 파일';
+            const statusCode = error?.response?.status;
+
+            throw new Error(
+                statusCode
+                    ? `${fileName} 업로드에 실패했습니다. (HTTP ${statusCode})`
+                    : `${fileName} 업로드에 실패했습니다.`
+            );
+        }
     }
 
     return {
