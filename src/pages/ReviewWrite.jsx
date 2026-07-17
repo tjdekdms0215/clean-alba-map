@@ -1041,7 +1041,14 @@ const ReviewWrite = () => {
                     ? 'AI 후기 순화는 로그인 상태에서만 사용할 수 있습니다. 다시 로그인한 뒤 시도해 주세요.'
                     : error?.response?.status === 404
                         ? 'AI 후기 순화 API가 현재 서버에 연결되어 있지 않습니다. 백엔드 배포 경로를 확인해 주세요.'
-                    : 'AI 후기 순화 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+                        : error?.code === 'ECONNABORTED' ||
+                              /timeout/i.test(
+                                  String(error?.message || '')
+                              )
+                            ? 'AI 후기 순화 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.'
+                            : !error?.response
+                                ? 'AI 후기 순화 서버에 연결하지 못했습니다. 네트워크 상태나 백엔드 서버 상태를 확인해 주세요.'
+                                : 'AI 후기 순화 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
             );
             setIsPurifyModalOpen(false);
         } finally {

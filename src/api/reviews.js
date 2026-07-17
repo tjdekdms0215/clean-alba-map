@@ -11,6 +11,9 @@ const ADMIN_STATUSES = [
 ];
 
 const DEFAULT_ADMIN_PAGE_SIZE = 50;
+const REVIEW_CREATE_TIMEOUT_MS = 30000;
+const REVIEW_ATTACHMENT_TIMEOUT_MS = 30000;
+const REVIEW_PURITY_TIMEOUT_MS = 45000;
 
 const deepClone = (value) =>
     JSON.parse(JSON.stringify(value));
@@ -222,6 +225,17 @@ const toInteger = (value) => {
 const shouldUseMockFallback = (error) =>
     !error?.response ||
     [404, 405, 501].includes(error?.response?.status);
+
+const isTimeoutError = (error) =>
+    error?.code === 'ECONNABORTED' ||
+    /timeout/i.test(String(error?.message || ''));
+
+const isNetworkError = (error) =>
+    !error?.response &&
+    (error?.code === 'ERR_NETWORK' ||
+        String(error?.message || '')
+            .trim()
+            .toLowerCase() === 'network error');
 
 const extractApiErrorMessage = (error) => {
     const responseData = error?.response?.data;
@@ -875,13 +889,19 @@ const createReview = async (workspaceId, reviewData) => {
         buildCreateReviewPayloadAttempts(
             reviewData
         );
+    const attemptedLabels = [];
     let lastError = null;
 
     for (const attempt of attempts) {
+        attemptedLabels.push(attempt.label);
+
         try {
             const response = await api.post(
                 `/workspaces/${workspaceId}/reviews`,
-                attempt.data
+                attempt.data,
+                {
+                    timeout: REVIEW_CREATE_TIMEOUT_MS
+                }
             );
 
             return response.data?.data || response.data;
@@ -894,7 +914,9 @@ const createReview = async (workspaceId, reviewData) => {
                 workspaceId,
                 requestBody: attempt.data,
                 responseData: error?.response?.data,
-                status: error?.response?.status
+                status: error?.response?.status,
+                errorCode: error?.code,
+                errorMessage: error?.message
             });
 
             const statusCode = error?.response?.status;
@@ -914,10 +936,29 @@ const createReview = async (workspaceId, reviewData) => {
     const statusCode = lastError?.response?.status;
     const apiMessage = extractApiErrorMessage(lastError);
     const finalMessage =
+        isTimeoutError(lastError)
+            ? '서버 응답이 지연되어 후기 등록 결과를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+            : isNetworkError(lastError)
+                ? '리뷰 등록 서버에 연결하지 못했습니다. 네트워크 상태나 백엔드 서버 상태를 확인해 주세요.'
+                : statusCode === 400 &&
+                    isGenericBadRequestMessage(apiMessage)
+                    ? '서버가 리뷰 생성 요청을 거절했습니다. 프론트에서 호환 형식으로 여러 번 재시도했지만 모두 실패했습니다. 백엔드 로그에서 리뷰 생성 사유를 확인해 주세요.'
+                    : apiMessage;
+
+    if (
         statusCode === 400 &&
         isGenericBadRequestMessage(apiMessage)
-            ? '리뷰 작성 요청이 거절되었습니다. 근무 시간대, 동시간대 업무자 수, 체크리스트 항목을 다시 확인해 주세요.'
-            : apiMessage;
+    ) {
+        console.error('리뷰 생성 호환 재시도 전체 실패', {
+            url: `/workspaces/${workspaceId}/reviews`,
+            workspaceId,
+            attemptedLabels,
+            lastResponseData: lastError?.response?.data,
+            lastStatus: statusCode,
+            lastErrorCode: lastError?.code,
+            lastErrorMessage: lastError?.message
+        });
+    }
 
     throw new Error(
         finalMessage ||
@@ -943,7 +984,10 @@ const uploadReviewAttachment = async (reviewId, file) => {
     try {
         const response = await api.post(
             `/reviews/${reviewId}/attachments`,
-            formData
+            formData,
+            {
+                timeout: REVIEW_ATTACHMENT_TIMEOUT_MS
+            }
         );
 
         return response.data?.data || response.data;
@@ -955,7 +999,9 @@ const uploadReviewAttachment = async (reviewId, file) => {
             fileType: file?.type,
             fileSize: file?.size,
             responseData: error?.response?.data,
-            status: error?.response?.status
+            status: error?.response?.status,
+            errorCode: error?.code,
+            errorMessage: error?.message
         });
         throw error;
     }
@@ -1002,10 +1048,14 @@ export const submitReview = async ({
             const statusCode = error?.response?.status;
             const apiMessage = extractApiErrorMessage(error);
             const finalMessage =
-                statusCode === 400 &&
-                isGenericBadRequestMessage(apiMessage)
-                    ? `${fileName} 업로드 요청이 거절되었습니다. 파일 형식(JPG, JPEG, PNG, PDF)과 용량(10MB 이하)을 확인해 주세요.`
-                    : apiMessage;
+                isTimeoutError(error)
+                    ? `${fileName} 업로드 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.`
+                    : isNetworkError(error)
+                        ? `${fileName} 업로드 서버에 연결하지 못했습니다. 네트워크 상태나 백엔드 서버 상태를 확인해 주세요.`
+                        : statusCode === 400 &&
+                            isGenericBadRequestMessage(apiMessage)
+                            ? `${fileName} 업로드 요청이 거절되었습니다. 파일 형식(JPG, JPEG, PNG, PDF)과 용량(10MB 이하)을 확인해 주세요.`
+                            : apiMessage;
 
             throw new Error(
                 finalMessage ||
@@ -1028,6 +1078,9 @@ export const purifyReview = async (content) => {
         '/reviews/purity-preview',
         {
             reviewText: content
+        },
+        {
+            timeout: REVIEW_PURITY_TIMEOUT_MS
         }
     );
 
