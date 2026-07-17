@@ -1167,8 +1167,11 @@ const WorkspaceDetail = () => {
 };
 
 const pageStyle = {
+    height: '100vh',
     minHeight: '100vh',
-    backgroundColor: '#FFFFFF'
+    backgroundColor: '#FFFFFF',
+    overflowX: 'hidden',
+    overflowY: 'auto'
 };
 
 const headerStyle = {

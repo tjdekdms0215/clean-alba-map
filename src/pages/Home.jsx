@@ -391,6 +391,20 @@ const Home = () => {
         }
     };
 
+    const handleSearchInputChange = (event) => {
+        const nextValue = event.target.value;
+
+        setSearchTerm(nextValue);
+
+        if (!nextValue.trim()) {
+            setSearchInterpretation(null);
+            setSelectedStore(null);
+            setSelectedStoreSummary(null);
+            setMapCenterStore(null);
+            fetchWorkspaces('');
+        }
+    };
+
     const activeSelectedStore =
         selectedStoreSummary || selectedStore;
     const selectedGrade = activeSelectedStore
@@ -665,8 +679,8 @@ const Home = () => {
                                 type="text"
                                 placeholder="사업장 이름 및 원하는 조건 검색"
                                 value={searchTerm}
-                                onChange={(event) =>
-                                    setSearchTerm(event.target.value)
+                                onChange={
+                                    handleSearchInputChange
                                 }
                                 onKeyDown={handleSearch}
                                 style={sidebarSearchInputStyle}
