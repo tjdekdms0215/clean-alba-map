@@ -675,6 +675,14 @@ const createReview = async (workspaceId, reviewData) => {
 
         return response.data?.data || response.data;
     } catch (error) {
+        console.error('리뷰 생성 요청 실패', {
+            url: `/workspaces/${workspaceId}/reviews`,
+            workspaceId,
+            requestBody: reviewData,
+            responseData: error?.response?.data,
+            status: error?.response?.status
+        });
+
         const statusCode = error?.response?.status;
         const apiMessage = extractApiErrorMessage(error);
         const finalMessage =
@@ -705,12 +713,25 @@ const uploadReviewAttachment = async (reviewId, file) => {
     const formData = new FormData();
     formData.append('file', file, file.name);
 
-    const response = await api.post(
-        `/reviews/${reviewId}/attachments`,
-        formData
-    );
+    try {
+        const response = await api.post(
+            `/reviews/${reviewId}/attachments`,
+            formData
+        );
 
-    return response.data?.data || response.data;
+        return response.data?.data || response.data;
+    } catch (error) {
+        console.error('리뷰 첨부 업로드 실패', {
+            url: `/reviews/${reviewId}/attachments`,
+            reviewId,
+            fileName: file?.name,
+            fileType: file?.type,
+            fileSize: file?.size,
+            responseData: error?.response?.data,
+            status: error?.response?.status
+        });
+        throw error;
+    }
 };
 
 export const submitReview = async ({
