@@ -244,13 +244,57 @@ const createEvidenceItem = (file) => ({
         `${Date.now()}-${Math.random()
             .toString(36)
             .slice(2)}`,
-    signature: buildFileSignature(file),
     file,
     isImage: isImageFile(file),
     previewUrl: isImageFile(file)
         ? URL.createObjectURL(file)
         : null
 });
+
+const buildNextEvidenceItems = (
+    currentItems,
+    files
+) => {
+    const warnings = [];
+    const nextItems = [...currentItems];
+
+    Array.from(files || []).forEach((file) => {
+        const normalizedFile = normalizeEvidenceFile(file);
+
+        if (!isAllowedEvidenceFile(normalizedFile)) {
+            warnings.push(
+                `${file.name}은(는) JPG, JPEG, PNG, PDF만 업로드할 수 있습니다.`
+            );
+            return;
+        }
+
+        if (
+            normalizedFile.size >
+            MAX_FILE_SIZE_BYTES
+        ) {
+            warnings.push(
+                `${file.name}은(는) 10MB 이하 파일만 업로드할 수 있습니다.`
+            );
+            return;
+        }
+
+        if (nextItems.length >= MAX_EVIDENCE_FILES) {
+            warnings.push(
+                `증빙 자료는 최대 ${MAX_EVIDENCE_FILES}개까지 업로드할 수 있습니다.`
+            );
+            return;
+        }
+
+        nextItems.push(
+            createEvidenceItem(normalizedFile)
+        );
+    });
+
+    return {
+        nextItems,
+        warnings
+    };
+};
 
 const revokeEvidencePreview = (item) => {
     if (item?.previewUrl) {
@@ -872,61 +916,16 @@ const ReviewWrite = () => {
     };
 
     const handleAddFiles = (files) => {
-        const warnings = [];
+        const {
+            nextItems,
+            warnings
+        } = buildNextEvidenceItems(
+            evidenceItemsRef.current,
+            files
+        );
 
-        setEvidenceItems((current) => {
-            const nextItems = [...current];
-
-            Array.from(files).forEach((file) => {
-                const normalizedFile =
-                    normalizeEvidenceFile(file);
-
-                if (!isAllowedEvidenceFile(normalizedFile)) {
-                    warnings.push(
-                        `${file.name}은(는) JPG, JPEG, PNG, PDF만 업로드할 수 있습니다.`
-                    );
-                    return;
-                }
-
-                if (
-                    normalizedFile.size >
-                    MAX_FILE_SIZE_BYTES
-                ) {
-                    warnings.push(
-                        `${file.name}은(는) 10MB 이하 파일만 업로드할 수 있습니다.`
-                    );
-                    return;
-                }
-
-                const nextSignature =
-                    buildFileSignature(normalizedFile);
-                const isDuplicate = nextItems.some(
-                    (item) =>
-                        item.signature === nextSignature
-                );
-
-                if (isDuplicate) {
-                    warnings.push(
-                        `${file.name}은(는) 이미 추가된 파일입니다.`
-                    );
-                    return;
-                }
-
-                if (nextItems.length >= MAX_EVIDENCE_FILES) {
-                    warnings.push(
-                        `증빙 자료는 최대 ${MAX_EVIDENCE_FILES}개까지 업로드할 수 있습니다.`
-                    );
-                    return;
-                }
-
-                nextItems.push(
-                    createEvidenceItem(normalizedFile)
-                );
-            });
-
-            return nextItems;
-        });
-
+        evidenceItemsRef.current = nextItems;
+        setEvidenceItems(nextItems);
         setUploadMessage(warnings[0] || '');
         setFormErrorMessage('');
     };
@@ -948,17 +947,19 @@ const ReviewWrite = () => {
     };
 
     const handleRemoveEvidence = (itemId) => {
-        setEvidenceItems((current) => {
-            const target = current.find(
-                (item) => item.id === itemId
-            );
+        const target = evidenceItemsRef.current.find(
+            (item) => item.id === itemId
+        );
 
-            revokeEvidencePreview(target);
+        revokeEvidencePreview(target);
 
-            return current.filter(
+        const nextItems =
+            evidenceItemsRef.current.filter(
                 (item) => item.id !== itemId
             );
-        });
+
+        evidenceItemsRef.current = nextItems;
+        setEvidenceItems(nextItems);
         setUploadMessage('');
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
