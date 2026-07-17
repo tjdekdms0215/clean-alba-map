@@ -171,207 +171,6 @@ let mockAdminReviews = deepClone(MOCK_ADMIN_REVIEWS);
 const normalizeToneKey = (value = '') =>
     normalizeIndicatorKey(value);
 
-const normalizePlainText = (value = '') =>
-    String(value)
-        .replace(/\s+/g, ' ')
-        .trim();
-
-const tokenizeSourceText = (value = '') =>
-    normalizePlainText(value)
-        .split(/[.!?]+|\s+/)
-        .map((token) => token.trim())
-        .filter((token) => token.length >= 2);
-
-const RAW_EMOTION_MARKERS = [
-    '최악',
-    '개판',
-    '쓰레기',
-    '짜증',
-    '열받',
-    '화나',
-    '미친',
-    '끔찍',
-    '무례'
-];
-
-const ISSUE_SUMMARY_RULES = [
-    {
-        pattern: /(사장|매니저|점장).{0,8}(최악|폭언|무시|막말|소리|짜증)/,
-        sentence: '근무 중 소통 방식에서 아쉬운 점이 있었습니다.'
-    },
-    {
-        pattern: /(월급|급여|임금).{0,12}(늦|지연|미루|밀리)/,
-        sentence: '급여 지급이 지연된 점이 있었습니다.'
-    },
-    {
-        pattern: /(근로)?계약서.{0,8}(없|안|미작성|못)/,
-        sentence: '근로계약서 작성 여부를 다시 확인할 필요가 있었습니다.'
-    },
-    {
-        pattern: /주휴수당.{0,8}(없|안|미지급|못|누락)/,
-        sentence: '주휴수당 지급 기준이 명확하지 않았습니다.'
-    },
-    {
-        pattern: /(최저시급|최저임금|시급).{0,10}(낮|부족|미준수|안)/,
-        sentence: '임금 조건이 기준에 미치지 못한 부분이 있었습니다.'
-    },
-    {
-        pattern: /(초과근무|야근|연장근무).{0,10}(없|안|미지급|못|누락)/,
-        sentence: '초과근무 수당 지급 여부를 확인할 필요가 있었습니다.'
-    },
-    {
-        pattern: /(휴게|쉬는 시간|휴식).{0,10}(없|못|부족)/,
-        sentence: '휴게 시간 운영에 아쉬움이 있었습니다.'
-    },
-    {
-        pattern: /(혼자).{0,10}(일|근무|돌리|마감|오픈)/,
-        sentence: '업무 분담과 인력 운영에 부담이 있었습니다.'
-    }
-];
-
-const buildNeutralIssueSummary = (content) => {
-    const normalized = normalizePlainText(content);
-
-    if (!normalized) {
-        return '근무 중 몇 가지 확인이 필요한 부분이 있었습니다.';
-    }
-
-    const matchedSentences = ISSUE_SUMMARY_RULES.filter(({ pattern }) =>
-        pattern.test(normalized)
-    )
-        .map(({ sentence }) => sentence)
-        .filter(
-            (sentence, index, list) =>
-                list.indexOf(sentence) === index
-        )
-        .slice(0, 2);
-
-    if (matchedSentences.length > 0) {
-        return matchedSentences.join(' ');
-    }
-
-    return '근무 중 몇 가지 확인이 필요한 부분이 있었습니다.';
-};
-
-const buildPurifyTemplateText = (
-    content,
-    toneKey = 'soft'
-) => {
-    const summary = buildNeutralIssueSummary(content);
-
-    if (toneKey === 'objective') {
-        return `${summary} 사실 관계는 근무 기간, 임금 지급 시점, 계약서 작성 여부처럼 확인 가능한 항목 중심으로 정리하는 것이 좋습니다.`;
-    }
-
-    if (toneKey === 'emotional') {
-        return `${summary} 비슷한 상황을 겪을 수 있는 분들은 근무 전 조건을 한 번 더 확인하고 필요한 내용을 기록으로 남겨두면 도움이 될 수 있습니다.`;
-    }
-
-    return `${summary} 관련 기준과 안내가 조금 더 명확해진다면 전반적인 근무 경험이 한층 나아질 것으로 보입니다.`;
-};
-
-const hasCopiedSourcePhrase = (
-    candidateText,
-    sourceText
-) => {
-    const normalizedCandidate =
-        normalizePlainText(candidateText);
-    const normalizedSource =
-        normalizePlainText(sourceText);
-
-    if (!normalizedCandidate || !normalizedSource) {
-        return false;
-    }
-
-    if (
-        normalizedSource.length >= 8 &&
-        normalizedCandidate.includes(normalizedSource)
-    ) {
-        return true;
-    }
-
-    const sourceTokens = tokenizeSourceText(sourceText);
-
-    for (
-        let phraseLength = Math.min(4, sourceTokens.length);
-        phraseLength >= 2;
-        phraseLength -= 1
-    ) {
-        for (
-            let index = 0;
-            index <= sourceTokens.length - phraseLength;
-            index += 1
-        ) {
-            const phrase = sourceTokens
-                .slice(index, index + phraseLength)
-                .join(' ');
-
-            if (
-                phrase.length >= 7 &&
-                normalizedCandidate.includes(phrase)
-            ) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-};
-
-const hasHarshCarryover = (
-    candidateText,
-    sourceText
-) =>
-    RAW_EMOTION_MARKERS.some(
-        (marker) =>
-            sourceText.includes(marker) &&
-            candidateText.includes(marker)
-    );
-
-const sanitizePurifySuggestion = (
-    text,
-    sourceText,
-    toneKey
-) => {
-    const normalizedText = normalizePlainText(text);
-
-    if (!normalizedText) {
-        return buildPurifyTemplateText(
-            sourceText,
-            toneKey
-        );
-    }
-
-    if (
-        hasCopiedSourcePhrase(normalizedText, sourceText) ||
-        hasHarshCarryover(normalizedText, sourceText)
-    ) {
-        return buildPurifyTemplateText(
-            sourceText,
-            toneKey
-        );
-    }
-
-    return normalizedText;
-};
-
-const buildLocalPurifyResult = (content) => {
-    const normalized = normalizePlainText(content);
-
-    return {
-        source: 'fallback',
-        objective: buildPurifyTemplateText(
-            normalized,
-            'objective'
-        ),
-        soft: buildPurifyTemplateText(normalized, 'soft'),
-        emotional: buildPurifyTemplateText(
-            normalized,
-            'emotional'
-        )
-    };
-};
-
 const pickFirstString = (source, keys) => {
     if (!source || typeof source !== 'object') {
         return '';
@@ -572,7 +371,9 @@ const normalizePurifyResponse = (payload, sourceText) => {
     const raw = payload?.data || payload?.result || payload;
 
     if (!raw || typeof raw !== 'object') {
-        return buildLocalPurifyResult(sourceText);
+        throw new Error(
+            'AI 순화 응답 형식이 올바르지 않습니다.'
+        );
     }
 
     const options = pickFirstArray(raw, [
@@ -616,11 +417,7 @@ const normalizePurifyResponse = (payload, sourceText) => {
         ]);
 
         if (text) {
-            mapped[key] = sanitizePurifySuggestion(
-                text,
-                sourceText,
-                key
-            );
+            mapped[key] = text;
         }
     });
 
@@ -632,7 +429,9 @@ const normalizePurifyResponse = (payload, sourceText) => {
         return mapped;
     }
 
-    return buildLocalPurifyResult(sourceText);
+    throw new Error(
+        'AI 순화 응답에 필요한 3가지 버전이 모두 포함되지 않았습니다.'
+    );
 };
 
 const toCoworkerText = (value) => {
@@ -848,29 +647,20 @@ export const submitReview = async ({
 };
 
 export const purifyReview = async (content) => {
-    try {
-        const response = await api.post(
-            '/reviews/purity-preview',
-            {
-                reviewText: content
-            },
-            {
-                useAuth: false
-            }
-        );
+    const response = await api.post(
+        '/reviews/purity-preview',
+        {
+            reviewText: content
+        },
+        {
+            useAuth: false
+        }
+    );
 
-        return normalizePurifyResponse(
-            response.data,
-            content
-        );
-    } catch (error) {
-        console.warn(
-            'AI 순화 API 응답을 받지 못해 예비 문안을 사용합니다.',
-            error
-        );
-
-        return buildLocalPurifyResult(content);
-    }
+    return normalizePurifyResponse(
+        response.data,
+        content
+    );
 };
 
 export const getAdminReviews = async (status = null) => {
