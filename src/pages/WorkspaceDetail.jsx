@@ -9,6 +9,11 @@ import {
 } from 'react-router-dom';
 import { getWorkspaceDetail } from '../api/workspace';
 import {
+    beginKakaoLogin,
+    getStoredAuth,
+    setPostLoginRedirectPath
+} from '../utils/auth';
+import {
     REVIEW_INDICATORS,
     findReviewIndicator,
     getViolationIndicatorIds
@@ -703,6 +708,25 @@ const WorkspaceDetail = () => {
     const hasNextReviewPage =
         (reviewPage + 1) * REVIEWS_PER_PAGE <
         detailData.reviews.length;
+    const handleReviewWriteClick = () => {
+        const writePath = `/review/write/${workspaceId}`;
+        const auth = getStoredAuth();
+
+        if (auth.isLoggedIn) {
+            navigate(writePath, {
+                state: { workspace }
+            });
+            return;
+        }
+
+        setPostLoginRedirectPath(writePath);
+
+        const hasStarted = beginKakaoLogin();
+
+        if (!hasStarted) {
+            alert('카카오 로그인 설정을 확인해 주세요.');
+        }
+    };
 
     return (
         <div style={pageStyle}>
@@ -1013,10 +1037,8 @@ const WorkspaceDetail = () => {
                                         style={
                                             reviewWriteButtonStyle
                                         }
-                                        onClick={() =>
-                                            navigate(
-                                                `/review/write/${workspaceId}`
-                                            )
+                                        onClick={
+                                            handleReviewWriteClick
                                         }
                                     >
                                         후기 남기기
