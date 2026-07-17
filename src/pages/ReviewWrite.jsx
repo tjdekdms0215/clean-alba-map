@@ -19,9 +19,9 @@ import {
     REVIEW_FORM_INDICATORS
 } from '../constants/reviewIndicators';
 import ReviewPurifyModal from '../components/ai/ReviewPurifyModal';
+import AppHeader from '../components/AppHeader';
 import {
     beginKakaoLogin,
-    clearStoredAuth,
     getStoredAuth
 } from '../utils/auth';
 
@@ -747,12 +747,6 @@ const ReviewWrite = () => {
         }
     };
 
-    const handleLogout = () => {
-        clearStoredAuth();
-        setAuthState(getStoredAuth());
-        navigate('/');
-    };
-
     const handleToggleShiftMenu = () => {
         setIsShiftMenuOpen((current) => !current);
     };
@@ -991,50 +985,7 @@ const ReviewWrite = () => {
 
     return (
         <div style={pageStyle}>
-            <header style={headerStyle}>
-                <button
-                    type="button"
-                    style={brandButtonStyle}
-                    onClick={() => navigate('/')}
-                >
-                    전남대 클린알바맵
-                </button>
-
-                <div style={headerActionsStyle}>
-                    <button
-                        type="button"
-                        style={headerLinkButtonStyle}
-                        onClick={() => navigate('/guide')}
-                    >
-                        근로기준법 안내
-                    </button>
-
-                    {authState.isLoggedIn && (
-                        <div style={profileChipStyle}>
-                            <span style={profileIconStyle}>
-                                ○
-                            </span>
-                            <span>
-                                {authState.nickname || '사용자'}
-                            </span>
-                        </div>
-                    )}
-
-                    <button
-                        type="button"
-                        style={headerLinkButtonStyle}
-                        onClick={
-                            authState.isLoggedIn
-                                ? handleLogout
-                                : handleKakaoLogin
-                        }
-                    >
-                        {authState.isLoggedIn
-                            ? '로그아웃'
-                            : '카카오 로그인'}
-                    </button>
-                </div>
-            </header>
+            <AppHeader />
 
             <main style={mainStyle}>
                 <section

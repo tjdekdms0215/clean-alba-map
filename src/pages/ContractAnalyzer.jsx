@@ -1,71 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ContractAnalyzerPanel from '../components/ai/ContractAnalyzerPanel';
-import {
-    beginKakaoLogin,
-    clearStoredAuth,
-    getStoredAuth
-} from '../utils/auth';
+import AppHeader from '../components/AppHeader';
 
 const ContractAnalyzer = () => {
     const navigate = useNavigate();
-    const [authState, setAuthState] = useState(
-        getStoredAuth()
-    );
-
-    const handleLogin = () => {
-        const started = beginKakaoLogin();
-
-        if (!started) {
-            alert('카카오 로그인 설정을 확인해 주세요.');
-        }
-    };
-
-    const handleLogout = () => {
-        clearStoredAuth();
-        setAuthState(getStoredAuth());
-        navigate('/');
-    };
 
     return (
         <div style={pageStyle}>
-            <header style={headerStyle}>
-                <div style={leftHeaderStyle}>
-                    <button
-                        type="button"
-                        style={brandButtonStyle}
-                        onClick={() => navigate('/')}
-                    >
-                        전남대 클린알바맵
-                    </button>
-
-                    <button
-                        type="button"
-                        style={navButtonStyle}
-                        onClick={() => navigate('/guide')}
-                    >
-                        근로기준법 안내
-                    </button>
-                </div>
-
-                <button
-                    type="button"
-                    style={
-                        authState.isLoggedIn
-                            ? logoutButtonStyle
-                            : loginButtonStyle
-                    }
-                    onClick={
-                        authState.isLoggedIn
-                            ? handleLogout
-                            : handleLogin
-                    }
-                >
-                    {authState.isLoggedIn
-                        ? '로그아웃'
-                        : '카카오 로그인'}
-                </button>
-            </header>
+            <AppHeader />
 
             <main style={mainStyle}>
                 <div style={contentStyle}>

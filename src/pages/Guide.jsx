@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const KAKAO_REST_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY;
-const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
+import AppHeader from '../components/AppHeader';
 
 const TAB_KEYS = {
     WAGE: '2026 최저시급',
@@ -42,22 +40,6 @@ const Guide = () => {
     const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState(TAB_KEYS.WAGE);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [nickname, setNickname] = useState('');
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [showIntroModal, setShowIntroModal] = useState(false);
-
-    useEffect(() => {
-        const token = localStorage.getItem('jwt_token');
-        const savedNickname = localStorage.getItem('user_nickname');
-        const userRole = localStorage.getItem('user_role');
-
-        if (token) {
-            setIsLoggedIn(true);
-            setNickname(savedNickname || '');
-            setIsAdmin(userRole === 'ADMIN');
-        }
-    }, []);
 
     useEffect(() => {
         const html = document.documentElement;
@@ -100,34 +82,6 @@ const Guide = () => {
     }, []);
 
     const activeGuide = useMemo(() => guideData[activeTab], [activeTab]);
-
-    const handleKakaoLogin = () => {
-        if (!KAKAO_REST_API_KEY || !KAKAO_REDIRECT_URI) {
-            alert('카카오 로그인 설정을 확인해 주세요.');
-            return;
-        }
-        const state = window.crypto?.randomUUID
-            ? window.crypto.randomUUID()
-            : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        sessionStorage.setItem('kakao_oauth_state', state);
-
-        const params = new URLSearchParams({
-            response_type: 'code',
-            client_id: KAKAO_REST_API_KEY,
-            redirect_uri: KAKAO_REDIRECT_URI,
-            state
-        });
-
-        window.location.assign(`https://kauth.kakao.com/oauth/authorize?${params.toString()}`);
-    };
-
-    const handleLogout = () => {
-        localStorage.clear();
-        setIsLoggedIn(false);
-        setNickname('');
-        setIsAdmin(false);
-        navigate('/');
-    };
 
     const openLawCenter = () => {
         window.open('https://www.law.go.kr', '_blank', 'noopener,noreferrer');
@@ -413,46 +367,7 @@ const Guide = () => {
 
     return (
         <div style={pageStyle}>
-            {/* 헤더 */}
-            <header
-                style={{
-                    ...fullWidthWrapperStyle,
-                    height: '64px',
-                    minHeight: '64px',
-                    flexShrink: 0,
-                    backgroundColor: '#ffffff',
-                    borderBottom: '1px solid #eeeeee',
-                    zIndex: 20
-                }}
-            >
-                <div style={{ ...innerContainerStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '64px' }}>
-                    <div style={headerLeftStyle}>
-                        <button type="button" style={logoButtonStyle} onClick={() => navigate('/')}>전남대 클린알바맵</button>
-                        <button type="button" style={navButtonStyle} onClick={() => setShowIntroModal(true)}>서비스 소개</button>
-                        <button type="button" style={navButtonStyle} onClick={() => navigate('/guide')}>근로기준법 안내</button>
-                    </div>
-
-                    <div style={headerRightStyle}>
-                        {isLoggedIn ? (
-                            <>
-                                <button type="button" style={profileButtonStyle} onClick={() => navigate('/profile')}>
-                                    <div style={profileCircleStyle}>
-                                        <img src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" alt="프로필" style={profileImageStyle} />
-                                    </div>
-                                    {nickname && <span style={profileTextStyle}>{nickname}님</span>}
-                                </button>
-                                {isAdmin && <button type="button" style={adminButtonStyle} onClick={() => navigate('/admin')}>⚙️ 관리자</button>}
-                                <button type="button" style={plainButtonStyle} onClick={handleLogout}>로그아웃 ➔</button>
-                            </>
-                        ) : (
-                            <button type="button" onClick={handleKakaoLogin} style={kakaoLoginButtonStyle}>
-                                <svg viewBox="0 0 24 24" style={kakaoLogoStyle}><path fill="#191919" d="M12 3C6.477 3 2 6.582 2 11c0 2.833 1.838 5.321 4.611 6.744l-1.153 4.227c-.103.377.327.681.656.464l5.119-3.386c.253.014.509.021.767.021 5.523 0 10-3.582 10-8.07C22 6.582 17.523 3 12 3Z" /></svg>
-                                <span style={kakaoLoginTextStyle}>카카오 로그인</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </header>
+            <AppHeader />
 
             <main style={scrollAreaStyle}>
                 {/* 탭 네비게이션 */}
@@ -527,14 +442,6 @@ const Guide = () => {
                 </div>
             </footer>
             </main>
-
-            {/* 모달 로직 유지 */}
-            {showIntroModal && (
-               // ... (기존 모달 코드 동일 유지)
-               <div style={modalOverlayStyle} onClick={() => setShowIntroModal(false)}>
-                   {/* 모달 내용은 생략 없이 그대로 */}
-               </div>
-            )}
         </div>
     );
 };

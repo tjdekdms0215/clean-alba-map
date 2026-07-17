@@ -13,11 +13,7 @@ import {
     findReviewIndicator,
     getViolationIndicatorIds
 } from '../constants/reviewIndicators';
-import {
-    beginKakaoLogin,
-    clearStoredAuth,
-    getStoredAuth
-} from '../utils/auth';
+import AppHeader from '../components/AppHeader';
 
 const DEFAULT_SHIFT_ORDER = ['morning', 'afternoon', 'night'];
 const SHIFT_LABELS = {
@@ -620,9 +616,6 @@ const CircularScore = ({
 const WorkspaceDetail = () => {
     const navigate = useNavigate();
     const { workspaceId } = useParams();
-    const [authState, setAuthState] = useState(
-        getStoredAuth()
-    );
     const [workspace, setWorkspace] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState('');
@@ -696,69 +689,9 @@ const WorkspaceDetail = () => {
         };
     }, [workspace]);
 
-    const handleLogin = () => {
-        const started = beginKakaoLogin();
-
-        if (!started) {
-            alert('카카오 로그인 설정을 확인해 주세요.');
-        }
-    };
-
-    const handleLogout = () => {
-        clearStoredAuth();
-        setAuthState(getStoredAuth());
-        navigate('/');
-    };
-
     return (
         <div style={pageStyle}>
-            <header style={headerStyle}>
-                <div style={headerLeftStyle}>
-                    <button
-                        type="button"
-                        style={logoButtonStyle}
-                        onClick={() => navigate('/')}
-                    >
-                        전남대 클린알바맵
-                    </button>
-
-                    <button
-                        type="button"
-                        style={navButtonStyle}
-                        onClick={() => navigate('/')}
-                    >
-                        서비스 소개
-                    </button>
-
-                    <button
-                        type="button"
-                        style={navButtonStyle}
-                        onClick={() => navigate('/guide')}
-                    >
-                        근로기준법 안내
-                    </button>
-                </div>
-
-                <div style={headerRightStyle}>
-                    {authState.isLoggedIn ? (
-                        <button
-                            type="button"
-                            style={plainHeaderButtonStyle}
-                            onClick={handleLogout}
-                        >
-                            로그아웃
-                        </button>
-                    ) : (
-                        <button
-                            type="button"
-                            style={loginButtonStyle}
-                            onClick={handleLogin}
-                        >
-                            카카오 로그인
-                        </button>
-                    )}
-                </div>
-            </header>
+            <AppHeader />
 
             <main style={mainStyle}>
                 <div style={contentWrapStyle}>

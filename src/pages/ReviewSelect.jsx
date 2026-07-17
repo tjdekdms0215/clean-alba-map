@@ -4,20 +4,13 @@ import {
     useNavigate
 } from 'react-router-dom';
 import { searchReviewTargets, resolveWorkspace } from '../api/workspace';
-
-
-const KAKAO_REST_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY;
-const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
+import AppHeader from '../components/AppHeader';
 
 const ReviewSelect = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [nickname, setNickname] = useState('');
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [showIntroModal, setShowIntroModal] = useState(false);
-
     const [keyword, setKeyword] = useState('');
     const [results, setResults] = useState([]);
     const [hasSearched, setHasSearched] = useState(false);
@@ -26,13 +19,8 @@ const ReviewSelect = () => {
 
     useEffect(() => {
         const token = localStorage.getItem('jwt_token');
-        const savedNickname = localStorage.getItem('user_nickname');
-        const userRole = localStorage.getItem('user_role');
-
         if (token) {
             setIsLoggedIn(true);
-            setNickname(savedNickname || '');
-            setIsAdmin(userRole === 'ADMIN');
         }
     }, []);
 
@@ -49,39 +37,6 @@ const ReviewSelect = () => {
             );
         }
     }, [location.state]);
-
-    const handleKakaoLogin = () => {
-        if (!KAKAO_REST_API_KEY || !KAKAO_REDIRECT_URI) {
-            console.error('카카오 로그인 환경변수가 설정되지 않았습니다.');
-            alert('카카오 로그인 설정을 확인해 주세요.');
-            return;
-        }
-
-        const state = window.crypto?.randomUUID
-            ? window.crypto.randomUUID()
-            : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-        sessionStorage.setItem('kakao_oauth_state', state);
-
-        const params = new URLSearchParams({
-            response_type: 'code',
-            client_id: KAKAO_REST_API_KEY,
-            redirect_uri: KAKAO_REDIRECT_URI,
-            state
-        });
-
-        window.location.assign(
-            `https://kauth.kakao.com/oauth/authorize?${params.toString()}`
-        );
-    };
-
-    const handleLogout = () => {
-        localStorage.clear();
-        setIsLoggedIn(false);
-        setNickname('');
-        setIsAdmin(false);
-        alert('로그아웃 되었습니다.');
-    };
 
     // 💡 1. 검색 함수 깔끔하게 교체
     const handleSearch = async (event) => {
@@ -191,99 +146,7 @@ const ReviewSelect = () => {
 
     return (
         <div style={pageStyle}>
-            <header style={headerStyle}>
-                <div style={headerLeftStyle}>
-                    <button
-                        type="button"
-                        style={logoBtnStyle}
-                        onClick={() => navigate('/')}
-                    >
-                        전남대 클린알바맵
-                    </button>
-
-                    <button
-                        type="button"
-                        style={navBtnStyle}
-                        onClick={() => setShowIntroModal(true)}
-                    >
-                        서비스 소개
-                    </button>
-
-                    <button
-                        type="button"
-                        style={navBtnStyle}
-                        onClick={() => navigate('/guide')}
-                    >
-                        근로기준법 안내
-                    </button>
-                </div>
-
-                <div style={headerRightStyle}>
-                    {isLoggedIn ? (
-                        <>
-                            <button
-                                type="button"
-                                style={profileButtonStyle}
-                                onClick={() => navigate('/profile')}
-                            >
-                                <div style={profileCircleStyle}>
-                                    <img
-                                        src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
-                                        alt="프로필"
-                                        style={profileImageStyle}
-                                    />
-                                </div>
-
-                                {nickname && (
-                                    <span style={profileTextStyle}>
-                                        {nickname}님
-                                    </span>
-                                )}
-                            </button>
-
-                            {isAdmin && (
-                                <button
-                                    type="button"
-                                    onClick={() => navigate('/admin')}
-                                    style={adminBtnStyle}
-                                >
-                                    ⚙️ 관리자
-                                </button>
-                            )}
-
-                            <button
-                                type="button"
-                                onClick={handleLogout}
-                                style={btnStyle}
-                            >
-                                로그아웃
-                            </button>
-                        </>
-                    ) : (
-                        <button
-                            type="button"
-                            onClick={handleKakaoLogin}
-                            style={kakaoLoginBtnStyle}
-                            aria-label="카카오 로그인"
-                        >
-                            <svg
-                                viewBox="0 0 24 24"
-                                style={kakaoLogoStyle}
-                                aria-hidden="true"
-                            >
-                                <path
-                                    fill="#191919"
-                                    d="M12 3C6.477 3 2 6.582 2 11c0 2.833 1.838 5.321 4.611 6.744l-1.153 4.227c-.103.377.327.681.656.464l5.119-3.386c.253.014.509.021.767.021 5.523 0 10-3.582 10-8.07C22 6.582 17.523 3 12 3Z"
-                                />
-                            </svg>
-
-                            <span style={kakaoLoginTextStyle}>
-                                카카오 로그인
-                            </span>
-                        </button>
-                    )}
-                </div>
-            </header>
+            <AppHeader />
 
             <main style={mainStyle}>
                 <section style={contentSectionStyle}>
@@ -409,90 +272,6 @@ const ReviewSelect = () => {
                 </section>
             </main>
 
-            {showIntroModal && (
-                <div
-                    style={modalOverlayStyle}
-                    onClick={() => setShowIntroModal(false)}
-                    role="presentation"
-                >
-                    <div
-                        role="dialog"
-                        aria-modal="true"
-                        aria-label="서비스 소개"
-                        style={introModalStyle}
-                        onClick={(event) => event.stopPropagation()}
-                    >
-                        <button
-                            type="button"
-                            onClick={() => setShowIntroModal(false)}
-                            style={modalCloseButtonStyle}
-                            aria-label="서비스 소개 닫기"
-                        >
-                            ✕
-                        </button>
-
-                        <div style={introHeaderStyle}>
-                            <span style={coreValueBadgeStyle}>
-                                CORE VALUE
-                            </span>
-
-                            <h2 style={introTitleStyle}>
-                                안전한 알바를 위한
-                                <br />
-                                <span style={introTitleAccentStyle}>
-                                    전남대 클린알바맵
-                                </span>
-                            </h2>
-
-                            <p style={introSubtitleStyle}>
-                                솔직한 후기, 공정한 평가로 더 나은 문화를
-                                만듭니다.
-                            </p>
-                        </div>
-
-                        <div style={introFeatureListStyle}>
-                            <div style={introFeatureStyle}>
-                                <div style={introFeatureIconStyle}>01</div>
-                                <div>
-                                    <div style={introFeatureTitleStyle}>
-                                        클린 지수 시각화
-                                    </div>
-                                    <div style={introFeatureDescStyle}>
-                                        사업장의 근로기준법 준수 여부를
-                                        점수화해 컬러 핀으로 표시합니다.
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style={introFeatureStyle}>
-                                <div style={introFeatureIconStyle}>02</div>
-                                <div>
-                                    <div style={introFeatureTitleStyle}>
-                                        인증 기반 후기
-                                    </div>
-                                    <div style={introFeatureDescStyle}>
-                                        실제 근로 증명 기반 후기로 신뢰도를
-                                        높입니다.
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style={introFeatureStyle}>
-                                <div style={introFeatureIconStyle}>03</div>
-                                <div>
-                                    <div style={introFeatureTitleStyle}>
-                                        AI 후기 순화
-                                    </div>
-                                    <div style={introFeatureDescStyle}>
-                                        위험 표현을 안전한 문장으로 변환해
-                                        작성자를 보호합니다.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

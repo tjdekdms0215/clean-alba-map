@@ -10,10 +10,7 @@ import {
     updateAdminReviewStatus
 } from '../api/reviews';
 import { REVIEW_INDICATORS } from '../constants/reviewIndicators';
-import {
-    clearStoredAuth,
-    getStoredAuth
-} from '../utils/auth';
+import AppHeader from '../components/AppHeader';
 
 const STATUS_TABS = [
     {
@@ -205,9 +202,6 @@ const PdfPlaceholderIcon = () => (
 const AdminPage = () => {
     const navigate = useNavigate();
     const isMobile = useIsMobile();
-    const [authState, setAuthState] = useState(
-        getStoredAuth()
-    );
     const [reviews, setReviews] = useState([]);
     const [activeStatus, setActiveStatus] = useState('PENDING');
     const [selectedReviewId, setSelectedReviewId] =
@@ -339,12 +333,6 @@ const AdminPage = () => {
         };
     }, [reviews, selectedReviewId]);
 
-    const handleLogout = () => {
-        clearStoredAuth();
-        setAuthState(getStoredAuth());
-        navigate('/');
-    };
-
     const handleModeration = async (nextStatus) => {
         if (!selectedReview) {
             return;
@@ -407,43 +395,7 @@ const AdminPage = () => {
 
     return (
         <div style={pageStyle}>
-            <header style={headerStyle}>
-                <div style={headerLeftStyle}>
-                    <button
-                        type="button"
-                        style={logoButtonStyle}
-                        onClick={() => navigate('/')}
-                    >
-                        전남대 클린알바맵
-                    </button>
-                </div>
-
-                <div style={headerRightStyle}>
-                    <button
-                        type="button"
-                        style={plainNavButtonStyle}
-                        onClick={() => navigate('/guide')}
-                    >
-                        근로기준법 안내
-                    </button>
-
-                    <div style={profileCircleStyle}>
-                        {authState.nickname
-                            ? authState.nickname
-                                  .slice(0, 1)
-                                  .toUpperCase()
-                            : '○'}
-                    </div>
-
-                    <button
-                        type="button"
-                        style={plainNavButtonStyle}
-                        onClick={handleLogout}
-                    >
-                        로그아웃
-                    </button>
-                </div>
-            </header>
+            <AppHeader />
 
             <main
                 style={{
