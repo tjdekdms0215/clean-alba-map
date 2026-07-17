@@ -1,12 +1,8 @@
 {
-  "routes": [
+  "rewrites": [
     {
-      "src": "^/backend/(.*)$",
-      "dest": "https://cleanalb-map.duckdns.org/$1"
-    },
-    {
-      "src": "^/(.*)$",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
