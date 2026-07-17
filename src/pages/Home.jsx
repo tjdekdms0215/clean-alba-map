@@ -574,16 +574,31 @@ const Home = () => {
                             <button
                                 type="button"
                                 onClick={() => setSelectedStore(null)}
-                                style={popupCloseBtnStyle}
+                                style={{
+                                    ...popupCloseBtnStyle,
+                                    ...(isMobile
+                                        ? mobilePopupCloseBtnStyle
+                                        : null)
+                                }}
                                 aria-label="팝업 닫기"
                             >
                                 ✕
                             </button>
 
-                            <div style={statusBadgeRowStyle}>
+                            <div
+                                style={{
+                                    ...statusBadgeRowStyle,
+                                    ...(isMobile
+                                        ? mobileStatusBadgeRowStyle
+                                        : null)
+                                }}
+                            >
                                 <span
                                     style={{
                                         ...tagStatusStyle,
+                                        ...(isMobile
+                                            ? mobileTagStatusStyle
+                                            : null),
                                         color: selectedGrade.color
                                     }}
                                 >
@@ -591,12 +606,26 @@ const Home = () => {
                                 </span>
                             </div>
 
-                            <h3 style={popupStoreNameStyle}>
+                            <h3
+                                style={{
+                                    ...popupStoreNameStyle,
+                                    ...(isMobile
+                                        ? mobilePopupStoreNameStyle
+                                        : null)
+                                }}
+                            >
                                 {activeSelectedStore.name ||
                                     '사업장 이름 없음'}
                             </h3>
 
-                            <p style={popupMetaStyle}>
+                            <p
+                                style={{
+                                    ...popupMetaStyle,
+                                    ...(isMobile
+                                        ? mobilePopupMetaStyle
+                                        : null)
+                                }}
+                            >
                                 <span>
                                     {activeSelectedStore.district ||
                                         '지역 정보 없음'}
@@ -608,12 +637,38 @@ const Home = () => {
                                 </span>
                             </p>
 
-                            <div style={grayBoxStyle}>
-                                <div style={boxRowStyle}>
-                                    <span style={boxLabelStyle}>클린 점수:</span>
+                            <div
+                                style={{
+                                    ...grayBoxStyle,
+                                    ...(isMobile
+                                        ? mobileGrayBoxStyle
+                                        : null)
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        ...boxRowStyle,
+                                        ...(isMobile
+                                            ? mobileBoxRowStyle
+                                            : null)
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            ...boxLabelStyle,
+                                            ...(isMobile
+                                                ? mobileBoxLabelStyle
+                                                : null)
+                                        }}
+                                    >
+                                        클린 점수:
+                                    </span>
                                     <strong
                                         style={{
                                             ...boxValueStyle,
+                                            ...(isMobile
+                                                ? mobileBoxValueStyle
+                                                : null),
                                             color: selectedGrade.color
                                         }}
                                     >
@@ -623,12 +678,31 @@ const Home = () => {
                                     </strong>
                                 </div>
 
-                                <div style={boxRowStyle}>
-                                    <span style={boxLabelStyle}>산출 근거:</span>
+                                <div
+                                    style={{
+                                        ...boxRowStyle,
+                                        ...(isMobile
+                                            ? mobileBoxRowStyle
+                                            : null)
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            ...boxLabelStyle,
+                                            ...(isMobile
+                                                ? mobileBoxLabelStyle
+                                                : null)
+                                        }}
+                                    >
+                                        산출 근거:
+                                    </span>
                                     <div style={evidenceBlockStyle}>
                                         <span
                                             style={{
                                                 ...evidenceHeadingStyle,
+                                                ...(isMobile
+                                                    ? mobileEvidenceHeadingStyle
+                                                    : null),
                                                 color:
                                                     evidenceSummary?.focus ===
                                                     'positive'
@@ -650,11 +724,19 @@ const Home = () => {
                                                 {evidenceSummary.items.map((item) => (
                                                     <div
                                                         key={item.id}
-                                                        style={evidenceItemStyle}
+                                                        style={{
+                                                            ...evidenceItemStyle,
+                                                            ...(isMobile
+                                                                ? mobileEvidenceItemStyle
+                                                                : null)
+                                                        }}
                                                     >
                                                         <span
                                                             style={{
                                                                 ...evidenceTypeBadgeStyle,
+                                                                ...(isMobile
+                                                                    ? mobileEvidenceTypeBadgeStyle
+                                                                    : null),
                                                                 backgroundColor:
                                                                     evidenceSummary.focus ===
                                                                     'positive'
@@ -679,9 +761,12 @@ const Home = () => {
                                                             }
                                                         >
                                                             <strong
-                                                                style={
-                                                                    evidenceTextStyle
-                                                                }
+                                                                style={{
+                                                                    ...evidenceTextStyle,
+                                                                    ...(isMobile
+                                                                        ? mobileEvidenceTextStyle
+                                                                        : null)
+                                                                }}
                                                             >
                                                                 {item.shortText ||
                                                                     `${item.label} ${item.metric || ''}`.trim()}
@@ -692,9 +777,12 @@ const Home = () => {
                                             </div>
                                         ) : (
                                             <span
-                                                style={
-                                                    evidenceFallbackTextStyle
-                                                }
+                                                style={{
+                                                    ...evidenceFallbackTextStyle,
+                                                    ...(isMobile
+                                                        ? mobileBoxTextStyle
+                                                        : null)
+                                                }}
                                             >
                                                 {evidenceSummary?.fallbackText ||
                                                     '수집된 근거 데이터가 없습니다.'}
@@ -704,22 +792,71 @@ const Home = () => {
                                 </div>
                             </div>
 
-                            <div style={tintedBoxStyle}>
-                                <div style={boxRowStyle}>
-                                    <span style={boxLabelStyle}>누적 후기:</span>
-                                    <span style={boxTextStyle}>
+                            <div
+                                style={{
+                                    ...tintedBoxStyle,
+                                    ...(isMobile
+                                        ? mobileTintedBoxStyle
+                                        : null)
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        ...boxRowStyle,
+                                        ...(isMobile
+                                            ? mobileBoxRowStyle
+                                            : null)
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            ...boxLabelStyle,
+                                            ...(isMobile
+                                                ? mobileBoxLabelStyle
+                                                : null)
+                                        }}
+                                    >
+                                        누적 후기:
+                                    </span>
+                                    <span
+                                        style={{
+                                            ...boxTextStyle,
+                                            ...(isMobile
+                                                ? mobileBoxTextStyle
+                                                : null)
+                                        }}
+                                    >
                                         {activeSelectedStore.reviewCount ??
                                             0}
                                         명 참여
                                     </span>
                                 </div>
 
-                                <div style={boxRowStyle}>
-                                    <span style={boxLabelStyle}>후기 요약:</span>
+                                <div
+                                    style={{
+                                        ...boxRowStyle,
+                                        ...(isMobile
+                                            ? mobileBoxRowStyle
+                                            : null)
+                                    }}
+                                >
                                     <span
-                                        style={
-                                            popupSummaryTextStyle
-                                        }
+                                        style={{
+                                            ...boxLabelStyle,
+                                            ...(isMobile
+                                                ? mobileBoxLabelStyle
+                                                : null)
+                                        }}
+                                    >
+                                        후기 요약:
+                                    </span>
+                                    <span
+                                        style={{
+                                            ...popupSummaryTextStyle,
+                                            ...(isMobile
+                                                ? mobilePopupSummaryTextStyle
+                                                : null)
+                                        }}
                                     >
                                         {activeSelectedStore.reviewSummary ||
                                             '아직 요약된 후기가 없습니다.'}
@@ -727,7 +864,14 @@ const Home = () => {
                                 </div>
                             </div>
 
-                            <div style={detailButtonAreaStyle}>
+                            <div
+                                style={{
+                                    ...detailButtonAreaStyle,
+                                    ...(isMobile
+                                        ? mobileDetailButtonAreaStyle
+                                        : null)
+                                }}
+                            >
                                 <button
                                     type="button"
                                     onClick={() =>
@@ -791,35 +935,58 @@ const Home = () => {
                                     handleSearchInputChange
                                 }
                                 onKeyDown={handleSearch}
-                                style={sidebarSearchInputStyle}
+                                style={{
+                                    ...sidebarSearchInputStyle,
+                                    ...(isMobile
+                                        ? mobileSidebarSearchInputStyle
+                                        : null)
+                                }}
                             />
 
                             <button
                                 type="submit"
-                                style={searchIconButtonStyle}
+                                style={{
+                                    ...searchIconButtonStyle,
+                                    ...(isMobile
+                                        ? mobileSearchIconButtonStyle
+                                        : null)
+                                }}
                                 aria-label="사업장 검색"
                             >
                                 🔍
                             </button>
                         </form>
 
-                        <div style={searchExampleTextStyle}>
+                        <div
+                            style={{
+                                ...searchExampleTextStyle,
+                                ...(isMobile
+                                    ? mobileSearchExampleTextStyle
+                                    : null)
+                            }}
+                        >
                              ex.클린점수 60점 넘는 상대 카페 추천해줘
                         </div>
 
                         {interpretedChips.length > 0 && (
                             <div
-                                style={
-                                    searchChipListStyle
-                                }
+                                style={{
+                                    ...searchChipListStyle,
+                                    ...(isMobile
+                                        ? mobileSearchChipListStyle
+                                        : null)
+                                }}
                             >
                                 {interpretedChips.map(
                                     (chip) => (
                                         <span
                                             key={chip}
-                                            style={
-                                                searchChipStyle
-                                            }
+                                            style={{
+                                                ...searchChipStyle,
+                                                ...(isMobile
+                                                    ? mobileSearchChipStyle
+                                                    : null)
+                                            }}
                                         >
                                             {chip}
                                         </span>
@@ -838,10 +1005,25 @@ const Home = () => {
                         }}
                     >
                         <h2 style={listTitleStyle}>
+                            <span
+                                style={
+                                    isMobile
+                                        ? mobileListTitleTextStyle
+                                        : null
+                                }
+                            >
                             클린 사업장 리스트
+                            </span>
                         </h2>
 
-                        <span style={listCountStyle}>
+                        <span
+                            style={{
+                                ...listCountStyle,
+                                ...(isMobile
+                                    ? mobileListCountStyle
+                                    : null)
+                            }}
+                        >
                             전체 {stores.length}건
                         </span>
                     </div>
@@ -863,14 +1045,26 @@ const Home = () => {
                                     <button
                                         type="button"
                                         key={store.workspaceId}
-                                        style={listItemStyle}
+                                        style={{
+                                            ...listItemStyle,
+                                            ...(isMobile
+                                                ? mobileListItemStyle
+                                                : null)
+                                        }}
                                         onClick={() => {
                                             setSelectedStore(store)
                                             setMapCenterStore(store);
                                         }}
                                     >
                                         <div style={listItemTopStyle}>
-                                            <div style={storeNameStyle}>
+                                            <div
+                                                style={{
+                                                    ...storeNameStyle,
+                                                    ...(isMobile
+                                                        ? mobileStoreNameStyle
+                                                        : null)
+                                                }}
+                                            >
                                                 {store.name ||
                                                     '사업장 이름 없음'}
                                             </div>
@@ -878,6 +1072,9 @@ const Home = () => {
                                             <div
                                                 style={{
                                                     ...storeScoreStyle,
+                                                    ...(isMobile
+                                                        ? mobileStoreScoreStyle
+                                                        : null),
                                                     color: grade.color
                                                 }}
                                             >
@@ -887,7 +1084,14 @@ const Home = () => {
                                             </div>
                                         </div>
 
-                                        <div style={storeInfoStyle}>
+                                        <div
+                                            style={{
+                                                ...storeInfoStyle,
+                                                ...(isMobile
+                                                    ? mobileStoreInfoStyle
+                                                    : null)
+                                            }}
+                                        >
                                             {store.district ||
                                                 '지역 정보 없음'}
                                             {' • '}
@@ -1160,7 +1364,7 @@ const listTitleAreaStyle = {
 };
 
 const mobileListTitleAreaStyle = {
-    padding: '16px 14px 12px'
+    padding: '14px 14px 10px'
 };
 
 const listTitleStyle = {
@@ -1168,10 +1372,19 @@ const listTitleStyle = {
     margin: 0
 };
 
+const mobileListTitleTextStyle = {
+    fontSize: '15px',
+    lineHeight: 1.2
+};
+
 const listCountStyle = {
     fontSize: '13px',
     color: '#888',
     fontWeight: 'bold'
+};
+
+const mobileListCountStyle = {
+    fontSize: '11px'
 };
 
 const searchContainerStyle = {
@@ -1189,6 +1402,11 @@ const sidebarSearchInputStyle = {
     fontSize: '15px'
 };
 
+const mobileSidebarSearchInputStyle = {
+    padding: '10px 36px 10px 12px',
+    fontSize: '12px'
+};
+
 const searchIconButtonStyle = {
     position: 'absolute',
     right: '5px',
@@ -1202,6 +1420,13 @@ const searchIconButtonStyle = {
     fontSize: '18px'
 };
 
+const mobileSearchIconButtonStyle = {
+    width: '30px',
+    height: '30px',
+    right: '4px',
+    fontSize: '14px'
+};
+
 const searchExampleTextStyle = {
     fontSize: '12px',
     color: '#777',
@@ -1211,11 +1436,22 @@ const searchExampleTextStyle = {
     fontWeight: '500'
 };
 
+const mobileSearchExampleTextStyle = {
+    marginTop: '8px',
+    fontSize: '10px',
+    lineHeight: '1.35'
+};
+
 const searchChipListStyle = {
     marginTop: '12px',
     display: 'flex',
     flexWrap: 'wrap',
     gap: '8px'
+};
+
+const mobileSearchChipListStyle = {
+    marginTop: '10px',
+    gap: '6px'
 };
 
 const searchChipStyle = {
@@ -1230,6 +1466,12 @@ const searchChipStyle = {
     fontWeight: '700',
     borderRadius: '999px',
     boxSizing: 'border-box'
+};
+
+const mobileSearchChipStyle = {
+    minHeight: '24px',
+    padding: '0 8px',
+    fontSize: '10px'
 };
 
 const listContainerStyle = {
@@ -1253,6 +1495,10 @@ const listItemStyle = {
     cursor: 'pointer'
 };
 
+const mobileListItemStyle = {
+    padding: '14px'
+};
+
 const listItemTopStyle = {
     display: 'flex',
     justifyContent: 'space-between',
@@ -1270,10 +1516,18 @@ const storeNameStyle = {
     whiteSpace: 'nowrap'
 };
 
+const mobileStoreNameStyle = {
+    fontSize: '14px'
+};
+
 const storeScoreStyle = {
     flexShrink: 0,
     fontWeight: 'bold',
     fontSize: '16px'
+};
+
+const mobileStoreScoreStyle = {
+    fontSize: '12px'
 };
 
 const storeInfoStyle = {
@@ -1281,6 +1535,12 @@ const storeInfoStyle = {
     color: '#666',
     marginTop: '8px',
     fontWeight: '500'
+};
+
+const mobileStoreInfoStyle = {
+    marginTop: '6px',
+    fontSize: '11px',
+    lineHeight: '1.4'
 };
 
 const emptyStyle = {
@@ -1341,11 +1601,12 @@ const popupStyle = {
 };
 
 const mobilePopupStyle = {
-    width: 'calc(100% - 24px)',
-    height: 'auto',
-    minHeight: '400px',
-    maxHeight: 'calc(100% - 24px)',
-    padding: '16px'
+    width: '286px',
+    maxWidth: 'calc(100% - 40px)',
+    height: '378px',
+    minHeight: '378px',
+    maxHeight: '378px',
+    padding: '14px 14px 12px'
 };
 
 const popupCloseBtnStyle = {
@@ -1370,6 +1631,14 @@ const popupCloseBtnStyle = {
     cursor: 'pointer'
 };
 
+const mobilePopupCloseBtnStyle = {
+    top: '10px',
+    right: '10px',
+    width: '24px',
+    height: '24px',
+    fontSize: '14px'
+};
+
 const statusBadgeRowStyle = {
     display: 'flex',
     alignItems: 'center',
@@ -1377,6 +1646,12 @@ const statusBadgeRowStyle = {
     minHeight: '30px',
     marginBottom: '12px',
     paddingRight: '38px'
+};
+
+const mobileStatusBadgeRowStyle = {
+    minHeight: '24px',
+    marginBottom: '8px',
+    paddingRight: '28px'
 };
 
 const tagStatusStyle = {
@@ -1395,6 +1670,12 @@ const tagStatusStyle = {
     fontWeight: '900'
 };
 
+const mobileTagStatusStyle = {
+    minWidth: '42px',
+    padding: '5px 8px',
+    fontSize: '11px'
+};
+
 const popupStoreNameStyle = {
     margin: '0 0 6px',
     paddingRight: '30px',
@@ -1410,6 +1691,13 @@ const popupStoreNameStyle = {
     wordBreak: 'keep-all'
 };
 
+const mobilePopupStoreNameStyle = {
+    margin: '0 0 4px',
+    paddingRight: '22px',
+    fontSize: '16px',
+    lineHeight: '1.2'
+};
+
 const popupMetaStyle = {
     display: 'flex',
     alignItems: 'center',
@@ -1421,6 +1709,12 @@ const popupMetaStyle = {
     color: '#666666',
     fontSize: '12px',
     fontWeight: '600'
+};
+
+const mobilePopupMetaStyle = {
+    gap: '4px',
+    margin: '0 0 10px',
+    fontSize: '10px'
 };
 
 const metaDividerStyle = {
@@ -1440,6 +1734,12 @@ const grayBoxStyle = {
     borderRadius: 0
 };
 
+const mobileGrayBoxStyle = {
+    gap: '6px',
+    marginBottom: '8px',
+    padding: '9px 10px'
+};
+
 const tintedBoxStyle = {
     display: 'flex',
     flexDirection: 'column',
@@ -1453,6 +1753,11 @@ const tintedBoxStyle = {
     borderRadius: 0
 };
 
+const mobileTintedBoxStyle = {
+    gap: '6px',
+    padding: '9px 10px'
+};
+
 const boxRowStyle = {
     display: 'flex',
     alignItems: 'flex-start',
@@ -1464,6 +1769,12 @@ const boxRowStyle = {
     lineHeight: '1.45'
 };
 
+const mobileBoxRowStyle = {
+    gap: '8px',
+    fontSize: '10px',
+    lineHeight: '1.35'
+};
+
 const boxLabelStyle = {
     minWidth: '62px',
     color: '#555555',
@@ -1471,9 +1782,18 @@ const boxLabelStyle = {
     flexShrink: 0
 };
 
+const mobileBoxLabelStyle = {
+    minWidth: '50px',
+    fontSize: '10px'
+};
+
 const boxValueStyle = {
     fontSize: '14px',
     fontWeight: '900'
+};
+
+const mobileBoxValueStyle = {
+    fontSize: '12px'
 };
 
 const boxTextStyle = {
@@ -1485,6 +1805,11 @@ const boxTextStyle = {
     lineHeight: '1.45',
 
     wordBreak: 'keep-all'
+};
+
+const mobileBoxTextStyle = {
+    fontSize: '10px',
+    lineHeight: '1.35'
 };
 
 const popupSummaryTextStyle = {
@@ -1512,6 +1837,10 @@ const evidenceHeadingStyle = {
     letterSpacing: '-0.2px'
 };
 
+const mobileEvidenceHeadingStyle = {
+    fontSize: '10px'
+};
+
 const evidenceItemsGridStyle = {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
@@ -1521,7 +1850,7 @@ const evidenceItemsGridStyle = {
 const mobileEvidenceItemsGridStyle = {
     display: 'grid',
     gridTemplateColumns: '1fr',
-    gap: '6px'
+    gap: '5px'
 };
 
 const evidenceItemStyle = {
@@ -1534,6 +1863,12 @@ const evidenceItemStyle = {
     backgroundColor: 'rgba(255,255,255,0.86)'
 };
 
+const mobileEvidenceItemStyle = {
+    minHeight: '34px',
+    padding: '5px 6px',
+    gap: '6px'
+};
+
 const evidenceTypeBadgeStyle = {
     width: '18px',
     height: '18px',
@@ -1544,6 +1879,12 @@ const evidenceTypeBadgeStyle = {
     borderRadius: '999px',
     fontSize: '9px',
     fontWeight: '900'
+};
+
+const mobileEvidenceTypeBadgeStyle = {
+    width: '16px',
+    height: '16px',
+    fontSize: '8px'
 };
 
 const evidenceContentStyle = {
@@ -1567,6 +1908,11 @@ const evidenceTextStyle = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     wordBreak: 'keep-all'
+};
+
+const mobileEvidenceTextStyle = {
+    fontSize: '10px',
+    lineHeight: '1.2'
 };
 
 const evidenceFallbackTextStyle = {
@@ -1604,6 +1950,10 @@ const detailButtonAreaStyle = {
     flexShrink: 0
 };
 
+const mobileDetailButtonAreaStyle = {
+    paddingTop: '10px'
+};
+
 const modernDetailBtnStyle = {
     padding: '9px 14px',
 
@@ -1621,7 +1971,15 @@ const modernDetailBtnStyle = {
 
 const mobileModernDetailBtnStyle = {
     width: '100%',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    padding: '8px 10px',
+    fontSize: '11px'
+};
+
+const mobilePopupSummaryTextStyle = {
+    ...mobileBoxTextStyle,
+    minHeight: '2.7em',
+    maxHeight: '2.7em'
 };
 
 const closeIconBtnStyle = {

@@ -192,7 +192,12 @@ const AppHeader = () => {
                         >
                             <svg
                                 viewBox="0 0 24 24"
-                                style={kakaoLogoStyle}
+                                style={{
+                                    ...kakaoLogoStyle,
+                                    ...(isMobile
+                                        ? mobileKakaoLogoStyle
+                                        : null)
+                                }}
                                 aria-hidden="true"
                             >
                                 <path
@@ -202,7 +207,12 @@ const AppHeader = () => {
                             </svg>
 
                             <span
-                                style={kakaoLoginTextStyle}
+                                style={{
+                                    ...kakaoLoginTextStyle,
+                                    ...(isMobile
+                                        ? mobileKakaoLoginTextStyle
+                                        : null)
+                                }}
                             >
                                 카카오 로그인
                             </span>
@@ -235,9 +245,9 @@ const headerStyle = {
 
 const mobileHeaderStyle = {
     minHeight: 'auto',
-    padding: '12px 16px',
+    padding: '10px 14px',
     alignItems: 'stretch',
-    gap: '10px'
+    gap: '8px'
 };
 
 const headerLeftStyle = {
@@ -249,7 +259,7 @@ const headerLeftStyle = {
 
 const mobileHeaderLeftStyle = {
     width: '100%',
-    gap: '8px'
+    gap: '6px'
 };
 
 const headerRightStyle = {
@@ -262,8 +272,8 @@ const headerRightStyle = {
 
 const mobileHeaderRightStyle = {
     width: '100%',
-    justifyContent: 'space-between',
-    gap: '8px'
+    justifyContent: 'flex-end',
+    gap: '6px'
 };
 
 const logoBtnStyle = {
@@ -276,7 +286,7 @@ const logoBtnStyle = {
 };
 
 const mobileLogoBtnStyle = {
-    fontSize: '16px'
+    fontSize: '14px'
 };
 
 const navBtnStyle = {
@@ -290,8 +300,8 @@ const navBtnStyle = {
 };
 
 const mobileNavBtnStyle = {
-    padding: '6px 8px',
-    fontSize: '13px'
+    padding: '5px 6px',
+    fontSize: '11px'
 };
 
 const btnStyle = {
@@ -305,9 +315,9 @@ const btnStyle = {
 };
 
 const mobileActionBtnStyle = {
-    minHeight: '34px',
-    padding: '6px 10px',
-    fontSize: '12px'
+    minHeight: '30px',
+    padding: '5px 8px',
+    fontSize: '11px'
 };
 
 const adminBtnStyle = {
@@ -366,11 +376,16 @@ const kakaoLoginBtnStyle = {
 };
 
 const mobileKakaoLoginBtnStyle = {
-    minWidth: '0',
-    width: '100%',
-    height: '36px',
-    padding: '0 12px',
-    gap: '8px'
+    minWidth: '118px',
+    width: 'auto',
+    height: '32px',
+    padding: '0 10px',
+    gap: '6px'
+};
+
+const mobileKakaoLogoStyle = {
+    width: '18px',
+    height: '18px'
 };
 
 const kakaoLogoStyle = {
@@ -385,6 +400,11 @@ const kakaoLoginTextStyle = {
     fontSize: '15px',
     fontWeight: '600',
     lineHeight: 1
+};
+
+const mobileKakaoLoginTextStyle = {
+    fontSize: '12px',
+    fontWeight: '700'
 };
 
 export default AppHeader;
