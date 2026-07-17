@@ -601,6 +601,15 @@ const createReview = async (workspaceId, reviewData) => {
     return response.data?.data || response.data;
 };
 
+const resolveCreatedReviewId = (createdReview) =>
+    createdReview?.reviewId ||
+    createdReview?.id ||
+    createdReview?.review_id ||
+    createdReview?.data?.reviewId ||
+    createdReview?.data?.id ||
+    createdReview?.data?.review_id ||
+    null;
+
 const uploadReviewAttachment = async (reviewId, file) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -628,13 +637,21 @@ export const submitReview = async ({
         workspaceId,
         reviewData
     );
+    const createdReviewId =
+        resolveCreatedReviewId(createdReview);
+
+    if (!createdReviewId) {
+        throw new Error(
+            '리뷰 생성 응답에서 reviewId를 찾을 수 없습니다.'
+        );
+    }
 
     const uploadedAttachments = [];
 
     for (const file of evidenceFiles) {
         uploadedAttachments.push(
             await uploadReviewAttachment(
-                createdReview.reviewId,
+                createdReviewId,
                 file
             )
         );
@@ -642,6 +659,7 @@ export const submitReview = async ({
 
     return {
         ...createdReview,
+        reviewId: createdReviewId,
         attachments: uploadedAttachments
     };
 };

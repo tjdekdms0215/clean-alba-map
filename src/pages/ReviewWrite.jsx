@@ -896,7 +896,9 @@ const ReviewWrite = () => {
                 error
             );
             setFormErrorMessage(
-                'AI 후기 순화 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+                error?.response?.status === 404
+                    ? 'AI 후기 순화 API가 현재 서버에 연결되어 있지 않습니다. 백엔드 배포 경로를 확인해 주세요.'
+                    : 'AI 후기 순화 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
             );
             setIsPurifyModalOpen(false);
         } finally {
