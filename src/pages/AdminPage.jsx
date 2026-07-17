@@ -1096,6 +1096,8 @@ const pageStyle = {
 
 const desktopPageStyle = {
     height: '100dvh',
+    display: 'grid',
+    gridTemplateRows: 'auto minmax(0, 1fr)',
     overflow: 'hidden'
 };
 
@@ -1161,12 +1163,14 @@ const profileCircleStyle = {
 
 const mainStyle = {
     display: 'grid',
-    flex: '1 0 auto',
+    flex: '1 1 auto',
+    minHeight: 0,
     width: '100%'
 };
 
 const desktopMainStyle = {
     minHeight: 0,
+    height: '100%',
     overflow: 'hidden'
 };
 
