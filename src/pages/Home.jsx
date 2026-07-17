@@ -5,7 +5,6 @@ import {
     getWorkspaces
 } from '../api/workspace';
 import { getWorkspaceEvidenceSummary } from '../utils/workspaceEvidence';
-import AlbaRecommendationPanel from '../components/ai/AlbaRecommendationPanel';
 
 const KAKAO_REST_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY;
 const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
@@ -91,7 +90,6 @@ const Home = () => {
     const [isAdmin, setIsAdmin] = useState(false);
 
     const [stores, setStores] = useState([]);
-    const [allStores, setAllStores] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStore, setSelectedStore] = useState(null);
     const [selectedStoreSummary, setSelectedStoreSummary] =
@@ -100,19 +98,12 @@ const Home = () => {
 
 
 // 💡 기존의 fetchWorkspaces 함수를 이걸로 통째로 교체하세요!
-const fetchWorkspaces = async (
-    keyword = '',
-    options = {}
-) => {
+const fetchWorkspaces = async (keyword = '') => {
     try {
         const data = await getWorkspaces(null, keyword);
 
         if (Array.isArray(data)) {
             setStores(data);
-
-            if (options.syncAll) {
-                setAllStores(data);
-            }
         } else {
             console.error('사업장 데이터가 배열 형태가 아닙니다.', data);
             setStores([]);
@@ -140,7 +131,7 @@ const fetchWorkspaces = async (
             }
         }
 
-        fetchWorkspaces('', { syncAll: true });
+        fetchWorkspaces('');
     }, []);
 
     useEffect(() => {
@@ -303,41 +294,6 @@ const fetchWorkspaces = async (
     const handleSearch = (event) => {
         if (event.key === 'Enter') {
             executeSearch();
-        }
-    };
-
-    const handleApplyRecommendationQuery = (query) => {
-        setSearchTerm(query);
-        executeSearch(query);
-    };
-
-    const handleFocusRecommendation = (recommendation) => {
-        const pool =
-            allStores.length > 0 ? allStores : stores;
-        const target =
-            pool.find(
-                (store) =>
-                    String(store.workspaceId) ===
-                    String(recommendation.workspaceId)
-            ) ||
-            pool.find(
-                (store) =>
-                    store.name === recommendation.name
-            );
-
-        if (target) {
-            if (allStores.length > 0) {
-                setStores(allStores);
-            }
-
-            setSelectedStore(target);
-            return;
-        }
-
-        if (recommendation.workspaceId) {
-            navigate(
-                `/detail/${recommendation.workspaceId}`
-            );
         }
     };
 
@@ -701,7 +657,7 @@ const fetchWorkspaces = async (
                         <div style={searchContainerStyle}>
                             <input
                                 type="text"
-                                placeholder="사업장 이름 및 원하는 조건 검색"
+                                placeholder="사업장 이름 검색"
                                 value={searchTerm}
                                 onChange={(event) =>
                                     setSearchTerm(event.target.value)
@@ -719,24 +675,6 @@ const fetchWorkspaces = async (
                                 🔍
                             </button>
                         </div>
-
-                        <div style={searchExampleTextStyle}>
-                             조건 예시: 클린점수 60점 넘는 카페 찾아줘
-                        </div>
-
-                        <AlbaRecommendationPanel
-                            candidateStores={
-                                allStores.length > 0
-                                    ? allStores
-                                    : stores
-                            }
-                            onFocusWorkspace={
-                                handleFocusRecommendation
-                            }
-                            onApplyQuery={
-                                handleApplyRecommendationQuery
-                            }
-                        />
                     </div>
 
                     <div style={listTitleAreaStyle}>

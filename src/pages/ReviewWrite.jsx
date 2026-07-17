@@ -56,6 +56,32 @@ const PURIFY_OPTIONS = [
     }
 ];
 
+const SHIFT_DAY_OPTIONS = [
+    {
+        id: 'weekday',
+        label: '평일'
+    },
+    {
+        id: 'weekend',
+        label: '주말'
+    }
+];
+
+const SHIFT_TIME_OPTIONS = [
+    {
+        id: 'morning',
+        label: '오전'
+    },
+    {
+        id: 'afternoon',
+        label: '오후'
+    },
+    {
+        id: 'night',
+        label: '야간'
+    }
+];
+
 const isImageFile = (file) =>
     file.type.startsWith('image/');
 
@@ -407,6 +433,7 @@ const ReviewWrite = () => {
     const { workspaceId: workspaceIdParam } = useParams();
     const fileInputRef = useRef(null);
     const evidenceItemsRef = useRef([]);
+    const shiftMenuRef = useRef(null);
     const isMobile = useIsMobile();
 
     const [authState, setAuthState] = useState(
@@ -423,6 +450,12 @@ const ReviewWrite = () => {
 
     const [selectedViolations, setSelectedViolations] =
         useState([]);
+    const [isShiftMenuOpen, setIsShiftMenuOpen] =
+        useState(false);
+    const [selectedShiftDay, setSelectedShiftDay] =
+        useState('');
+    const [selectedShiftTime, setSelectedShiftTime] =
+        useState('');
     const [simultaneousWorkers, setSimultaneousWorkers] =
         useState('');
     const [reviewText, setReviewText] = useState('');
@@ -485,6 +518,29 @@ const ReviewWrite = () => {
             : null;
     }, [simultaneousWorkers]);
 
+    const selectedShiftLabel = useMemo(() => {
+        if (!selectedShiftDay || !selectedShiftTime) {
+            return '';
+        }
+
+        const dayLabel =
+            SHIFT_DAY_OPTIONS.find(
+                (option) =>
+                    option.id === selectedShiftDay
+            )?.label || '';
+        const timeLabel =
+            SHIFT_TIME_OPTIONS.find(
+                (option) =>
+                    option.id === selectedShiftTime
+            )?.label || '';
+
+        if (!dayLabel || !timeLabel) {
+            return '';
+        }
+
+        return `${dayLabel} · ${timeLabel}`;
+    }, [selectedShiftDay, selectedShiftTime]);
+
     const isFormValid = useMemo(
         () =>
             coworkerCount !== null &&
@@ -502,6 +558,35 @@ const ReviewWrite = () => {
             setWorkspace(location.state.workspace);
         }
     }, [location.state]);
+
+    useEffect(() => {
+        if (!isShiftMenuOpen) {
+            return undefined;
+        }
+
+        const handlePointerDown = (event) => {
+            if (
+                shiftMenuRef.current &&
+                !shiftMenuRef.current.contains(
+                    event.target
+                )
+            ) {
+                setIsShiftMenuOpen(false);
+            }
+        };
+
+        document.addEventListener(
+            'mousedown',
+            handlePointerDown
+        );
+
+        return () => {
+            document.removeEventListener(
+                'mousedown',
+                handlePointerDown
+            );
+        };
+    }, [isShiftMenuOpen]);
 
     useEffect(() => {
         if (workspace) {
@@ -666,6 +751,30 @@ const ReviewWrite = () => {
         clearStoredAuth();
         setAuthState(getStoredAuth());
         navigate('/');
+    };
+
+    const handleToggleShiftMenu = () => {
+        setIsShiftMenuOpen((current) => !current);
+    };
+
+    const handleSelectShiftDay = (dayId) => {
+        setSelectedShiftDay(dayId);
+        setSelectedShiftTime('');
+    };
+
+    const handleSelectShiftTime = (timeId) => {
+        if (!selectedShiftDay) {
+            return;
+        }
+
+        setSelectedShiftTime(timeId);
+        setIsShiftMenuOpen(false);
+    };
+
+    const handleResetShiftSelection = () => {
+        setSelectedShiftDay('');
+        setSelectedShiftTime('');
+        setIsShiftMenuOpen(false);
     };
 
     const toggleViolation = (itemId) => {
@@ -975,6 +1084,234 @@ const ReviewWrite = () => {
                                     {workspaceAddress}
                                 </p>
                             </div>
+
+                            <section style={sectionStyle}>
+                                <div
+                                    style={sectionTitleRowStyle}
+                                >
+                                    <h2 style={sectionTitleStyle}>
+                                        근무 시간대
+                                    </h2>
+                                </div>
+                                <p style={sectionHelpStyle}>
+                                    선택 버튼을 누른 뒤 평일 또는 주말을
+                                    고르고, 이어서 오전·오후·야간 중 하나를
+                                    선택해 주세요.
+                                </p>
+
+                                <div
+                                    ref={shiftMenuRef}
+                                    style={shiftMenuWrapStyle}
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={
+                                            handleToggleShiftMenu
+                                        }
+                                        style={
+                                            shiftTriggerButtonStyle
+                                        }
+                                        aria-haspopup="menu"
+                                        aria-expanded={
+                                            isShiftMenuOpen
+                                        }
+                                    >
+                                        <span
+                                            style={
+                                                selectedShiftLabel
+                                                    ? shiftTriggerValueStyle
+                                                    : shiftTriggerPlaceholderStyle
+                                            }
+                                        >
+                                            {selectedShiftLabel ||
+                                                '선택'}
+                                        </span>
+
+                                        <span
+                                            style={{
+                                                ...shiftArrowStyle,
+                                                transform:
+                                                    isShiftMenuOpen
+                                                        ? 'rotate(180deg)'
+                                                        : 'rotate(0deg)'
+                                            }}
+                                        >
+                                            ▾
+                                        </span>
+                                    </button>
+
+                                    {isShiftMenuOpen && (
+                                        <div
+                                            style={{
+                                                ...shiftMenuPanelStyle,
+                                                gridTemplateColumns:
+                                                    isMobile
+                                                        ? '1fr'
+                                                        : 'repeat(2, minmax(0, 1fr))'
+                                            }}
+                                        >
+                                            <div
+                                                style={
+                                                    shiftMenuColumnStyle
+                                                }
+                                            >
+                                                <span
+                                                    style={
+                                                        shiftMenuColumnTitleStyle
+                                                    }
+                                                >
+                                                    1단계
+                                                </span>
+
+                                                <div
+                                                    style={
+                                                        shiftMenuOptionsStyle
+                                                    }
+                                                >
+                                                    {SHIFT_DAY_OPTIONS.map(
+                                                        (
+                                                            option
+                                                        ) => (
+                                                            <button
+                                                                key={
+                                                                    option.id
+                                                                }
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleSelectShiftDay(
+                                                                        option.id
+                                                                    )
+                                                                }
+                                                                style={{
+                                                                    ...shiftOptionButtonStyle,
+                                                                    borderColor:
+                                                                        selectedShiftDay ===
+                                                                        option.id
+                                                                            ? '#4a72ff'
+                                                                            : '#e4e8ef',
+                                                                    backgroundColor:
+                                                                        selectedShiftDay ===
+                                                                        option.id
+                                                                            ? '#eff3ff'
+                                                                            : '#ffffff',
+                                                                    color:
+                                                                        selectedShiftDay ===
+                                                                        option.id
+                                                                            ? '#3158e8'
+                                                                            : '#4d5766'
+                                                                }}
+                                                            >
+                                                                {
+                                                                    option.label
+                                                                }
+                                                            </button>
+                                                        )
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div
+                                                style={
+                                                    shiftMenuColumnStyle
+                                                }
+                                            >
+                                                <span
+                                                    style={
+                                                        shiftMenuColumnTitleStyle
+                                                    }
+                                                >
+                                                    2단계
+                                                </span>
+
+                                                {selectedShiftDay ? (
+                                                    <div
+                                                        style={
+                                                            shiftMenuOptionsStyle
+                                                        }
+                                                    >
+                                                        {SHIFT_TIME_OPTIONS.map(
+                                                            (
+                                                                option
+                                                            ) => (
+                                                                <button
+                                                                    key={
+                                                                        option.id
+                                                                    }
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        handleSelectShiftTime(
+                                                                            option.id
+                                                                        )
+                                                                    }
+                                                                    style={{
+                                                                        ...shiftOptionButtonStyle,
+                                                                        borderColor:
+                                                                            selectedShiftTime ===
+                                                                            option.id
+                                                                                ? '#4a72ff'
+                                                                                : '#e4e8ef',
+                                                                        backgroundColor:
+                                                                            selectedShiftTime ===
+                                                                            option.id
+                                                                                ? '#eff3ff'
+                                                                                : '#ffffff',
+                                                                        color:
+                                                                            selectedShiftTime ===
+                                                                            option.id
+                                                                                ? '#3158e8'
+                                                                                : '#4d5766'
+                                                                    }}
+                                                                >
+                                                                    {
+                                                                        option.label
+                                                                    }
+                                                                </button>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <div
+                                                        style={
+                                                            shiftEmptyStateStyle
+                                                        }
+                                                    >
+                                                        먼저 평일 또는 주말을
+                                                        선택해 주세요.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {selectedShiftLabel && (
+                                    <div
+                                        style={
+                                            shiftSelectionRowStyle
+                                        }
+                                    >
+                                        <span
+                                            style={
+                                                shiftSelectionChipStyle
+                                            }
+                                        >
+                                            {selectedShiftLabel}
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            onClick={
+                                                handleResetShiftSelection
+                                            }
+                                            style={
+                                                shiftResetButtonStyle
+                                            }
+                                        >
+                                            선택 초기화
+                                        </button>
+                                    </div>
+                                )}
+                            </section>
 
                             <section style={sectionStyle}>
                                 <div
@@ -1467,6 +1804,132 @@ const sectionHelpStyle = {
     color: '#a3aab5',
     fontSize: '12px',
     lineHeight: '1.55'
+};
+
+const shiftMenuWrapStyle = {
+    position: 'relative'
+};
+
+const shiftTriggerButtonStyle = {
+    width: '100%',
+    minHeight: '46px',
+    padding: '0 14px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+    backgroundColor: '#ffffff',
+    border: '1px solid #e4e8ef',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    boxSizing: 'border-box'
+};
+
+const shiftTriggerPlaceholderStyle = {
+    color: '#9aa2ae',
+    fontSize: '13px',
+    fontWeight: '600'
+};
+
+const shiftTriggerValueStyle = {
+    color: '#273142',
+    fontSize: '13px',
+    fontWeight: '700'
+};
+
+const shiftArrowStyle = {
+    color: '#8b95a3',
+    fontSize: '12px',
+    transition: 'transform 0.18s ease'
+};
+
+const shiftMenuPanelStyle = {
+    marginTop: '10px',
+    width: '100%',
+    padding: '14px',
+    display: 'grid',
+    gap: '14px',
+    backgroundColor: '#ffffff',
+    border: '1px solid #e7ebf1',
+    borderRadius: '16px',
+    boxShadow: '0 16px 34px rgba(15, 23, 42, 0.10)',
+    boxSizing: 'border-box'
+};
+
+const shiftMenuColumnStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+};
+
+const shiftMenuColumnTitleStyle = {
+    color: '#8f98a5',
+    fontSize: '11px',
+    fontWeight: '800'
+};
+
+const shiftMenuOptionsStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+};
+
+const shiftOptionButtonStyle = {
+    minHeight: '42px',
+    padding: '0 14px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    border: '1px solid #e4e8ef',
+    borderRadius: '10px',
+    backgroundColor: '#ffffff',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '700'
+};
+
+const shiftEmptyStateStyle = {
+    minHeight: '142px',
+    padding: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#9aa2ae',
+    fontSize: '12px',
+    fontWeight: '600',
+    lineHeight: '1.6',
+    textAlign: 'center',
+    backgroundColor: '#f8fafc',
+    border: '1px dashed #dbe2ea',
+    borderRadius: '10px',
+    boxSizing: 'border-box'
+};
+
+const shiftSelectionRowStyle = {
+    marginTop: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    flexWrap: 'wrap'
+};
+
+const shiftSelectionChipStyle = {
+    padding: '8px 12px',
+    borderRadius: '999px',
+    backgroundColor: '#eef3ff',
+    color: '#3158e8',
+    fontSize: '12px',
+    fontWeight: '800'
+};
+
+const shiftResetButtonStyle = {
+    padding: 0,
+    border: 'none',
+    backgroundColor: 'transparent',
+    color: '#8c95a1',
+    fontSize: '12px',
+    fontWeight: '700',
+    cursor: 'pointer'
 };
 
 const checklistStyle = {
