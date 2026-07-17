@@ -72,6 +72,14 @@ const percentText = (ratio) => {
     return `${Math.round(ratio)}%`;
 };
 
+const countText = (value) => {
+    if (!Number.isFinite(value)) {
+        return null;
+    }
+
+    return `${Math.max(0, Math.round(value))}건`;
+};
+
 const resolveStructuredSource = (workspace) => {
     for (const key of STRUCTURED_SOURCE_KEYS) {
         const candidate = workspace?.[key];
@@ -224,8 +232,8 @@ const normalizeStructuredEntry = (
 
 const buildPositiveItem = (entry) => {
     let score = 0;
-    let metric = null;
-    let description = entry.summary;
+    let count = null;
+    let shortMetric = null;
 
     if (Number.isFinite(entry.complianceRate)) {
         const ratio =
@@ -234,31 +242,25 @@ const buildPositiveItem = (entry) => {
                 : entry.complianceRate;
 
         score = ratio;
-        metric = percentText(entry.complianceRate);
-        description =
-            description ||
-            `응답의 ${metric}가 해당 기준이 잘 지켜졌다고 평가했어요.`;
+        if (
+            Number.isFinite(entry.totalCount) &&
+            entry.totalCount > 0
+        ) {
+            count = ratio * entry.totalCount;
+        }
     } else if (
         Number.isFinite(entry.complianceCount) &&
         Number.isFinite(entry.totalCount) &&
         entry.totalCount > 0
     ) {
         score = entry.complianceCount / entry.totalCount;
-        metric = `${entry.complianceCount}/${entry.totalCount}`;
-        description =
-            description ||
-            `${entry.totalCount}건 중 ${entry.complianceCount}건이 준수로 집계됐어요.`;
+        count = entry.complianceCount;
     } else if (
         Number.isFinite(entry.violationCount) &&
         entry.violationCount === 0
     ) {
         score = 1;
-        metric = '0건';
-        description =
-            description ||
-            (entry.totalCount
-                ? `총 ${entry.totalCount}건의 후기에서 관련 위반 제보가 없었어요.`
-                : '현재까지 관련 위반 제보가 확인되지 않았어요.');
+        count = entry.totalCount;
     } else if (
         Number.isFinite(entry.violationCount) &&
         Number.isFinite(entry.totalCount) &&
@@ -268,24 +270,29 @@ const buildPositiveItem = (entry) => {
             entry.totalCount - entry.violationCount;
 
         score = safeCount / entry.totalCount;
-        metric = `${safeCount}/${entry.totalCount}`;
-        description =
-            description ||
-            `${entry.totalCount}건 중 ${safeCount}건에서 문제 없이 평가됐어요.`;
+        count = safeCount;
     } else {
         return null;
     }
 
+    shortMetric =
+        countText(count) ||
+        percentText(entry.complianceRate) ||
+        entry.summary ||
+        '확인';
+
     return {
         id: entry.id,
         label: entry.positiveLabel,
-        metric,
+        metric: shortMetric,
         score,
-        description
+        shortText: `${entry.positiveLabel} ${shortMetric}`.trim()
     };
 };
 
 const buildNegativeItem = (entry) => {
+    let count = null;
+
     if (
         Number.isFinite(entry.violationRate) &&
         entry.violationRate > 0
@@ -295,14 +302,25 @@ const buildNegativeItem = (entry) => {
                 ? entry.violationRate / 100
                 : entry.violationRate;
 
+        if (
+            Number.isFinite(entry.totalCount) &&
+            entry.totalCount > 0
+        ) {
+            count = score * entry.totalCount;
+        }
+
         return {
             id: entry.id,
             label: entry.label,
-            metric: percentText(entry.violationRate),
+            metric:
+                countText(count) ||
+                percentText(entry.violationRate),
             score,
-            description:
-                entry.summary ||
-                `응답의 ${percentText(entry.violationRate)}가 이 항목의 문제를 언급했어요.`
+            shortText: `${entry.label} ${
+                countText(count) ||
+                percentText(entry.violationRate) ||
+                ''
+            }`.trim()
         };
     }
 
@@ -315,11 +333,7 @@ const buildNegativeItem = (entry) => {
             label: entry.label,
             metric: `${entry.violationCount}건`,
             score: entry.violationCount,
-            description:
-                entry.summary ||
-                (entry.totalCount
-                    ? `총 ${entry.totalCount}건 중 ${entry.violationCount}건에서 이 문제가 제기됐어요.`
-                    : `${entry.violationCount}건의 후기에서 이 문제가 확인됐어요.`)
+            shortText: `${entry.label} ${entry.violationCount}건`
         };
     }
 
@@ -350,7 +364,7 @@ export const getWorkspaceEvidenceSummary = (workspace) => {
         )
         .filter(Boolean)
         .sort((left, right) => right.score - left.score)
-        .slice(0, 3);
+        .slice(0, 4);
 
     return {
         focus,

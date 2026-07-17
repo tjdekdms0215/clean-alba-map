@@ -584,40 +584,23 @@ const Home = () => {
                                                             evidenceContentStyle
                                                         }
                                                     >
-                                                        <div
+                                                        <strong
                                                             style={
-                                                                evidenceItemTopStyle
+                                                                evidenceTextStyle
                                                             }
                                                         >
-                                                            <strong
-                                                                style={
-                                                                    evidenceLabelStyle
-                                                                }
-                                                            >
-                                                                {item.label}
-                                                            </strong>
-
-                                                            {item.metric && (
-                                                                <span
-                                                                    style={
-                                                                        evidenceMetricStyle
-                                                                    }
-                                                                >
-                                                                    {item.metric}
-                                                                </span>
-                                                            )}
-                                                        </div>
-
-                                                        <span
-                                                            style={boxTextStyle}
-                                                        >
-                                                            {item.description}
-                                                        </span>
+                                                            {item.shortText ||
+                                                                `${item.label} ${item.metric || ''}`.trim()}
+                                                        </strong>
                                                     </div>
                                                 </div>
                                             ))
                                         ) : (
-                                            <span style={boxTextStyle}>
+                                            <span
+                                                style={
+                                                    evidenceFallbackTextStyle
+                                                }
+                                            >
                                                 {evidenceSummary?.fallbackText ||
                                                     '수집된 근거 데이터가 없습니다.'}
                                             </span>
@@ -638,7 +621,11 @@ const Home = () => {
 
                                 <div style={boxRowStyle}>
                                     <span style={boxLabelStyle}>후기 요약:</span>
-                                    <span style={boxTextStyle}>
+                                    <span
+                                        style={
+                                            popupSummaryTextStyle
+                                        }
+                                    >
                                         {activeSelectedStore.reviewSummary ||
                                             '아직 요약된 후기가 없습니다.'}
                                     </span>
@@ -1137,8 +1124,10 @@ const popupStyle = {
     left: '50%',
     transform: 'translate(-50%, -50%)',
 
-    width: 'min(336px, calc(100% - 32px))',
-    height: 'min(448px, calc(100% - 32px))',
+    width: '336px',
+    height: '448px',
+    maxWidth: 'calc(100% - 32px)',
+    maxHeight: 'calc(100% - 32px)',
 
     padding: '20px',
     boxSizing: 'border-box',
@@ -1147,8 +1136,7 @@ const popupStyle = {
     border: '1px solid #D6DDE8',
     borderRadius: 0,
 
-    overflowX: 'hidden',
-    overflowY: 'auto',
+    overflow: 'hidden',
 
     zIndex: 20,
     display: 'flex',
@@ -1212,7 +1200,10 @@ const popupStoreNameStyle = {
     fontSize: '21px',
     fontWeight: '900',
     lineHeight: '1.3',
-
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
     wordBreak: 'keep-all'
 };
 
@@ -1293,6 +1284,14 @@ const boxTextStyle = {
     wordBreak: 'keep-all'
 };
 
+const popupSummaryTextStyle = {
+    ...boxTextStyle,
+    display: '-webkit-box',
+    WebkitLineClamp: 3,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
+};
+
 const evidenceBlockStyle = {
     minWidth: 0,
     display: 'flex',
@@ -1308,9 +1307,10 @@ const evidenceHeadingStyle = {
 
 const evidenceItemStyle = {
     display: 'flex',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: '10px',
-    padding: '10px 11px',
+    minHeight: '42px',
+    padding: '9px 11px',
     border: '1px solid rgba(214, 221, 232, 0.96)',
     backgroundColor: 'rgba(255,255,255,0.86)'
 };
@@ -1332,6 +1332,26 @@ const evidenceContentStyle = {
     display: 'flex',
     flexDirection: 'column',
     gap: '2px'
+};
+
+const evidenceTextStyle = {
+    display: 'block',
+    minWidth: 0,
+    color: '#333333',
+    fontSize: '13px',
+    fontWeight: '900',
+    lineHeight: '1.4',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
+};
+
+const evidenceFallbackTextStyle = {
+    ...boxTextStyle,
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
 };
 
 const evidenceItemTopStyle = {
