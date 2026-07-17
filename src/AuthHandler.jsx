@@ -6,10 +6,7 @@ import {
     getStoredOauthState,
     persistAuth
 } from './utils/auth';
-
-const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ||
-    'https://cleanalb-map.duckdns.org';
+import { API_BASE_URL } from './api/baseUrl';
 
 const AuthHandler = () => {
     const navigate = useNavigate();

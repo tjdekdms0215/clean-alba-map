@@ -1,8 +1,5 @@
 import axios from 'axios';
-
-const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ||
-    'https://cleanalb-map.duckdns.org';
+import { API_BASE_URL } from './baseUrl';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
