@@ -26,6 +26,7 @@ const DAY_TYPE_LABELS = {
     weekday: '평일',
     weekend: '주말'
 };
+const REVIEWS_PER_PAGE = 5;
 
 const coerceNumber = (value) => {
     if (typeof value === 'number' && Number.isFinite(value)) {
@@ -619,6 +620,7 @@ const WorkspaceDetail = () => {
     const [workspace, setWorkspace] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState('');
+    const [reviewPage, setReviewPage] = useState(0);
 
     useEffect(() => {
         let isMounted = true;
@@ -688,6 +690,19 @@ const WorkspaceDetail = () => {
             reviews: buildReviews(safeWorkspace)
         };
     }, [workspace]);
+
+    useEffect(() => {
+        setReviewPage(0);
+    }, [workspaceId, detailData.reviews.length]);
+
+    const visibleReviews = detailData.reviews.slice(
+        reviewPage * REVIEWS_PER_PAGE,
+        (reviewPage + 1) * REVIEWS_PER_PAGE
+    );
+    const hasPreviousReviewPage = reviewPage > 0;
+    const hasNextReviewPage =
+        (reviewPage + 1) * REVIEWS_PER_PAGE <
+        detailData.reviews.length;
 
     return (
         <div style={pageStyle}>
@@ -1012,7 +1027,7 @@ const WorkspaceDetail = () => {
                                     style={reviewListStyle}
                                 >
                                     {detailData.reviews.length ? (
-                                        detailData.reviews.map(
+                                        visibleReviews.map(
                                             (
                                                 review
                                             ) => (
@@ -1088,6 +1103,60 @@ const WorkspaceDetail = () => {
                                         </div>
                                     )}
                                 </div>
+
+                                {detailData.reviews.length >
+                                REVIEWS_PER_PAGE ? (
+                                    <div
+                                        style={
+                                            reviewPaginationStyle
+                                        }
+                                    >
+                                        <button
+                                            type="button"
+                                            style={{
+                                                ...reviewPageButtonStyle,
+                                                ...(!hasPreviousReviewPage
+                                                    ? reviewPageButtonDisabledStyle
+                                                    : {})
+                                            }}
+                                            onClick={() =>
+                                                setReviewPage(
+                                                    (previousPage) =>
+                                                        Math.max(
+                                                            previousPage - 1,
+                                                            0
+                                                        )
+                                                )
+                                            }
+                                            disabled={
+                                                !hasPreviousReviewPage
+                                            }
+                                        >
+                                            이전
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            style={{
+                                                ...reviewPageButtonStyle,
+                                                ...(!hasNextReviewPage
+                                                    ? reviewPageButtonDisabledStyle
+                                                    : {})
+                                            }}
+                                            onClick={() =>
+                                                setReviewPage(
+                                                    (previousPage) =>
+                                                        previousPage + 1
+                                                )
+                                            }
+                                            disabled={
+                                                !hasNextReviewPage
+                                            }
+                                        >
+                                            다음
+                                        </button>
+                                    </div>
+                                ) : null}
                             </section>
                         </>
                     )}
@@ -1447,6 +1516,32 @@ const reviewListStyle = {
     display: 'flex',
     flexDirection: 'column',
     gap: '14px'
+};
+
+const reviewPaginationStyle = {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '8px',
+    marginTop: '18px',
+    flexWrap: 'wrap'
+};
+
+const reviewPageButtonStyle = {
+    minWidth: '64px',
+    height: '32px',
+    padding: '0 16px',
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #D8DEE7',
+    borderRadius: '16px',
+    color: '#4A515C',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '700'
+};
+
+const reviewPageButtonDisabledStyle = {
+    opacity: 0.42,
+    cursor: 'default'
 };
 
 const reviewCardStyle = {

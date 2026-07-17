@@ -90,6 +90,25 @@ const coerceFiniteNumber = (value) => {
     return Number.isFinite(parsed) ? parsed : null;
 };
 
+const DEFAULT_MAP_CENTER = {
+    lat: 35.1764,
+    lng: 126.9135
+};
+
+const getStoreCoordinates = (store) => {
+    const lat = coerceFiniteNumber(store?.latitude);
+    const lng = coerceFiniteNumber(store?.longitude);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return null;
+    }
+
+    return { lat, lng };
+};
+
+const findFirstMappableStore = (items) =>
+    items.find((item) => getStoreCoordinates(item)) || null;
+
 const buildInterpretedSearchChips = (
     interpreted
 ) => {
@@ -144,22 +163,44 @@ const Home = () => {
         useState(null);
     const [searchInterpretation, setSearchInterpretation] =
         useState(null);
+    const [mapCenterStore, setMapCenterStore] =
+        useState(null);
 
-const fetchWorkspaces = async (keyword = '') => {
-    try {
-        const data = await getWorkspaces(null, keyword);
+    const fetchWorkspaces = async (
+        keyword = '',
+        shouldCenterResult = false
+    ) => {
+        try {
+            const data = await getWorkspaces(null, keyword);
 
-        if (Array.isArray(data)) {
-            setStores(data);
-        } else {
-            console.error('사업장 데이터가 배열 형태가 아닙니다.', data);
+            if (Array.isArray(data)) {
+                setStores(data);
+
+                if (shouldCenterResult) {
+                    setMapCenterStore(
+                        findFirstMappableStore(data)
+                    );
+                }
+            } else {
+                console.error(
+                    '사업장 데이터가 배열 형태가 아닙니다.',
+                    data
+                );
+                setStores([]);
+
+                if (shouldCenterResult) {
+                    setMapCenterStore(null);
+                }
+            }
+        } catch (error) {
+            console.error('API 연동 에러:', error);
             setStores([]);
+
+            if (shouldCenterResult) {
+                setMapCenterStore(null);
+            }
         }
-    } catch (error) {
-        console.error('API 연동 에러:', error);
-        setStores([]);
-    }
-};
+    };
 
     useEffect(() => {
         fetchWorkspaces('');
@@ -176,8 +217,14 @@ const fetchWorkspaces = async (keyword = '') => {
             return;
         }
 
+        const centerCoordinates =
+            getStoreCoordinates(mapCenterStore) ||
+            DEFAULT_MAP_CENTER;
         const options = {
-            center: new window.kakao.maps.LatLng(35.1764, 126.9135),
+            center: new window.kakao.maps.LatLng(
+                centerCoordinates.lat,
+                centerCoordinates.lng
+            ),
             level: 4
         };
 
@@ -234,7 +281,7 @@ const fetchWorkspaces = async (keyword = '') => {
                 setSelectedStore(store);
             });
         });
-    }, [stores]);
+    }, [stores, mapCenterStore]);
 
     useEffect(() => {
         if (!selectedStore) {
@@ -285,6 +332,7 @@ const fetchWorkspaces = async (keyword = '') => {
 
         if (!keyword) {
             setSearchInterpretation(null);
+            setMapCenterStore(null);
             fetchWorkspaces('');
             setSelectedStore(null);
             return;
@@ -300,10 +348,15 @@ const fetchWorkspaces = async (keyword = '') => {
                 setSearchInterpretation(
                     data.interpreted || null
                 );
+                const nextStores = Array.isArray(data.results)
+                    ? data.results
+                    : [];
+
                 setStores(
-                    Array.isArray(data.results)
-                        ? data.results
-                        : []
+                    nextStores
+                );
+                setMapCenterStore(
+                    findFirstMappableStore(nextStores)
                 );
             } catch (error) {
                 console.error(
@@ -315,12 +368,16 @@ const fetchWorkspaces = async (keyword = '') => {
                     shouldFallbackToKeywordSearch(error)
                 ) {
                     setSearchInterpretation(null);
-                    fetchWorkspaces(keyword);
+                    await fetchWorkspaces(
+                        keyword,
+                        true
+                    );
                     return;
                 }
 
                 setSearchInterpretation(null);
                 setStores([]);
+                setMapCenterStore(null);
             }
         };
 
@@ -672,9 +729,10 @@ const fetchWorkspaces = async (keyword = '') => {
                                         type="button"
                                         key={store.workspaceId}
                                         style={listItemStyle}
-                                        onClick={() =>
+                                        onClick={() => {
                                             setSelectedStore(store)
-                                        }
+                                            setMapCenterStore(store);
+                                        }}
                                     >
                                         <div style={listItemTopStyle}>
                                             <div style={storeNameStyle}>
