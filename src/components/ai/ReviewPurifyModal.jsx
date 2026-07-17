@@ -1,4 +1,5 @@
 import React from 'react';
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 const PURIFY_OPTIONS = [
     {
@@ -30,20 +31,32 @@ const ReviewPurifyModal = ({
     onApply,
     onClose
 }) => {
+    const isMobile = useMediaQuery('(max-width: 640px)');
+
     if (!isOpen) {
         return null;
     }
 
     return (
         <div
-            style={modalOverlayStyle}
+            style={{
+                ...modalOverlayStyle,
+                ...(isMobile
+                    ? mobileModalOverlayStyle
+                    : null)
+            }}
             onClick={onClose}
         >
             <section
                 role="dialog"
                 aria-modal="true"
                 aria-label="AI 후기 순화"
-                style={modalCardStyle}
+                style={{
+                    ...modalCardStyle,
+                    ...(isMobile
+                        ? mobileModalCardStyle
+                        : null)
+                }}
                 onClick={(event) => event.stopPropagation()}
             >
                 <div style={modalHandleStyle} />
@@ -61,7 +74,14 @@ const ReviewPurifyModal = ({
                     </button>
                 </div>
 
-                <div style={modalBodyStyle}>
+                <div
+                    style={{
+                        ...modalBodyStyle,
+                        ...(isMobile
+                            ? mobileModalBodyStyle
+                            : null)
+                    }}
+                >
                     {isLoading ? (
                         <div style={modalLoadingStyle}>
                             AI가 표현을 정리하고 있습니다.
@@ -80,6 +100,9 @@ const ReviewPurifyModal = ({
                                     }
                                     style={{
                                         ...toneCardStyle,
+                                        ...(isMobile
+                                            ? mobileToneCardStyle
+                                            : null),
                                         borderColor: isSelected
                                             ? option.accentColor
                                             : '#e6e9ee',
@@ -146,6 +169,9 @@ const ReviewPurifyModal = ({
                         disabled={isLoading}
                         style={{
                             ...applyButtonStyle,
+                            ...(isMobile
+                                ? mobileApplyButtonStyle
+                                : null),
                             opacity: isLoading ? 0.6 : 1
                         }}
                     >
@@ -169,15 +195,26 @@ const modalOverlayStyle = {
     backgroundColor: 'rgba(0, 0, 0, 0.48)'
 };
 
+const mobileModalOverlayStyle = {
+    alignItems: 'flex-end',
+    padding: '12px'
+};
+
 const modalCardStyle = {
     width: 'min(100%, 370px)',
-    maxHeight: 'min(80vh, 620px)',
+    maxHeight: 'min(80dvh, 620px)',
     display: 'flex',
     flexDirection: 'column',
     backgroundColor: '#ffffff',
     borderRadius: '14px',
     boxShadow: '0 20px 56px rgba(0, 0, 0, 0.24)',
     overflow: 'hidden'
+};
+
+const mobileModalCardStyle = {
+    width: '100%',
+    maxHeight: 'min(88dvh, 760px)',
+    borderRadius: '16px 16px 0 0'
 };
 
 const modalHandleStyle = {
@@ -228,6 +265,10 @@ const modalBodyStyle = {
     overflowY: 'auto'
 };
 
+const mobileModalBodyStyle = {
+    padding: '12px 10px 8px'
+};
+
 const modalLoadingStyle = {
     padding: '48px 18px',
     color: '#798391',
@@ -246,6 +287,10 @@ const toneCardStyle = {
     backgroundColor: '#ffffff',
     textAlign: 'left',
     cursor: 'pointer'
+};
+
+const mobileToneCardStyle = {
+    padding: '12px'
 };
 
 const toneCardHeaderStyle = {
@@ -307,6 +352,10 @@ const applyButtonStyle = {
     cursor: 'pointer',
     fontSize: '13px',
     fontWeight: '800'
+};
+
+const mobileApplyButtonStyle = {
+    height: '44px'
 };
 
 export default ReviewPurifyModal;

@@ -19,6 +19,7 @@ import {
     getViolationIndicatorIds
 } from '../constants/reviewIndicators';
 import AppHeader from '../components/AppHeader';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const DEFAULT_SHIFT_ORDER = ['morning', 'afternoon', 'night'];
 const SHIFT_LABELS = {
@@ -669,6 +670,7 @@ const CircularScore = ({
 const WorkspaceDetail = () => {
     const navigate = useNavigate();
     const { workspaceId } = useParams();
+    const isMobile = useMediaQuery('(max-width: 720px)');
     const [workspace, setWorkspace] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState('');
@@ -787,7 +789,14 @@ const WorkspaceDetail = () => {
             <AppHeader />
 
             <main style={mainStyle}>
-                <div style={contentWrapStyle}>
+                <div
+                    style={{
+                        ...contentWrapStyle,
+                        ...(isMobile
+                            ? mobileContentWrapStyle
+                            : null)
+                    }}
+                >
                     {isLoading ? (
                         <section style={feedbackCardStyle}>
                             사업장 정보를 불러오는 중입니다.
@@ -798,7 +807,14 @@ const WorkspaceDetail = () => {
                         </section>
                     ) : (
                         <>
-                            <section style={heroStyle}>
+                            <section
+                                style={{
+                                    ...heroStyle,
+                                    ...(isMobile
+                                        ? mobileHeroStyle
+                                        : null)
+                                }}
+                            >
                                 <CircularScore
                                     score={detailData.cleanScore}
                                     accentColor={
@@ -811,14 +827,35 @@ const WorkspaceDetail = () => {
                                     }
                                 />
 
-                                <div style={heroTextStyle}>
-                                    <h1 style={titleStyle}>
+                                <div
+                                    style={{
+                                        ...heroTextStyle,
+                                        ...(isMobile
+                                            ? mobileHeroTextStyle
+                                            : null)
+                                    }}
+                                >
+                                    <h1
+                                        style={{
+                                            ...titleStyle,
+                                            ...(isMobile
+                                                ? mobileTitleStyle
+                                                : null)
+                                        }}
+                                    >
                                         {
                                             detailData.workspaceName
                                         }
                                     </h1>
 
-                                    <p style={metaStyle}>
+                                    <p
+                                        style={{
+                                            ...metaStyle,
+                                            ...(isMobile
+                                                ? mobileMetaStyle
+                                                : null)
+                                        }}
+                                    >
                                         {
                                             detailData.district
                                         }
@@ -854,9 +891,12 @@ const WorkspaceDetail = () => {
                                 </h2>
 
                                 <div
-                                    style={
-                                        indicatorGridStyle
-                                    }
+                                    style={{
+                                        ...indicatorGridStyle,
+                                        ...(isMobile
+                                            ? mobileIndicatorGridStyle
+                                            : null)
+                                    }}
                                 >
                                     {detailData.indicatorStats.map(
                                         (item) => (
@@ -930,7 +970,14 @@ const WorkspaceDetail = () => {
                                     동시간대 근무자 수
                                 </h2>
 
-                                <div style={workerCardStyle}>
+                                <div
+                                    style={{
+                                        ...workerCardStyle,
+                                        ...(isMobile
+                                            ? mobileWorkerCardStyle
+                                            : null)
+                                    }}
+                                >
                                     <div style={legendStyle}>
                                         <span
                                             style={
@@ -974,14 +1021,20 @@ const WorkspaceDetail = () => {
                                             (row) => (
                                                 <div
                                                     key={row.id}
-                                                    style={
-                                                        shiftRowStyle
-                                                    }
+                                                    style={{
+                                                        ...shiftRowStyle,
+                                                        ...(isMobile
+                                                            ? mobileShiftRowStyle
+                                                            : null)
+                                                    }}
                                                 >
                                                     <div
-                                                        style={
-                                                            shiftLabelStyle
-                                                        }
+                                                        style={{
+                                                            ...shiftLabelStyle,
+                                                            ...(isMobile
+                                                                ? mobileShiftLabelStyle
+                                                                : null)
+                                                        }}
                                                     >
                                                         {
                                                             row.label
@@ -1008,9 +1061,12 @@ const WorkspaceDetail = () => {
                                                                 return (
                                                                     <div
                                                                         key={`${row.id}-${dayType}`}
-                                                                        style={
-                                                                            shiftBarLineStyle
-                                                                        }
+                                                                        style={{
+                                                                            ...shiftBarLineStyle,
+                                                                            ...(isMobile
+                                                                                ? mobileShiftBarLineStyle
+                                                                                : null)
+                                                                        }}
                                                                     >
                                                                         <span
                                                                             style={
@@ -1094,9 +1150,12 @@ const WorkspaceDetail = () => {
 
                                     <button
                                         type="button"
-                                        style={
-                                            reviewWriteButtonStyle
-                                        }
+                                        style={{
+                                            ...reviewWriteButtonStyle,
+                                            ...(isMobile
+                                                ? mobileReviewWriteButtonStyle
+                                                : null)
+                                        }}
                                         onClick={
                                             handleReviewWriteClick
                                         }
@@ -1117,9 +1176,12 @@ const WorkspaceDetail = () => {
                                                     key={
                                                         review.id
                                                     }
-                                                    style={
-                                                        reviewCardStyle
-                                                    }
+                                                    style={{
+                                                        ...reviewCardStyle,
+                                                        ...(isMobile
+                                                            ? mobileReviewCardStyle
+                                                            : null)
+                                                    }}
                                                 >
                                                     <p
                                                         style={
@@ -1189,9 +1251,12 @@ const WorkspaceDetail = () => {
                                 {detailData.reviews.length >
                                 REVIEWS_PER_PAGE ? (
                                     <div
-                                        style={
-                                            reviewPaginationStyle
-                                        }
+                                        style={{
+                                            ...reviewPaginationStyle,
+                                            ...(isMobile
+                                                ? mobileReviewPaginationStyle
+                                                : null)
+                                        }}
                                     >
                                         <button
                                             type="button"
@@ -1249,8 +1314,7 @@ const WorkspaceDetail = () => {
 };
 
 const pageStyle = {
-    height: '100vh',
-    minHeight: '100vh',
+    minHeight: '100dvh',
     backgroundColor: '#FFFFFF',
     overflowX: 'hidden',
     overflowY: 'auto'
@@ -1335,6 +1399,10 @@ const contentWrapStyle = {
     boxSizing: 'border-box'
 };
 
+const mobileContentWrapStyle = {
+    padding: '20px 14px 32px'
+};
+
 const backButtonStyle = {
     marginBottom: '26px',
     padding: 0,
@@ -1362,9 +1430,18 @@ const heroStyle = {
     flexWrap: 'wrap'
 };
 
+const mobileHeroStyle = {
+    gap: '18px',
+    marginBottom: '28px'
+};
+
 const heroTextStyle = {
     minWidth: 0,
     flex: 1
+};
+
+const mobileHeroTextStyle = {
+    width: '100%'
 };
 
 const titleStyle = {
@@ -1375,11 +1452,21 @@ const titleStyle = {
     letterSpacing: '-0.4px'
 };
 
+const mobileTitleStyle = {
+    fontSize: '20px',
+    lineHeight: '1.35'
+};
+
 const metaStyle = {
     margin: '10px 0 0',
     color: '#8C94A0',
     fontSize: '14px',
     fontWeight: '500'
+};
+
+const mobileMetaStyle = {
+    fontSize: '13px',
+    lineHeight: '1.6'
 };
 
 const metaDotStyle = {
@@ -1441,6 +1528,10 @@ const indicatorGridStyle = {
     gap: '12px'
 };
 
+const mobileIndicatorGridStyle = {
+    gridTemplateColumns: '1fr'
+};
+
 const indicatorCardStyle = {
     padding: '18px 18px 16px',
     border: '1px solid #E6EAF0',
@@ -1487,6 +1578,10 @@ const workerCardStyle = {
     backgroundColor: '#FFFFFF'
 };
 
+const mobileWorkerCardStyle = {
+    padding: '16px 14px'
+};
+
 const legendStyle = {
     display: 'flex',
     alignItems: 'center',
@@ -1523,12 +1618,22 @@ const shiftRowStyle = {
     alignItems: 'start'
 };
 
+const mobileShiftRowStyle = {
+    gridTemplateColumns: '1fr',
+    gap: '8px'
+};
+
 const shiftLabelStyle = {
     paddingTop: '18px',
     color: '#2C313A',
     fontSize: '14px',
     fontWeight: '700',
     textAlign: 'right'
+};
+
+const mobileShiftLabelStyle = {
+    paddingTop: 0,
+    textAlign: 'left'
 };
 
 const shiftBarsStyle = {
@@ -1542,6 +1647,11 @@ const shiftBarLineStyle = {
     gridTemplateColumns: '26px minmax(0, 1fr) 34px',
     gap: '10px',
     alignItems: 'center'
+};
+
+const mobileShiftBarLineStyle = {
+    gridTemplateColumns: '30px minmax(0, 1fr) 32px',
+    gap: '8px'
 };
 
 const dayTypeLabelStyle = {
@@ -1597,6 +1707,12 @@ const reviewWriteButtonStyle = {
     fontWeight: '700'
 };
 
+const mobileReviewWriteButtonStyle = {
+    width: '100%',
+    height: '38px',
+    borderRadius: '12px'
+};
+
 const reviewListStyle = {
     display: 'flex',
     flexDirection: 'column',
@@ -1609,6 +1725,10 @@ const reviewPaginationStyle = {
     gap: '8px',
     marginTop: '18px',
     flexWrap: 'wrap'
+};
+
+const mobileReviewPaginationStyle = {
+    justifyContent: 'stretch'
 };
 
 const reviewPageButtonStyle = {
@@ -1634,6 +1754,10 @@ const reviewCardStyle = {
     border: '1px solid #E6EAF0',
     borderRadius: '16px',
     backgroundColor: '#FFFFFF'
+};
+
+const mobileReviewCardStyle = {
+    padding: '16px 14px'
 };
 
 const reviewContentStyle = {

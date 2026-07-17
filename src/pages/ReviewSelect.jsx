@@ -5,10 +5,12 @@ import {
 } from 'react-router-dom';
 import { searchReviewTargets, resolveWorkspace } from '../api/workspace';
 import AppHeader from '../components/AppHeader';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const ReviewSelect = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const isMobile = useMediaQuery('(max-width: 640px)');
 
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [keyword, setKeyword] = useState('');
@@ -148,8 +150,22 @@ const ReviewSelect = () => {
         <div style={pageStyle}>
             <AppHeader />
 
-            <main style={mainStyle}>
-                <section style={contentSectionStyle}>
+            <main
+                style={{
+                    ...mainStyle,
+                    ...(isMobile
+                        ? mobileMainStyle
+                        : null)
+                }}
+            >
+                <section
+                    style={{
+                        ...contentSectionStyle,
+                        ...(isMobile
+                            ? mobileContentSectionStyle
+                            : null)
+                    }}
+                >
                     <div style={titleAreaStyle}>
                         <h1 style={titleStyle}>알바 후기 작성</h1>
                         <p style={subtitleStyle}>
@@ -161,7 +177,12 @@ const ReviewSelect = () => {
                         <div style={searchTopStyle}>
                             <form
                                 onSubmit={handleSearch}
-                                style={searchFormStyle}
+                                style={{
+                                    ...searchFormStyle,
+                                    ...(isMobile
+                                        ? mobileSearchFormStyle
+                                        : null)
+                                }}
                             >
                                 <input
                                     type="text"
@@ -178,6 +199,9 @@ const ReviewSelect = () => {
                                     type="submit"
                                     style={{
                                         ...searchButtonStyle,
+                                        ...(isMobile
+                                            ? mobileSearchButtonStyle
+                                            : null),
                                         opacity: isLoading ? 0.72 : 1,
                                         cursor: isLoading
                                             ? 'default'
@@ -243,7 +267,12 @@ const ReviewSelect = () => {
                                             type="button"
                                             key={resultKey}
                                             onClick={() => handleSelectWorkspace(place)}
-                                            style={resultRowStyle}
+                                            style={{
+                                                ...resultRowStyle,
+                                                ...(isMobile
+                                                    ? mobileResultRowStyle
+                                                    : null)
+                                            }}
                                         >
                                             <div style={resultMainStyle}>
                                                 <strong style={placeNameStyle}>
@@ -260,7 +289,14 @@ const ReviewSelect = () => {
                                                 </div>
                                             </div>
 
-                                            <span style={selectTextStyle}>
+                                            <span
+                                                style={{
+                                                    ...selectTextStyle,
+                                                    ...(isMobile
+                                                        ? mobileSelectTextStyle
+                                                        : null)
+                                                }}
+                                            >
                                                 선택
                                             </span>
                                         </button>
@@ -290,12 +326,12 @@ const categoryBadgeStyle = (isExisting) => ({
 });
 
 const pageStyle = {
-    width: '100vw',
-    height: '100vh',
+    width: '100%',
+    minHeight: '100dvh',
     backgroundColor: '#f5f5f5',
     display: 'flex',
     flexDirection: 'column',
-    overflow: 'hidden'
+    overflowX: 'hidden'
 };
 
 const headerStyle = {
@@ -438,12 +474,21 @@ const mainStyle = {
     overflowY: 'auto'
 };
 
+const mobileMainStyle = {
+    padding: '28px 14px 36px',
+    justifyContent: 'flex-start'
+};
+
 const contentSectionStyle = {
     width: '100%',
     maxWidth: '560px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch'
+};
+
+const mobileContentSectionStyle = {
+    maxWidth: '100%'
 };
 
 const titleAreaStyle = {
@@ -484,6 +529,10 @@ const searchFormStyle = {
     gap: '8px'
 };
 
+const mobileSearchFormStyle = {
+    flexDirection: 'column'
+};
+
 const searchInputStyle = {
     flex: 1,
     minWidth: 0,
@@ -510,6 +559,10 @@ const searchButtonStyle = {
     color: '#ffffff',
     fontSize: '14px',
     fontWeight: '700'
+};
+
+const mobileSearchButtonStyle = {
+    width: '100%'
 };
 
 const searchIconStyle = {
@@ -564,6 +617,12 @@ const resultRowStyle = {
     boxSizing: 'border-box'
 };
 
+const mobileResultRowStyle = {
+    alignItems: 'flex-start',
+    flexDirection: 'column',
+    gap: '10px'
+};
+
 const resultMainStyle = {
     minWidth: 0,
     flex: 1
@@ -597,6 +656,10 @@ const selectTextStyle = {
     color: '#4169e1',
     fontSize: '12px',
     fontWeight: '600'
+};
+
+const mobileSelectTextStyle = {
+    alignSelf: 'flex-end'
 };
 
 const modalOverlayStyle = {

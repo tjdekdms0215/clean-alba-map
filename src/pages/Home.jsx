@@ -7,6 +7,7 @@ import {
 } from '../api/workspace';
 import { getWorkspaceEvidenceSummary } from '../utils/workspaceEvidence';
 import AppHeader from '../components/AppHeader';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const getCleanGradeInfo = (score) => {
     if (score === null || score === undefined) {
@@ -155,6 +156,7 @@ const buildInterpretedSearchChips = (
 
 const Home = () => {
     const navigate = useNavigate();
+    const isMobile = useMediaQuery('(max-width: 900px)');
 
     const [stores, setStores] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -430,14 +432,35 @@ const Home = () => {
         <div style={pageStyle}>
             <AppHeader />
 
-            <main style={contentStyle}>
-                <section style={mapContainerStyle}>
+            <main
+                style={{
+                    ...contentStyle,
+                    ...(isMobile
+                        ? mobileContentStyle
+                        : null)
+                }}
+            >
+                <section
+                    style={{
+                        ...mapContainerStyle,
+                        ...(isMobile
+                            ? mobileMapContainerStyle
+                            : null)
+                    }}
+                >
                     <div
                         id="kakao-map"
                         style={mapStyle}
                     />
 
-                    <div style={legendBoxStyle}>
+                    <div
+                        style={{
+                            ...legendBoxStyle,
+                            ...(isMobile
+                                ? mobileLegendBoxStyle
+                                : null)
+                        }}
+                    >
                         <div style={legendRowStyle}>
                             <span
                                 style={{
@@ -487,6 +510,9 @@ const Home = () => {
                             aria-label={`${activeSelectedStore.name} 사업장 정보`}
                             style={{
                                 ...popupStyle,
+                                ...(isMobile
+                                    ? mobilePopupStyle
+                                    : null),
                                 backgroundColor: selectedGrade.softColor,
                                 borderColor:
                                     selectedGrade.borderColor
@@ -563,7 +589,9 @@ const Home = () => {
                                         {evidenceSummary?.items?.length ? (
                                             <div
                                                 style={
-                                                    evidenceItemsGridStyle
+                                                    isMobile
+                                                        ? mobileEvidenceItemsGridStyle
+                                                        : evidenceItemsGridStyle
                                                 }
                                             >
                                                 {evidenceSummary.items.map((item) => (
@@ -656,6 +684,9 @@ const Home = () => {
                                     }
                                     style={{
                                         ...modernDetailBtnStyle,
+                                        ...(isMobile
+                                            ? mobileModernDetailBtnStyle
+                                            : null),
                                         color: selectedGrade.color
                                     }}
                                 >
@@ -668,14 +699,33 @@ const Home = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/review/select')}
-                        style={fabStyle}
+                        style={{
+                            ...fabStyle,
+                            ...(isMobile
+                                ? mobileFabStyle
+                                : null)
+                        }}
                     >
                         후기 쓰기
                     </button>
                 </section>
 
-                <aside style={sidebarStyle}>
-                    <div style={sidebarHeaderAreaStyle}>
+                <aside
+                    style={{
+                        ...sidebarStyle,
+                        ...(isMobile
+                            ? mobileSidebarStyle
+                            : null)
+                    }}
+                >
+                    <div
+                        style={{
+                            ...sidebarHeaderAreaStyle,
+                            ...(isMobile
+                                ? mobileSidebarHeaderAreaStyle
+                                : null)
+                        }}
+                    >
                         <form
                             style={searchContainerStyle}
                             onSubmit={handleSubmitSearch}
@@ -701,7 +751,7 @@ const Home = () => {
                         </form>
 
                         <div style={searchExampleTextStyle}>
-                            ex)클린점수 60점 넘는 상대 카페 추천해줘
+                             ex.클린점수 60점 넘는 상대 카페 추천해줘
                         </div>
 
                         {interpretedChips.length > 0 && (
@@ -726,7 +776,14 @@ const Home = () => {
                         )}
                     </div>
 
-                    <div style={listTitleAreaStyle}>
+                    <div
+                        style={{
+                            ...listTitleAreaStyle,
+                            ...(isMobile
+                                ? mobileListTitleAreaStyle
+                                : null)
+                        }}
+                    >
                         <h2 style={listTitleStyle}>
                             클린 사업장 리스트
                         </h2>
@@ -736,7 +793,14 @@ const Home = () => {
                         </span>
                     </div>
 
-                    <div style={listContainerStyle}>
+                    <div
+                        style={{
+                            ...listContainerStyle,
+                            ...(isMobile
+                                ? mobileListContainerStyle
+                                : null)
+                        }}
+                    >
                         {stores.length > 0 ? (
                             stores.map((store) => {
                                 const grade =
@@ -793,8 +857,8 @@ const Home = () => {
 };
 
 const pageStyle = {
-    width: '100vw',
-    height: '100vh',
+    width: '100%',
+    minHeight: '100dvh',
     backgroundColor: '#f5f5f5',
     display: 'flex',
     flexDirection: 'column'
@@ -929,13 +993,25 @@ const profileImageStyle = {
 const contentStyle = {
     display: 'flex',
     flex: 1,
+    minHeight: 0,
     overflow: 'hidden'
+};
+
+const mobileContentStyle = {
+    flexDirection: 'column',
+    overflowY: 'auto',
+    overflowX: 'hidden'
 };
 
 const mapContainerStyle = {
     flex: 1,
     position: 'relative',
     backgroundColor: '#e9ecef'
+};
+
+const mobileMapContainerStyle = {
+    flex: '0 0 auto',
+    minHeight: '54dvh'
 };
 
 const mapStyle = {
@@ -956,6 +1032,14 @@ const legendBoxStyle = {
     flexDirection: 'column',
     gap: '10px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+};
+
+const mobileLegendBoxStyle = {
+    left: '12px',
+    right: '12px',
+    bottom: '12px',
+    padding: '12px',
+    gap: '8px'
 };
 
 const legendRowStyle = {
@@ -983,10 +1067,21 @@ const sidebarStyle = {
     zIndex: 5
 };
 
+const mobileSidebarStyle = {
+    width: '100%',
+    borderLeft: 'none',
+    borderTop: '1px solid #ddd',
+    minHeight: 0
+};
+
 const sidebarHeaderAreaStyle = {
     padding: '20px 20px 14px',
     borderBottom: '1px solid #ddd',
     backgroundColor: '#fafafa'
+};
+
+const mobileSidebarHeaderAreaStyle = {
+    padding: '16px 14px 12px'
 };
 
 const listTitleAreaStyle = {
@@ -995,6 +1090,10 @@ const listTitleAreaStyle = {
     alignItems: 'flex-end',
     padding: '20px 20px 16px',
     borderBottom: '1px solid #eee'
+};
+
+const mobileListTitleAreaStyle = {
+    padding: '16px 14px 12px'
 };
 
 const listTitleStyle = {
@@ -1071,6 +1170,11 @@ const listContainerStyle = {
     flex: 1
 };
 
+const mobileListContainerStyle = {
+    overflow: 'visible',
+    flex: '0 0 auto'
+};
+
 const listItemStyle = {
     display: 'block',
     width: '100%',
@@ -1134,6 +1238,14 @@ const fabStyle = {
     zIndex: 15
 };
 
+const mobileFabStyle = {
+    top: '14px',
+    left: '14px',
+    width: '92px',
+    height: '38px',
+    fontSize: '13px'
+};
+
 const popupStyle = {
     position: 'absolute',
     top: '50%',
@@ -1159,6 +1271,14 @@ const popupStyle = {
     flexDirection: 'column',
 
     boxShadow: 'none'
+};
+
+const mobilePopupStyle = {
+    width: 'calc(100% - 24px)',
+    height: 'auto',
+    minHeight: '400px',
+    maxHeight: 'calc(100% - 24px)',
+    padding: '16px'
 };
 
 const popupCloseBtnStyle = {
@@ -1331,6 +1451,12 @@ const evidenceItemsGridStyle = {
     gap: '6px'
 };
 
+const mobileEvidenceItemsGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gap: '6px'
+};
+
 const evidenceItemStyle = {
     display: 'flex',
     alignItems: 'flex-start',
@@ -1426,6 +1552,11 @@ const modernDetailBtnStyle = {
     fontWeight: '900'
 };
 
+const mobileModernDetailBtnStyle = {
+    width: '100%',
+    justifyContent: 'center'
+};
+
 const closeIconBtnStyle = {
     position: 'absolute',
     top: '12px',
@@ -1439,10 +1570,9 @@ const closeIconBtnStyle = {
 
 const modalOverlayStyle = {
     position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
+    inset: 0,
+    width: '100%',
+    height: '100dvh',
     backgroundColor: 'rgba(0,0,0,0.4)',
     zIndex: 1000,
     display: 'flex',

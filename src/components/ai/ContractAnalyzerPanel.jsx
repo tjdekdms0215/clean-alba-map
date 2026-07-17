@@ -5,6 +5,7 @@ import React, {
     useState
 } from 'react';
 import { analyzeContract } from '../../api/ai';
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 const ALLOWED_EXTENSIONS = [
     'jpg',
@@ -42,6 +43,7 @@ const statusMap = {
 };
 
 const ContractAnalyzerPanel = () => {
+    const isMobile = useMediaQuery('(max-width: 720px)');
     const inputRef = useRef(null);
     const previewUrlRef = useRef(null);
 
@@ -147,9 +149,23 @@ const ContractAnalyzerPanel = () => {
 
     return (
         <section style={panelStyle}>
-            <div style={headerStyle}>
+            <div
+                style={{
+                    ...headerStyle,
+                    ...(isMobile
+                        ? mobileHeaderStyle
+                        : null)
+                }}
+            >
                 <div>
-                    <h1 style={titleStyle}>
+                    <h1
+                        style={{
+                            ...titleStyle,
+                            ...(isMobile
+                                ? mobileTitleStyle
+                                : null)
+                        }}
+                    >
                         AI 계약서 분석
                     </h1>
                     <p style={subtitleStyle}>
@@ -158,7 +174,14 @@ const ContractAnalyzerPanel = () => {
                     </p>
                 </div>
 
-                <span style={badgeStyle}>
+                <span
+                    style={{
+                        ...badgeStyle,
+                        ...(isMobile
+                            ? mobileBadgeStyle
+                            : null)
+                    }}
+                >
                     contract-analyzer
                 </span>
             </div>
@@ -204,8 +227,22 @@ const ContractAnalyzerPanel = () => {
             </div>
 
             {selectedFile && (
-                <div style={filePreviewCardStyle}>
-                    <div style={previewMediaStyle}>
+                <div
+                    style={{
+                        ...filePreviewCardStyle,
+                        ...(isMobile
+                            ? mobileFilePreviewCardStyle
+                            : null)
+                    }}
+                >
+                    <div
+                        style={{
+                            ...previewMediaStyle,
+                            ...(isMobile
+                                ? mobilePreviewMediaStyle
+                                : null)
+                        }}
+                    >
                         {isImage ? (
                             <img
                                 src={previewUrl}
@@ -231,7 +268,12 @@ const ContractAnalyzerPanel = () => {
 
                     <button
                         type="button"
-                        style={analyzeButtonStyle}
+                        style={{
+                            ...analyzeButtonStyle,
+                            ...(isMobile
+                                ? mobileAnalyzeButtonStyle
+                                : null)
+                        }}
                         onClick={handleAnalyze}
                         disabled={isAnalyzing}
                     >
@@ -388,12 +430,21 @@ const headerStyle = {
     flexWrap: 'wrap'
 };
 
+const mobileHeaderStyle = {
+    gap: '10px'
+};
+
 const titleStyle = {
     margin: 0,
     color: '#18202D',
     fontSize: '28px',
     fontWeight: '900',
     letterSpacing: '-0.5px'
+};
+
+const mobileTitleStyle = {
+    fontSize: '22px',
+    lineHeight: '1.35'
 };
 
 const subtitleStyle = {
@@ -410,6 +461,10 @@ const badgeStyle = {
     color: '#4668EC',
     fontSize: '11px',
     fontWeight: '800'
+};
+
+const mobileBadgeStyle = {
+    alignSelf: 'flex-start'
 };
 
 const uploadBoxStyle = {
@@ -457,12 +512,22 @@ const filePreviewCardStyle = {
     backgroundColor: '#FFFFFF'
 };
 
+const mobileFilePreviewCardStyle = {
+    gridTemplateColumns: '72px minmax(0, 1fr)',
+    gap: '12px'
+};
+
 const previewMediaStyle = {
     width: '96px',
     height: '96px',
     overflow: 'hidden',
     borderRadius: '14px',
     backgroundColor: '#F2F5F9'
+};
+
+const mobilePreviewMediaStyle = {
+    width: '72px',
+    height: '72px'
 };
 
 const previewImageStyle = {
@@ -514,6 +579,11 @@ const analyzeButtonStyle = {
     cursor: 'pointer',
     fontSize: '13px',
     fontWeight: '800'
+};
+
+const mobileAnalyzeButtonStyle = {
+    gridColumn: '1 / -1',
+    width: '100%'
 };
 
 const messageStyle = {

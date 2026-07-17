@@ -1165,6 +1165,7 @@ const mainStyle = {
     display: 'grid',
     flex: '1 1 auto',
     minHeight: 0,
+    minWidth: 0,
     width: '100%'
 };
 
@@ -1175,13 +1176,15 @@ const desktopMainStyle = {
 };
 
 const mobileMainStyle = {
-    minHeight: 0
+    minHeight: 0,
+    gap: '0'
 };
 
 const sidebarStyle = {
     display: 'flex',
     flexDirection: 'column',
     alignSelf: 'stretch',
+    minWidth: 0,
     minHeight: '100%',
     borderRight: '1px solid #E8ECF2',
     backgroundColor: '#FFFFFF',
@@ -1195,7 +1198,9 @@ const desktopSidebarStyle = {
 };
 
 const mobileSidebarStyle = {
-    height: 'auto'
+    height: 'auto',
+    borderRight: 'none',
+    borderBottom: '1px solid #E8ECF2'
 };
 
 const statusTabsStyle = {
@@ -1245,7 +1250,8 @@ const desktopListWrapStyle = {
 };
 
 const mobileListWrapStyle = {
-    overflow: 'visible'
+    overflow: 'visible',
+    paddingBottom: '14px'
 };
 
 const listItemStyle = {
@@ -1309,6 +1315,7 @@ const detailAreaStyle = {
     display: 'flex',
     flexDirection: 'column',
     gap: '12px',
+    minWidth: 0,
     boxSizing: 'border-box'
 };
 
@@ -1321,7 +1328,8 @@ const desktopDetailAreaStyle = {
 };
 
 const mobileDetailAreaStyle = {
-    overflow: 'visible'
+    overflow: 'visible',
+    padding: '16px 12px 24px'
 };
 
 const adminStatsGridStyle = {

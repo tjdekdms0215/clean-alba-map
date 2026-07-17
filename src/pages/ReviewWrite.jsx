@@ -536,12 +536,23 @@ const SubmissionOverlay = ({
     onGoHome
 }) => (
     <div style={submissionOverlayStyle}>
+        <style>{submissionMotionStyles}</style>
         <div style={submissionCardStyle}>
             <div style={submissionBadgeStyle}>
                 관리자 검수 중
             </div>
 
-            <div style={submissionIconStyle}>✓</div>
+            <div style={submissionIconWrapStyle}>
+                <span
+                    aria-hidden="true"
+                    style={submissionIconHaloStyle}
+                />
+                <span
+                    aria-hidden="true"
+                    style={submissionIconRippleStyle}
+                />
+                <div style={submissionIconStyle}>✓</div>
+            </div>
 
             <h2 style={submissionTitleStyle}>
                 후기 제출이 완료되었습니다.
@@ -1670,12 +1681,12 @@ const ReviewWrite = () => {
 };
 
 const pageStyle = {
-    height: '100vh',
-    minHeight: '100vh',
+    width: '100%',
+    minHeight: '100dvh',
     display: 'flex',
     flexDirection: 'column',
     backgroundColor: '#f6f8fb',
-    overflow: 'hidden'
+    overflowX: 'hidden'
 };
 
 const headerStyle = {
@@ -1743,7 +1754,8 @@ const profileIconStyle = {
 const mainStyle = {
     flex: 1,
     minHeight: 0,
-    overflowY: 'auto'
+    overflowY: 'auto',
+    overflowX: 'hidden'
 };
 
 const formShellStyle = {
@@ -2352,26 +2364,64 @@ const submissionOverlayStyle = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '24px',
-    backgroundColor: 'rgba(246, 248, 251, 0.98)'
+    backgroundColor: 'rgba(246, 248, 251, 0.98)',
+    animation:
+        'submissionOverlayFade 360ms ease-out both'
 };
 
 const submissionCardStyle = {
     width: '100%',
     maxWidth: '320px',
-    textAlign: 'center'
+    textAlign: 'center',
+    animation:
+        'submissionCardLift 560ms cubic-bezier(0.2, 0.9, 0.2, 1) both'
 };
 
 const submissionBadgeStyle = {
     marginBottom: '18px',
     color: '#6d7786',
     fontSize: '12px',
-    fontWeight: '700'
+    fontWeight: '700',
+    animation:
+        'submissionItemFadeUp 420ms ease-out 80ms both'
 };
 
-const submissionIconStyle = {
+const submissionIconWrapStyle = {
+    position: 'relative',
     width: '38px',
     height: '38px',
     margin: '0 auto 18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    animation:
+        'submissionIconGroupPop 620ms cubic-bezier(0.24, 0.9, 0.2, 1) 120ms both'
+};
+
+const submissionIconHaloStyle = {
+    position: 'absolute',
+    inset: '-16px',
+    borderRadius: '999px',
+    background:
+        'radial-gradient(circle, rgba(74, 114, 255, 0.18) 0%, rgba(74, 114, 255, 0.08) 42%, rgba(74, 114, 255, 0) 72%)',
+    animation:
+        'submissionHaloBloom 1400ms ease-out 220ms both'
+};
+
+const submissionIconRippleStyle = {
+    position: 'absolute',
+    inset: '-8px',
+    border: '1.5px solid rgba(74, 114, 255, 0.22)',
+    borderRadius: '999px',
+    animation:
+        'submissionRippleExpand 1100ms ease-out 240ms both'
+};
+
+const submissionIconStyle = {
+    position: 'relative',
+    zIndex: 1,
+    width: '100%',
+    height: '100%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -2379,7 +2429,9 @@ const submissionIconStyle = {
     borderRadius: '999px',
     color: '#ffffff',
     fontSize: '18px',
-    boxShadow: '0 14px 28px rgba(74, 114, 255, 0.26)'
+    boxShadow: '0 14px 28px rgba(74, 114, 255, 0.26)',
+    animation:
+        'submissionCheckPop 620ms cubic-bezier(0.18, 1.12, 0.34, 1) 150ms both'
 };
 
 const submissionTitleStyle = {
@@ -2387,13 +2439,17 @@ const submissionTitleStyle = {
     color: '#121826',
     fontSize: '30px',
     fontWeight: '900',
-    letterSpacing: '-0.8px'
+    letterSpacing: '-0.8px',
+    animation:
+        'submissionItemFadeUp 420ms ease-out 220ms both'
 };
 
 const submissionTextStyle = {
     margin: '0 0 20px',
     color: '#9ca5b2',
-    fontSize: '13px'
+    fontSize: '13px',
+    animation:
+        'submissionItemFadeUp 420ms ease-out 300ms both'
 };
 
 const submissionButtonStyle = {
@@ -2406,7 +2462,87 @@ const submissionButtonStyle = {
     color: '#3f4753',
     cursor: 'pointer',
     fontSize: '12px',
-    fontWeight: '700'
+    fontWeight: '700',
+    animation:
+        'submissionItemFadeUp 420ms ease-out 380ms both'
 };
+
+const submissionMotionStyles = `
+@keyframes submissionOverlayFade {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes submissionCardLift {
+    0% {
+        opacity: 0;
+        transform: translateY(22px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes submissionItemFadeUp {
+    0% {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes submissionIconGroupPop {
+    0% {
+        opacity: 0;
+        transform: translateY(10px) scale(0.84);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes submissionCheckPop {
+    0% {
+        transform: scale(0.2);
+    }
+    55% {
+        transform: scale(1.12);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes submissionHaloBloom {
+    0% {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes submissionRippleExpand {
+    0% {
+        opacity: 0.5;
+        transform: scale(0.65);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.4);
+    }
+}
+`;
 
 export default ReviewWrite;

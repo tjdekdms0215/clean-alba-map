@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const FEATURES = [
     {
@@ -25,6 +26,8 @@ const ServiceIntroModal = ({
     isOpen,
     onClose
 }) => {
+    const isMobile = useMediaQuery('(max-width: 640px)');
+
     useEffect(() => {
         if (!isOpen) {
             return undefined;
@@ -47,7 +50,12 @@ const ServiceIntroModal = ({
 
     return (
         <div
-            style={modalOverlayStyle}
+            style={{
+                ...modalOverlayStyle,
+                ...(isMobile
+                    ? mobileModalOverlayStyle
+                    : null)
+            }}
             onClick={onClose}
             role="presentation"
         >
@@ -55,7 +63,12 @@ const ServiceIntroModal = ({
                 role="dialog"
                 aria-modal="true"
                 aria-label="서비스 소개"
-                style={introModalStyle}
+                style={{
+                    ...introModalStyle,
+                    ...(isMobile
+                        ? mobileIntroModalStyle
+                        : null)
+                }}
                 onClick={(event) =>
                     event.stopPropagation()
                 }
@@ -69,7 +82,14 @@ const ServiceIntroModal = ({
                     ✕
                 </button>
 
-                <div style={introHeaderStyle}>
+                <div
+                    style={{
+                        ...introHeaderStyle,
+                        ...(isMobile
+                            ? mobileIntroHeaderStyle
+                            : null)
+                    }}
+                >
                     <span style={coreValueBadgeStyle}>
                         CORE VALUE
                     </span>
@@ -94,7 +114,12 @@ const ServiceIntroModal = ({
                     {FEATURES.map((feature) => (
                         <div
                             key={feature.number}
-                            style={introFeatureStyle}
+                            style={{
+                                ...introFeatureStyle,
+                                ...(isMobile
+                                    ? mobileIntroFeatureStyle
+                                    : null)
+                            }}
                         >
                             <div
                                 style={introFeatureIconStyle}
@@ -129,15 +154,19 @@ const ServiceIntroModal = ({
 
 const modalOverlayStyle = {
     position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
+    inset: 0,
+    width: '100%',
+    height: '100dvh',
     backgroundColor: 'rgba(0,0,0,0.4)',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000
+};
+
+const mobileModalOverlayStyle = {
+    alignItems: 'flex-end',
+    padding: '12px'
 };
 
 const introModalStyle = {
@@ -149,7 +178,15 @@ const introModalStyle = {
     position: 'relative',
     boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
     borderRadius: 0,
-    border: '1px solid #222'
+    border: '1px solid #222',
+    maxHeight: 'calc(100dvh - 24px)',
+    overflowY: 'auto'
+};
+
+const mobileIntroModalStyle = {
+    width: '100%',
+    maxWidth: '100%',
+    padding: '24px 18px 20px'
 };
 
 const closeIconBtnStyle = {
@@ -166,6 +203,10 @@ const introHeaderStyle = {
     textAlign: 'center',
     marginBottom: '28px',
     marginTop: '8px'
+};
+
+const mobileIntroHeaderStyle = {
+    marginBottom: '20px'
 };
 
 const coreValueBadgeStyle = {
@@ -209,6 +250,11 @@ const introFeatureStyle = {
     backgroundColor: '#fdfdfd',
     borderRadius: 0,
     border: '1px solid #eaeaea'
+};
+
+const mobileIntroFeatureStyle = {
+    padding: '14px 12px',
+    gap: '10px'
 };
 
 const introFeatureIconStyle = {

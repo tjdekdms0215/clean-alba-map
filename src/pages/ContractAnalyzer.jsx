@@ -2,19 +2,40 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ContractAnalyzerPanel from '../components/ai/ContractAnalyzerPanel';
 import AppHeader from '../components/AppHeader';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const ContractAnalyzer = () => {
     const navigate = useNavigate();
+    const isMobile = useMediaQuery('(max-width: 720px)');
 
     return (
         <div style={pageStyle}>
             <AppHeader />
 
-            <main style={mainStyle}>
-                <div style={contentStyle}>
+            <main
+                style={{
+                    ...mainStyle,
+                    ...(isMobile
+                        ? mobileMainStyle
+                        : null)
+                }}
+            >
+                <div
+                    style={{
+                        ...contentStyle,
+                        ...(isMobile
+                            ? mobileContentStyle
+                            : null)
+                    }}
+                >
                     <button
                         type="button"
-                        style={backButtonStyle}
+                        style={{
+                            ...backButtonStyle,
+                            ...(isMobile
+                                ? mobileBackButtonStyle
+                                : null)
+                        }}
                         onClick={() => navigate('/guide')}
                     >
                         ‹ 근로기준법 안내로 돌아가기
@@ -28,7 +49,7 @@ const ContractAnalyzer = () => {
 };
 
 const pageStyle = {
-    minHeight: '100vh',
+    minHeight: '100dvh',
     backgroundColor: '#F6F8FB'
 };
 
@@ -101,10 +122,18 @@ const mainStyle = {
     padding: '32px 20px 56px'
 };
 
+const mobileMainStyle = {
+    padding: '20px 14px 32px'
+};
+
 const contentStyle = {
     width: '100%',
     maxWidth: '960px',
     margin: '0 auto'
+};
+
+const mobileContentStyle = {
+    maxWidth: '100%'
 };
 
 const backButtonStyle = {
@@ -116,6 +145,10 @@ const backButtonStyle = {
     cursor: 'pointer',
     fontSize: '13px',
     fontWeight: '600'
+};
+
+const mobileBackButtonStyle = {
+    fontSize: '12px'
 };
 
 export default ContractAnalyzer;

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import AppHeader from '../components/AppHeader';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const TAB_KEYS = {
     WAGE: '2026 최저시급',
@@ -36,6 +37,7 @@ const guideData = {
 };
 
 const Guide = () => {
+    const isMobile = useMediaQuery('(max-width: 720px)');
     const [activeTab, setActiveTab] = useState(TAB_KEYS.WAGE);
 
     useEffect(() => {
@@ -109,8 +111,10 @@ const Guide = () => {
                     style={{
                         ...innerContainerStyle,
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(4, minmax(170px, 1fr))',
-                        overflowX: 'auto',
+                        gridTemplateColumns: isMobile
+                            ? 'repeat(2, minmax(0, 1fr))'
+                            : 'repeat(4, minmax(170px, 1fr))',
+                        overflowX: isMobile ? 'visible' : 'auto',
                         paddingLeft: 0,
                         paddingRight: 0
                     }}
@@ -171,7 +175,14 @@ const Guide = () => {
                                 { badge: '주급', desc: '1일 4시간, 1주(5일) 간 총 20시간 근로(개근)하고 주급 217,440원을 받은 경우', calc: '10,320원 > 217,440원 ÷ 24시간 = 9,060원', note: '* 주 15시간 이상 근무하는 경우 주휴수당을 포함하여 계산하여야 함' },
                                 { badge: '월급', desc: '월급 1,893,540원을 받고 1주 40시간(주 5일, 1일 8시간)을 근무한 경우', calc: '10,320원 > 1,893,540원 ÷ 209시간 = 9,060원', note: '* 주 소정근로시간 40시간 → 월환산 기준 시간수 5*200시간' }
                             ].map((row, idx) => (
-                                <div key={idx} style={calculationRowStyle}>
+                                <div
+                                    key={idx}
+                                    style={
+                                        isMobile
+                                            ? mobileCalculationRowStyle
+                                            : calculationRowStyle
+                                    }
+                                >
                                     <span style={roundBadgeStyle}>
                                         {row.badge}
                                     </span>
@@ -409,9 +420,8 @@ const InfoCard = ({ title, centered = false, children }) => (
 // --- CSS 스타일링 영역 ---
 
 const pageStyle = {
-    width: '100vw',
-    height: '100dvh',
-    minHeight: 0,
+    width: '100%',
+    minHeight: '100dvh',
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
@@ -521,6 +531,14 @@ const calculationRowStyle = {
     boxSizing: 'border-box',
     backgroundColor: '#ffffff',
     borderBottom: '1px solid #eeeeee'
+};
+
+const mobileCalculationRowStyle = {
+    ...calculationRowStyle,
+    minHeight: 'auto',
+    gridTemplateColumns: '1fr',
+    rowGap: '10px',
+    alignItems: 'start'
 };
 
 const roundBadgeStyle = {

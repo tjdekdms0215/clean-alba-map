@@ -7,6 +7,7 @@ import {
     useNavigate
 } from 'react-router-dom';
 import ServiceIntroModal from './ServiceIntroModal';
+import useMediaQuery from '../hooks/useMediaQuery';
 import {
     beginKakaoLogin,
     clearStoredAuth,
@@ -16,6 +17,7 @@ import {
 const AppHeader = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const isMobile = useMediaQuery('(max-width: 820px)');
     const [authState, setAuthState] = useState(
         getStoredAuth()
     );
@@ -59,11 +61,30 @@ const AppHeader = () => {
 
     return (
         <>
-            <header style={headerStyle}>
-                <div style={headerLeftStyle}>
+            <header
+                style={{
+                    ...headerStyle,
+                    ...(isMobile
+                        ? mobileHeaderStyle
+                        : null)
+                }}
+            >
+                <div
+                    style={{
+                        ...headerLeftStyle,
+                        ...(isMobile
+                            ? mobileHeaderLeftStyle
+                            : null)
+                    }}
+                >
                     <button
                         type="button"
-                        style={logoBtnStyle}
+                        style={{
+                            ...logoBtnStyle,
+                            ...(isMobile
+                                ? mobileLogoBtnStyle
+                                : null)
+                        }}
                         onClick={() => navigate('/')}
                     >
                         전남대 클린알바맵
@@ -71,7 +92,12 @@ const AppHeader = () => {
 
                     <button
                         type="button"
-                        style={navBtnStyle}
+                        style={{
+                            ...navBtnStyle,
+                            ...(isMobile
+                                ? mobileNavBtnStyle
+                                : null)
+                        }}
                         onClick={() => setIsIntroOpen(true)}
                     >
                         서비스 소개
@@ -79,14 +105,26 @@ const AppHeader = () => {
 
                     <button
                         type="button"
-                        style={navBtnStyle}
+                        style={{
+                            ...navBtnStyle,
+                            ...(isMobile
+                                ? mobileNavBtnStyle
+                                : null)
+                        }}
                         onClick={() => navigate('/guide')}
                     >
                         근로기준법 안내
                     </button>
                 </div>
 
-                <div style={headerRightStyle}>
+                <div
+                    style={{
+                        ...headerRightStyle,
+                        ...(isMobile
+                            ? mobileHeaderRightStyle
+                            : null)
+                    }}
+                >
                     {authState.isLoggedIn ? (
                         <>
                             <div style={profileDisplayStyle}>
@@ -98,7 +136,8 @@ const AppHeader = () => {
                                     />
                                 </div>
 
-                                {authState.nickname && (
+                                {authState.nickname &&
+                                    !isMobile && (
                                     <span
                                         style={
                                             profileTextStyle
@@ -115,9 +154,12 @@ const AppHeader = () => {
                                     onClick={() =>
                                         navigate('/admin')
                                     }
-                                    style={
-                                        adminBtnStyle
-                                    }
+                                    style={{
+                                        ...adminBtnStyle,
+                                        ...(isMobile
+                                            ? mobileActionBtnStyle
+                                            : null)
+                                    }}
                                 >
                                     관리자 페이지
                                 </button>
@@ -126,7 +168,12 @@ const AppHeader = () => {
                             <button
                                 type="button"
                                 onClick={handleLogout}
-                                style={btnStyle}
+                                style={{
+                                    ...btnStyle,
+                                    ...(isMobile
+                                        ? mobileActionBtnStyle
+                                        : null)
+                                }}
                             >
                                 로그아웃
                             </button>
@@ -135,7 +182,12 @@ const AppHeader = () => {
                         <button
                             type="button"
                             onClick={handleLogin}
-                            style={kakaoLoginBtnStyle}
+                            style={{
+                                ...kakaoLoginBtnStyle,
+                                ...(isMobile
+                                    ? mobileKakaoLoginBtnStyle
+                                    : null)
+                            }}
                             aria-label="카카오 로그인"
                         >
                             <svg
@@ -181,11 +233,23 @@ const headerStyle = {
     flexWrap: 'wrap'
 };
 
+const mobileHeaderStyle = {
+    minHeight: 'auto',
+    padding: '12px 16px',
+    alignItems: 'stretch',
+    gap: '10px'
+};
+
 const headerLeftStyle = {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
     flexWrap: 'wrap'
+};
+
+const mobileHeaderLeftStyle = {
+    width: '100%',
+    gap: '8px'
 };
 
 const headerRightStyle = {
@@ -196,6 +260,12 @@ const headerRightStyle = {
     justifyContent: 'flex-end'
 };
 
+const mobileHeaderRightStyle = {
+    width: '100%',
+    justifyContent: 'space-between',
+    gap: '8px'
+};
+
 const logoBtnStyle = {
     backgroundColor: 'transparent',
     border: 'none',
@@ -203,6 +273,10 @@ const logoBtnStyle = {
     fontWeight: 'bold',
     cursor: 'pointer',
     color: '#333'
+};
+
+const mobileLogoBtnStyle = {
+    fontSize: '16px'
 };
 
 const navBtnStyle = {
@@ -215,6 +289,11 @@ const navBtnStyle = {
     color: '#444'
 };
 
+const mobileNavBtnStyle = {
+    padding: '6px 8px',
+    fontSize: '13px'
+};
+
 const btnStyle = {
     backgroundColor: 'transparent',
     border: '1px solid #ddd',
@@ -223,6 +302,12 @@ const btnStyle = {
     cursor: 'pointer',
     fontSize: '14px',
     color: '#444'
+};
+
+const mobileActionBtnStyle = {
+    minHeight: '34px',
+    padding: '6px 10px',
+    fontSize: '12px'
 };
 
 const adminBtnStyle = {
@@ -278,6 +363,14 @@ const kakaoLoginBtnStyle = {
     boxSizing: 'border-box',
     fontFamily: 'inherit',
     whiteSpace: 'nowrap'
+};
+
+const mobileKakaoLoginBtnStyle = {
+    minWidth: '0',
+    width: '100%',
+    height: '36px',
+    padding: '0 12px',
+    gap: '8px'
 };
 
 const kakaoLogoStyle = {
