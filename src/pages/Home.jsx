@@ -386,9 +386,17 @@ const Home = () => {
     };
 
     const handleSearch = (event) => {
-        if (event.key === 'Enter') {
-            executeSearch();
+        if (
+            event.key === 'Enter' &&
+            event.nativeEvent?.isComposing
+        ) {
+            event.preventDefault();
         }
+    };
+
+    const handleSubmitSearch = (event) => {
+        event.preventDefault();
+        executeSearch();
     };
 
     const handleSearchInputChange = (event) => {
@@ -668,7 +676,10 @@ const Home = () => {
 
                 <aside style={sidebarStyle}>
                     <div style={sidebarHeaderAreaStyle}>
-                        <div style={searchContainerStyle}>
+                        <form
+                            style={searchContainerStyle}
+                            onSubmit={handleSubmitSearch}
+                        >
                             <input
                                 type="text"
                                 placeholder="사업장 이름 및 원하는 조건 검색"
@@ -681,14 +692,13 @@ const Home = () => {
                             />
 
                             <button
-                                type="button"
-                                onClick={executeSearch}
+                                type="submit"
                                 style={searchIconButtonStyle}
                                 aria-label="사업장 검색"
                             >
                                 🔍
                             </button>
-                        </div>
+                        </form>
 
                         <div style={searchExampleTextStyle}>
                             ex)클린점수 60점 넘는 상대 카페 추천해줘
@@ -1295,7 +1305,11 @@ const popupSummaryTextStyle = {
     display: '-webkit-box',
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    whiteSpace: 'normal',
+    wordBreak: 'keep-all',
+    minHeight: '2.9em',
+    maxHeight: '2.9em'
 };
 
 const evidenceBlockStyle = {
@@ -1319,9 +1333,9 @@ const evidenceItemsGridStyle = {
 
 const evidenceItemStyle = {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: '7px',
-    minHeight: '34px',
+    minHeight: '40px',
     padding: '6px 8px',
     border: '1px solid rgba(214, 221, 232, 0.96)',
     backgroundColor: 'rgba(255,255,255,0.86)'
@@ -1343,19 +1357,23 @@ const evidenceContentStyle = {
     minWidth: 0,
     display: 'flex',
     flexDirection: 'column',
-    gap: 0
+    gap: 0,
+    paddingTop: '1px'
 };
 
 const evidenceTextStyle = {
-    display: 'block',
+    display: '-webkit-box',
     minWidth: 0,
     color: '#333333',
     fontSize: '11px',
     fontWeight: '900',
     lineHeight: '1.25',
-    whiteSpace: 'nowrap',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    whiteSpace: 'normal',
     overflow: 'hidden',
-    textOverflow: 'ellipsis'
+    textOverflow: 'ellipsis',
+    wordBreak: 'keep-all'
 };
 
 const evidenceFallbackTextStyle = {
