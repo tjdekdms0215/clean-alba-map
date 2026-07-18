@@ -543,8 +543,11 @@ const normalizeEvidenceFile = (item, index) => {
             item.split('/').pop() || `인증자료_${index + 1}`;
 
         return {
+            attachmentId: null,
             id: `${fileName}-${index}`,
             name: fileName,
+            contentType: '',
+            size: null,
             url: item,
             type: /\.pdf$/i.test(fileName) ? 'PDF' : 'IMAGE'
         };
@@ -565,12 +568,19 @@ const normalizeEvidenceFile = (item, index) => {
     const normalizedType = String(contentType).toUpperCase();
 
     return {
+        attachmentId:
+            item?.attachmentId ||
+            item?.id ||
+            item?.fileId ||
+            null,
         id:
             item?.attachmentId ||
             item?.id ||
             item?.fileId ||
             `${name}-${index}`,
         name,
+        contentType,
+        size: toInteger(item?.size),
         url:
             item?.url ||
             item?.fileUrl ||
@@ -1164,6 +1174,55 @@ export const getAdminReviewDetail = async (reviewId) => {
 
         return deepClone(matched);
     }
+};
+
+const readFileNameFromDisposition = (
+    disposition = ''
+) => {
+    const encodedMatch = String(disposition).match(
+        /filename\*=UTF-8''([^;]+)/i
+    );
+
+    if (encodedMatch?.[1]) {
+        return decodeURIComponent(
+            encodedMatch[1].replace(/"/g, '')
+        );
+    }
+
+    const plainMatch = String(disposition).match(
+        /filename="?([^";]+)"?/i
+    );
+
+    return plainMatch?.[1]
+        ? plainMatch[1].trim()
+        : '';
+};
+
+export const downloadAdminReviewAttachment = async ({
+    reviewId,
+    attachmentId
+}) => {
+    if (!reviewId || !attachmentId) {
+        throw new Error(
+            '다운로드할 인증 자료 정보가 없습니다.'
+        );
+    }
+
+    const response = await api.get(
+        `/admin/reviews/${reviewId}/attachments/${attachmentId}`,
+        {
+            responseType: 'blob',
+            preserveAuthOnFailure: true
+        }
+    );
+
+    return {
+        blob: response.data,
+        fileName: readFileNameFromDisposition(
+            response.headers?.['content-disposition']
+        ),
+        contentType: response.headers?.['content-type'] || ''
+    };
 };
 
 export const updateAdminReviewStatus = async ({

@@ -4,6 +4,7 @@ import React, {
     useState
 } from 'react';
 import {
+    downloadAdminReviewAttachment,
     getAdminReviewDetail,
     getAdminReviews,
     getAdminStats,
@@ -122,9 +123,36 @@ const formatRelativeTime = (value) => {
     return `${Math.round(diffHours / 24)}일 전`;
 };
 
+const formatEvidenceSize = (size) => {
+    if (!Number.isFinite(size) || size <= 0) {
+        return '';
+    }
+
+    if (size < 1024 * 1024) {
+        return `${Math.round(size / 1024)}KB`;
+    }
+
+    return `${(size / (1024 * 1024)).toFixed(1)}MB`;
+};
+
 const isImageEvidence = (file) =>
     file?.type === 'IMAGE' ||
     /\.(jpg|jpeg|png|gif|webp)$/i.test(file?.name || '');
+
+const triggerBlobDownload = (blob, fileName) => {
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = blobUrl;
+    link.download = fileName || '인증자료';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+    }, 1000);
+};
 
 const getStatusMeta = (status) =>
     STATUS_TABS.find(
@@ -415,6 +443,53 @@ const AdminPage = () => {
             );
         } finally {
             setIsUpdating(false);
+        }
+    };
+
+    const handleDownloadEvidence = async (file) => {
+        if (!selectedReview || !file) {
+            return;
+        }
+
+        if (file.url) {
+            window.open(file.url, '_blank', 'noreferrer');
+            return;
+        }
+
+        if (!file.attachmentId) {
+            setErrorMessage(
+                '다운로드할 인증 자료 ID가 없습니다.'
+            );
+            return;
+        }
+
+        setErrorMessage('');
+
+        try {
+            const result =
+                await downloadAdminReviewAttachment({
+                    reviewId: selectedReview.reviewId,
+                    attachmentId: file.attachmentId
+                });
+
+            triggerBlobDownload(
+                result.blob,
+                result.fileName || file.name
+            );
+        } catch (error) {
+            console.error(
+                '관리자 인증 자료 다운로드에 실패했습니다.',
+                error
+            );
+            setErrorMessage(
+                [401, 403].includes(
+                    error?.response?.status
+                )
+                    ? '인증 자료 다운로드 권한을 확인할 수 없습니다. 관리자 계정으로 다시 로그인해 주세요.'
+                    : error?.response?.status === 404
+                        ? '해당 인증 자료를 찾을 수 없습니다.'
+                        : '인증 자료 다운로드 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+            );
         }
     };
 
@@ -904,29 +979,21 @@ const AdminPage = () => {
                                 >
                                     {selectedReview.evidenceFiles.map(
                                         (file) => {
-                                            const CardTag =
-                                                file.url
-                                                    ? 'a'
-                                                    : 'div';
+                                            const evidenceSizeLabel =
+                                                formatEvidenceSize(
+                                                    file.size
+                                                );
 
                                             return (
-                                                <CardTag
+                                                <button
+                                                    type="button"
                                                     key={
                                                         file.id
                                                     }
-                                                    href={
-                                                        file.url ||
-                                                        undefined
-                                                    }
-                                                    target={
-                                                        file.url
-                                                            ? '_blank'
-                                                            : undefined
-                                                    }
-                                                    rel={
-                                                        file.url
-                                                            ? 'noreferrer'
-                                                            : undefined
+                                                    onClick={() =>
+                                                        handleDownloadEvidence(
+                                                            file
+                                                        )
                                                     }
                                                     style={{
                                                         ...evidenceCardStyle,
@@ -987,11 +1054,12 @@ const AdminPage = () => {
                                                                     : '#6F8EEA'
                                                         }}
                                                     >
-                                                        {
-                                                            file.type
-                                                        }
+                                                        {file.type}
+                                                        {evidenceSizeLabel
+                                                            ? ` · ${evidenceSizeLabel}`
+                                                            : ''}
                                                     </span>
-                                                </CardTag>
+                                                </button>
                                             );
                                         }
                                     )}
@@ -1515,6 +1583,7 @@ const evidenceGridStyle = {
 };
 
 const evidenceCardStyle = {
+    width: '100%',
     minHeight: '112px',
     padding: '14px 12px',
     display: 'flex',
@@ -1522,7 +1591,11 @@ const evidenceCardStyle = {
     justifyContent: 'space-between',
     border: '1px solid #E4E8F0',
     borderRadius: '12px',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    appearance: 'none',
+    fontFamily: 'inherit',
+    textAlign: 'left',
+    cursor: 'pointer'
 };
 
 const evidenceIconWrapStyle = {
