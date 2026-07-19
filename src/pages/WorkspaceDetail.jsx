@@ -20,6 +20,10 @@ import {
 } from '../constants/reviewIndicators';
 import AppHeader from '../components/AppHeader';
 import useMediaQuery from '../hooks/useMediaQuery';
+import {
+    REVIEW_SENTIMENT_OPTIONS,
+    buildReviewSentimentStats
+} from '../utils/reviewSentiment';
 
 const DEFAULT_SHIFT_ORDER = ['morning', 'afternoon', 'night'];
 const SHIFT_LABELS = {
@@ -858,7 +862,20 @@ const buildReviews = (workspace) => {
         status:
             review?.status ||
             review?.reviewStatus ||
-            'APPROVED'
+            'APPROVED',
+        sentiment:
+            pickFirstDefined(review, [
+                'sentiment',
+                'reviewSentiment',
+                'review_sentiment',
+                'sentimentType',
+                'sentiment_type',
+                'mood',
+                'reviewMood',
+                'review_mood',
+                'atmosphere',
+                'tone'
+            ]) || ''
     }));
 };
 
@@ -982,6 +999,11 @@ const WorkspaceDetail = () => {
     const detailData = useMemo(() => {
         const safeWorkspace = workspace || {};
         const shiftRows = buildShiftRows(safeWorkspace);
+        const reviews = buildReviews(safeWorkspace);
+        const sentimentStats = buildReviewSentimentStats({
+            source: safeWorkspace,
+            reviews
+        });
         const maxWorkers = Math.max(
             1,
             ...shiftRows.flatMap((row) => [
@@ -1009,9 +1031,10 @@ const WorkspaceDetail = () => {
             ),
             indicatorStats:
                 buildIndicatorStats(safeWorkspace),
+            sentimentStats,
             shiftRows,
             maxWorkers,
-            reviews: buildReviews(safeWorkspace)
+            reviews
         };
     }, [workspace]);
 
@@ -1145,6 +1168,45 @@ const WorkspaceDetail = () => {
                                         }
                                         개
                                     </p>
+                                </div>
+                            </section>
+
+                            <section style={sectionStyle}>
+                                <h2 style={sectionTitleStyle}>
+                                    후기 분위기
+                                </h2>
+
+                                <div
+                                    style={{
+                                        ...sentimentCardStyle,
+                                        ...(isMobile
+                                            ? mobileSentimentCardStyle
+                                            : null)
+                                    }}
+                                >
+                                    {REVIEW_SENTIMENT_OPTIONS.map(
+                                        (option) => (
+                                            <span
+                                                key={option.id}
+                                                style={{
+                                                    ...sentimentPillStyle,
+                                                    color: option.color,
+                                                    backgroundColor:
+                                                        option.softColor
+                                                }}
+                                            >
+                                                {option.label}{' '}
+                                                {
+                                                    detailData
+                                                        .sentimentStats
+                                                        .rates[
+                                                        option.id
+                                                    ]
+                                                }
+                                                %
+                                            </span>
+                                        )
+                                    )}
                                 </div>
                             </section>
 
@@ -1781,6 +1843,33 @@ const sectionTitleStyle = {
     fontSize: '17px',
     fontWeight: '900',
     letterSpacing: '-0.3px'
+};
+
+const sentimentCardStyle = {
+    padding: '16px 18px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    flexWrap: 'wrap',
+    border: '1px solid #E6EAF0',
+    borderRadius: '16px',
+    backgroundColor: '#FFFFFF'
+};
+
+const mobileSentimentCardStyle = {
+    padding: '14px',
+    gap: '8px'
+};
+
+const sentimentPillStyle = {
+    minHeight: '32px',
+    padding: '0 12px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    borderRadius: '999px',
+    fontSize: '13px',
+    fontWeight: '800',
+    boxSizing: 'border-box'
 };
 
 const indicatorGridStyle = {

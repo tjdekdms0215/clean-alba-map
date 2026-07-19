@@ -3,6 +3,7 @@ import {
     getViolationIndicatorIds,
     normalizeIndicatorKey
 } from '../constants/reviewIndicators';
+import { normalizeReviewSentiment } from '../utils/reviewSentiment';
 
 const ADMIN_STATUSES = [
     'PENDING',
@@ -702,6 +703,15 @@ const normalizeAdminReview = (item) => {
             'purifiedContent',
             'sanitizedContent'
         ]),
+        sentiment: normalizeReviewSentiment(
+            reviewSource?.sentiment ||
+                reviewSource?.reviewSentiment ||
+                reviewSource?.sentimentType ||
+                reviewSource?.mood ||
+                reviewSource?.reviewMood ||
+                reviewSource?.atmosphere ||
+                reviewSource?.tone
+        ),
         evidenceFiles: evidenceFiles.map(
             normalizeEvidenceFile
         ),
@@ -1188,6 +1198,47 @@ export const updateAdminReviewContent = async ({
                 'subjectiveReview',
                 'purifiedContent'
             ]) || content
+    };
+};
+
+export const updateAdminReviewSentiment = async ({
+    reviewId,
+    sentiment
+}) => {
+    if (!reviewId) {
+        throw new Error('수정할 리뷰 정보가 없습니다.');
+    }
+
+    const normalizedSentiment =
+        normalizeReviewSentiment(sentiment);
+
+    if (!normalizedSentiment) {
+        throw new Error('후기 분위기를 선택해 주세요.');
+    }
+
+    const apiSentiment = normalizedSentiment.toUpperCase();
+    const response = await api.patch(
+        `/admin/reviews/${reviewId}/sentiment`,
+        {
+            sentiment: apiSentiment,
+            reviewSentiment: apiSentiment
+        },
+        {
+            preserveAuthOnFailure: true
+        }
+    );
+    const raw = response.data?.data || response.data;
+    const normalized = normalizeAdminReview(raw);
+
+    return {
+        ...normalized,
+        reviewId:
+            normalized.reviewId ||
+            raw?.reviewId ||
+            Number(reviewId) ||
+            reviewId,
+        sentiment:
+            normalized.sentiment || normalizedSentiment
     };
 };
 

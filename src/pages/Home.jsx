@@ -6,6 +6,10 @@ import {
     searchWorkspacesNaturalLanguage
 } from '../api/workspace';
 import { getWorkspaceEvidenceSummary } from '../utils/workspaceEvidence';
+import {
+    buildReviewSentimentStats,
+    getReviewSentimentMeta
+} from '../utils/reviewSentiment';
 import AppHeader from '../components/AppHeader';
 import useMediaQuery from '../hooks/useMediaQuery';
 
@@ -458,6 +462,18 @@ const Home = () => {
     const evidenceSummary = activeSelectedStore
         ? getWorkspaceEvidenceSummary(activeSelectedStore)
         : null;
+    const sentimentStats = activeSelectedStore
+        ? buildReviewSentimentStats({
+              source: activeSelectedStore,
+              reviews:
+                  activeSelectedStore.reviews ||
+                  activeSelectedStore.approvedReviews ||
+                  []
+          })
+        : null;
+    const sentimentMeta = getReviewSentimentMeta(
+        sentimentStats?.dominant
+    );
     const interpretedChips =
         buildInterpretedSearchChips(
             searchInterpretation
@@ -866,6 +882,40 @@ const Home = () => {
                                             0}
                                         명 참여
                                     </span>
+                                </div>
+
+                                <div
+                                    style={{
+                                        ...boxRowStyle,
+                                        ...(isMobile
+                                            ? mobileBoxRowStyle
+                                            : null)
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            ...boxLabelStyle,
+                                            ...(isMobile
+                                                ? mobileBoxLabelStyle
+                                                : null)
+                                        }}
+                                    >
+                                        후기 분위기:
+                                    </span>
+                                    <strong
+                                        style={{
+                                            ...boxTextStyle,
+                                            ...(isMobile
+                                                ? mobileBoxTextStyle
+                                                : null),
+                                            color:
+                                                sentimentMeta?.color ||
+                                                '#333333'
+                                        }}
+                                    >
+                                        {sentimentMeta?.label ||
+                                            '데이터 없음'}
+                                    </strong>
                                 </div>
 
                                 <div

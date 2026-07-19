@@ -9,9 +9,11 @@ import {
     getAdminReviews,
     getAdminStats,
     updateAdminReviewContent,
+    updateAdminReviewSentiment,
     updateAdminReviewStatus
 } from '../api/reviews';
 import { REVIEW_INDICATORS } from '../constants/reviewIndicators';
+import { REVIEW_SENTIMENT_OPTIONS } from '../utils/reviewSentiment';
 import AppHeader from '../components/AppHeader';
 
 const STATUS_TABS = [
@@ -248,6 +250,8 @@ const AdminPage = () => {
     const [editableReviewText, setEditableReviewText] =
         useState('');
     const [isReviewTextSaving, setIsReviewTextSaving] =
+        useState(false);
+    const [isSentimentSaving, setIsSentimentSaving] =
         useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
@@ -577,6 +581,61 @@ const AdminPage = () => {
             );
         } finally {
             setIsReviewTextSaving(false);
+        }
+    };
+
+    const handleSelectSentiment = async (sentiment) => {
+        if (!selectedReview) {
+            return;
+        }
+
+        setIsSentimentSaving(true);
+        setErrorMessage('');
+
+        try {
+            const updatedReview =
+                await updateAdminReviewSentiment({
+                    reviewId: selectedReview.reviewId,
+                    sentiment
+                });
+            const nextSentiment =
+                updatedReview.sentiment || sentiment;
+
+            setSelectedReview((current) =>
+                current
+                    ? {
+                          ...current,
+                          sentiment: nextSentiment
+                      }
+                    : current
+            );
+            setReviews((currentReviews) =>
+                currentReviews.map((review) =>
+                    String(review.reviewId) ===
+                    String(selectedReview.reviewId)
+                        ? {
+                              ...review,
+                              sentiment: nextSentiment
+                          }
+                        : review
+                )
+            );
+        } catch (error) {
+            console.error(
+                '관리자 후기 분위기 저장에 실패했습니다.',
+                error
+            );
+            setErrorMessage(
+                [401, 403].includes(
+                    error?.response?.status
+                )
+                    ? '후기 분위기 수정 권한을 확인할 수 없습니다. 관리자 계정으로 다시 로그인해 주세요.'
+                    : error?.response?.status === 404
+                        ? '후기 분위기 수정 API를 찾을 수 없습니다. 백엔드 경로를 확인해 주세요.'
+                        : '후기 분위기 저장 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+            );
+        } finally {
+            setIsSentimentSaving(false);
         }
     };
 
@@ -1041,6 +1100,61 @@ const AdminPage = () => {
                                         </strong>
                                     </div>
                                 </div>
+                            </article>
+
+                            <article style={sectionCardStyle}>
+                                <h2 style={sectionTitleStyle}>
+                                    후기 분위기
+                                </h2>
+
+                                <div style={sentimentSelectRowStyle}>
+                                    {REVIEW_SENTIMENT_OPTIONS.map(
+                                        (option) => {
+                                            const isSelected =
+                                                selectedReview.sentiment ===
+                                                option.id;
+
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    key={option.id}
+                                                    onClick={() =>
+                                                        handleSelectSentiment(
+                                                            option.id
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        isSentimentSaving
+                                                    }
+                                                    style={{
+                                                        ...sentimentSelectButtonStyle,
+                                                        borderColor:
+                                                            isSelected
+                                                                ? option.color
+                                                                : '#E2E7EF',
+                                                        backgroundColor:
+                                                            isSelected
+                                                                ? option.softColor
+                                                                : '#FFFFFF',
+                                                        color: isSelected
+                                                            ? option.color
+                                                            : '#687284',
+                                                        opacity:
+                                                            isSentimentSaving
+                                                                ? 0.72
+                                                                : 1
+                                                    }}
+                                                >
+                                                    {option.label}
+                                                </button>
+                                            );
+                                        }
+                                    )}
+                                </div>
+
+                                <p style={sentimentHelpTextStyle}>
+                                    승인 후 사업장 상세의 후기 분위기 비율에 반영됩니다.
+                                </p>
                             </article>
 
                             <article style={sectionCardStyle}>
@@ -1772,6 +1886,29 @@ const workerValueStyle = {
     color: '#333C49',
     fontSize: '14px',
     fontWeight: '800'
+};
+
+const sentimentSelectRowStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    gap: '8px'
+};
+
+const sentimentSelectButtonStyle = {
+    height: '38px',
+    border: '1px solid',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '900',
+    fontFamily: 'inherit'
+};
+
+const sentimentHelpTextStyle = {
+    margin: '10px 0 0',
+    color: '#9EA6B3',
+    fontSize: '12px',
+    lineHeight: '1.5'
 };
 
 const evidenceGridStyle = {
