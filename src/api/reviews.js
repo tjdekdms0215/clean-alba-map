@@ -723,9 +723,12 @@ const normalizeAdminReview = (item) => {
         sentiment: normalizeReviewSentiment(
             reviewSource?.sentiment ||
                 reviewSource?.reviewSentiment ||
+                reviewSource?.review_sentiment ||
                 reviewSource?.sentimentType ||
+                reviewSource?.sentiment_type ||
                 reviewSource?.mood ||
                 reviewSource?.reviewMood ||
+                reviewSource?.review_mood ||
                 reviewSource?.atmosphere ||
                 reviewSource?.tone
         ),

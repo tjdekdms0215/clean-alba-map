@@ -376,7 +376,15 @@ const AdminPage = () => {
                 );
 
                 if (isMounted) {
-                    setSelectedReview(data);
+                    setSelectedReview((current) => ({
+                        ...current,
+                        ...data,
+                        sentiment:
+                            data.sentiment ||
+                            current?.sentiment ||
+                            summary?.sentiment ||
+                            ''
+                    }));
                 }
             } catch (error) {
                 console.error(
