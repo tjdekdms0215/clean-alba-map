@@ -395,7 +395,7 @@ const AdminPage = () => {
         return () => {
             isMounted = false;
         };
-    }, [reviews, selectedReviewId]);
+    }, [selectedReviewId]);
 
     useEffect(() => {
         setIsReviewTextEditing(false);
@@ -589,18 +589,8 @@ const AdminPage = () => {
             return;
         }
 
-        setIsSentimentSaving(true);
-        setErrorMessage('');
-
-        try {
-            const updatedReview =
-                await updateAdminReviewSentiment({
-                    reviewId: selectedReview.reviewId,
-                    sentiment
-                });
-            const nextSentiment =
-                updatedReview.sentiment || sentiment;
-
+        const previousSentiment = selectedReview.sentiment || '';
+        const applySentiment = (nextSentiment) => {
             setSelectedReview((current) =>
                 current
                     ? {
@@ -620,7 +610,24 @@ const AdminPage = () => {
                         : review
                 )
             );
+        };
+
+        applySentiment(sentiment);
+        setIsSentimentSaving(true);
+        setErrorMessage('');
+
+        try {
+            const updatedReview =
+                await updateAdminReviewSentiment({
+                    reviewId: selectedReview.reviewId,
+                    sentiment
+                });
+            const nextSentiment =
+                updatedReview.sentiment || sentiment;
+
+            applySentiment(nextSentiment);
         } catch (error) {
+            applySentiment(previousSentiment);
             console.error(
                 '관리자 후기 분위기 저장에 실패했습니다.',
                 error

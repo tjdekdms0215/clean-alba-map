@@ -1217,16 +1217,34 @@ export const updateAdminReviewSentiment = async ({
     }
 
     const apiSentiment = normalizedSentiment.toUpperCase();
-    const response = await api.patch(
-        `/admin/reviews/${reviewId}/sentiment`,
-        {
-            sentiment: apiSentiment,
-            reviewSentiment: apiSentiment
-        },
-        {
-            preserveAuthOnFailure: true
+    const payload = {
+        sentiment: apiSentiment,
+        reviewSentiment: apiSentiment
+    };
+    let response;
+
+    try {
+        response = await api.patch(
+            `/admin/reviews/${reviewId}/sentiment`,
+            payload,
+            {
+                preserveAuthOnFailure: true
+            }
+        );
+    } catch (error) {
+        if (![404, 405].includes(error?.response?.status)) {
+            throw error;
         }
-    );
+
+        response = await api.patch(
+            `/admin/reviews/${reviewId}`,
+            payload,
+            {
+                preserveAuthOnFailure: true
+            }
+        );
+    }
+
     const raw = response.data?.data || response.data;
     const normalized = normalizeAdminReview(raw);
 
