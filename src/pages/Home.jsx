@@ -111,6 +111,11 @@ const DEFAULT_MAP_CENTER = {
     lat: 35.1764,
     lng: 126.9135
 };
+const EMPTY_WORKSPACE_NAMES = new Set([
+    '사업장 이름 없음',
+    '이름 없음',
+    '업체명 없음'
+]);
 
 const getStoreCoordinates = (store) => {
     const lat = coerceFiniteNumber(store?.latitude);
@@ -123,6 +128,16 @@ const getStoreCoordinates = (store) => {
     return { lat, lng };
 };
 
+const normalizeWorkspaceNameText = (value) => {
+    if (typeof value !== 'string') {
+        return '';
+    }
+
+    const trimmed = value.trim();
+
+    return EMPTY_WORKSPACE_NAMES.has(trimmed) ? '' : trimmed;
+};
+
 const readWorkspaceName = (workspace = {}) => {
     const nestedWorkspace =
         workspace?.workspace ||
@@ -131,7 +146,7 @@ const readWorkspaceName = (workspace = {}) => {
         workspace?.business ||
         {};
 
-    return (
+    const rawName =
         workspace?.name ||
         workspace?.workspaceName ||
         workspace?.workspace_name ||
@@ -152,8 +167,9 @@ const readWorkspaceName = (workspace = {}) => {
         nestedWorkspace?.businessName ||
         nestedWorkspace?.storeName ||
         nestedWorkspace?.title ||
-        ''
-    );
+        '';
+
+    return normalizeWorkspaceNameText(rawName);
 };
 
 const getWorkspaceDisplayName = (workspace = {}) =>
