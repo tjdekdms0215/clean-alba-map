@@ -543,19 +543,7 @@ const SubmissionOverlay = ({
     <div style={submissionOverlayStyle}>
         <style>{submissionMotionStyles}</style>
         <div style={submissionCardStyle}>
-            <div style={submissionBadgeStyle}>
-                관리자 검수 중
-            </div>
-
             <div style={submissionIconWrapStyle}>
-                <span
-                    aria-hidden="true"
-                    style={submissionIconHaloStyle}
-                />
-                <span
-                    aria-hidden="true"
-                    style={submissionIconRippleStyle}
-                />
                 <div style={submissionIconStyle}>✓</div>
             </div>
 
@@ -611,6 +599,8 @@ const ReviewWrite = () => {
     const [simultaneousWorkers, setSimultaneousWorkers] =
         useState('');
     const [reviewText, setReviewText] = useState('');
+    const [isPurifiedApplied, setIsPurifiedApplied] =
+        useState(false);
     const [evidenceItems, setEvidenceItems] = useState([]);
 
     const [uploadMessage, setUploadMessage] = useState('');
@@ -705,13 +695,15 @@ const ReviewWrite = () => {
             ) &&
             coworkerCount !== null &&
             evidenceItems.length > 0 &&
-            reviewText.trim().length >= MIN_REVIEW_LENGTH,
+            reviewText.trim().length >= MIN_REVIEW_LENGTH &&
+            isPurifiedApplied,
         [
             selectedShiftDay,
             selectedShiftTime,
             coworkerCount,
             evidenceItems.length,
-            reviewText
+            reviewText,
+            isPurifiedApplied
         ]
     );
 
@@ -1081,6 +1073,7 @@ const ReviewWrite = () => {
 
         if (selectedText) {
             setReviewText(selectedText);
+            setIsPurifiedApplied(true);
             setFormErrorMessage('');
         }
 
@@ -1109,7 +1102,10 @@ const ReviewWrite = () => {
 
         if (!isFormValid) {
             setFormErrorMessage(
-                '필수 항목을 모두 입력한 뒤 제출해 주세요.'
+                reviewText.trim().length >= MIN_REVIEW_LENGTH &&
+                    !isPurifiedApplied
+                    ? 'AI 후기 순화를 적용한 뒤 제출해 주세요.'
+                    : '필수 항목을 모두 입력한 뒤 제출해 주세요.'
             );
             return;
         }
@@ -1662,6 +1658,9 @@ const ReviewWrite = () => {
                                             setReviewText(
                                                 event.target.value
                                             );
+                                            setIsPurifiedApplied(
+                                                false
+                                            );
                                             setFormErrorMessage(
                                                 ''
                                             );
@@ -1688,6 +1687,19 @@ const ReviewWrite = () => {
                                 >
                                     ✨ AI 후기 순화
                                 </button>
+
+                                <p
+                                    style={{
+                                        ...purifyRequiredTextStyle,
+                                        color: isPurifiedApplied
+                                            ? '#4a72ff'
+                                            : '#ff6b4a'
+                                    }}
+                                >
+                                    {isPurifiedApplied
+                                        ? 'AI 순화 문안이 적용되었습니다.'
+                                        : 'AI 후기 순화를 적용해야 제출할 수 있습니다.'}
+                                </p>
 
                                 {aiNoticeMessage && (
                                     <p
@@ -2241,6 +2253,14 @@ const purifyButtonStyle = {
     fontWeight: '600'
 };
 
+const purifyRequiredTextStyle = {
+    margin: '9px 0 0',
+    fontSize: '12px',
+    fontWeight: '800',
+    lineHeight: '1.45',
+    textAlign: 'center'
+};
+
 const warningBoxStyle = {
     minHeight: '44px',
     marginBottom: '14px',
@@ -2518,58 +2538,30 @@ const submissionOverlayStyle = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '24px',
-    backgroundColor: 'rgba(246, 248, 251, 0.98)',
+    padding: '24px 24px 72px',
+    backgroundColor: '#f6f8fb',
     animation:
         'submissionOverlayFade 360ms ease-out both'
 };
 
 const submissionCardStyle = {
     width: '100%',
-    maxWidth: '320px',
+    maxWidth: '390px',
     textAlign: 'center',
     animation:
         'submissionCardLift 560ms cubic-bezier(0.2, 0.9, 0.2, 1) both'
 };
 
-const submissionBadgeStyle = {
-    marginBottom: '18px',
-    color: '#6d7786',
-    fontSize: '12px',
-    fontWeight: '700',
-    animation:
-        'submissionItemFadeUp 420ms ease-out 80ms both'
-};
-
 const submissionIconWrapStyle = {
     position: 'relative',
-    width: '38px',
-    height: '38px',
-    margin: '0 auto 18px',
+    width: '96px',
+    height: '96px',
+    margin: '0 auto 52px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     animation:
         'submissionIconGroupPop 620ms cubic-bezier(0.24, 0.9, 0.2, 1) 120ms both'
-};
-
-const submissionIconHaloStyle = {
-    position: 'absolute',
-    inset: '-16px',
-    borderRadius: '999px',
-    background:
-        'radial-gradient(circle, rgba(74, 114, 255, 0.18) 0%, rgba(74, 114, 255, 0.08) 42%, rgba(74, 114, 255, 0) 72%)',
-    animation:
-        'submissionHaloBloom 1400ms ease-out 220ms both'
-};
-
-const submissionIconRippleStyle = {
-    position: 'absolute',
-    inset: '-8px',
-    border: '1.5px solid rgba(74, 114, 255, 0.22)',
-    borderRadius: '999px',
-    animation:
-        'submissionRippleExpand 1100ms ease-out 240ms both'
 };
 
 const submissionIconStyle = {
@@ -2583,41 +2575,48 @@ const submissionIconStyle = {
     backgroundColor: '#4a72ff',
     borderRadius: '999px',
     color: '#ffffff',
-    fontSize: '18px',
-    boxShadow: '0 14px 28px rgba(74, 114, 255, 0.26)',
+    fontSize: '48px',
+    fontWeight: '500',
+    lineHeight: 1,
+    boxShadow: '0 14px 22px rgba(35, 48, 80, 0.18)',
     animation:
         'submissionCheckPop 620ms cubic-bezier(0.18, 1.12, 0.34, 1) 150ms both'
 };
 
 const submissionTitleStyle = {
-    margin: '0 0 8px',
+    margin: '0 0 28px',
     color: '#121826',
     fontSize: '30px',
     fontWeight: '900',
-    letterSpacing: '-0.8px',
+    lineHeight: '1.2',
     animation:
         'submissionItemFadeUp 420ms ease-out 220ms both'
 };
 
 const submissionTextStyle = {
-    margin: '0 0 20px',
-    color: '#9ca5b2',
-    fontSize: '13px',
+    margin: '0 0 66px',
+    color: '#8c94a1',
+    fontSize: '21px',
+    fontWeight: '500',
+    lineHeight: '1.35',
     animation:
         'submissionItemFadeUp 420ms ease-out 300ms both'
 };
 
 const submissionButtonStyle = {
-    minWidth: '114px',
-    height: '32px',
-    padding: '0 18px',
+    width: '304px',
+    maxWidth: '100%',
+    height: '80px',
+    padding: '0 26px',
     backgroundColor: '#ffffff',
     border: '1px solid #d7dce3',
-    borderRadius: '6px',
-    color: '#3f4753',
+    borderRadius: '8px',
+    color: '#343c49',
     cursor: 'pointer',
-    fontSize: '12px',
-    fontWeight: '700',
+    fontSize: '23px',
+    fontWeight: '900',
+    fontFamily: 'inherit',
+    boxShadow: '0 2px 5px rgba(31, 40, 55, 0.12)',
     animation:
         'submissionItemFadeUp 420ms ease-out 380ms both'
 };
@@ -2677,27 +2676,6 @@ const submissionMotionStyles = `
     }
 }
 
-@keyframes submissionHaloBloom {
-    0% {
-        opacity: 0;
-        transform: scale(0.6);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-@keyframes submissionRippleExpand {
-    0% {
-        opacity: 0.5;
-        transform: scale(0.65);
-    }
-    100% {
-        opacity: 0;
-        transform: scale(1.4);
-    }
-}
 `;
 
 export default ReviewWrite;

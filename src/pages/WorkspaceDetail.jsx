@@ -82,6 +82,26 @@ const pickFirstText = (source, keys) => {
     return '';
 };
 
+const pickFirstDefined = (source, keys) => {
+    if (!source || typeof source !== 'object') {
+        return undefined;
+    }
+
+    for (const key of keys) {
+        const value = source[key];
+
+        if (
+            value !== undefined &&
+            value !== null &&
+            value !== ''
+        ) {
+            return value;
+        }
+    }
+
+    return undefined;
+};
+
 const clamp = (value, min, max) =>
     Math.min(max, Math.max(min, value));
 
@@ -405,74 +425,138 @@ const normalizeShiftKey = (value = '') => {
     const normalized = String(value)
         .trim()
         .toLowerCase();
+    const compact = normalized.replace(/[\s_-]/g, '');
 
     if (
-        ['오전', '아침', 'morning', 'am'].includes(
-            normalized
-        )
+        [
+            '오전',
+            '아침',
+            'morning',
+            'morningshift',
+            'am'
+        ].includes(compact)
     ) {
         return 'morning';
     }
 
     if (
-        ['오후', '점심', 'afternoon', 'pm'].includes(
-            normalized
-        )
+        [
+            '오후',
+            '점심',
+            'afternoon',
+            'afternoonshift',
+            'pm'
+        ].includes(compact)
     ) {
         return 'afternoon';
     }
 
     if (
-        ['야간', '밤', 'night', 'evening'].includes(
-            normalized
-        )
+        [
+            '야간',
+            '밤',
+            'night',
+            'nightshift',
+            'evening',
+            'eveningshift'
+        ].includes(compact)
     ) {
         return 'night';
     }
 
-    return normalized;
+    return compact || normalized;
 };
 
 const normalizeDayTypeKey = (value = '') => {
     const normalized = String(value)
         .trim()
         .toLowerCase();
+    const compact = normalized.replace(/[\s_-]/g, '');
 
     if (
-        ['평일', 'weekday', 'weekdays', 'daily'].includes(
-            normalized
-        )
+        [
+            '평일',
+            'weekday',
+            'weekdays',
+            'weekdaywork',
+            'workday',
+            'workdays',
+            'daily'
+        ].includes(compact)
     ) {
         return 'weekday';
     }
 
     if (
-        ['주말', 'weekend', 'weekends', 'holiday'].includes(
-            normalized
-        )
+        [
+            '주말',
+            'weekend',
+            'weekends',
+            'weekendday',
+            'holiday',
+            'holidays'
+        ].includes(compact)
     ) {
         return 'weekend';
     }
 
-    return normalized;
+    return compact || normalized;
 };
+
+const getShiftValue = (source) =>
+    pickFirstDefined(source, [
+        'timeSlot',
+        'time_slot',
+        'workTimeSlot',
+        'work_time_slot',
+        'shift',
+        'shiftType',
+        'shift_type',
+        'time',
+        'slot',
+        'label'
+    ]);
+
+const getDayTypeValue = (source) =>
+    pickFirstDefined(source, [
+        'dayType',
+        'day_type',
+        'workDayType',
+        'work_day_type',
+        'workdayType',
+        'workday_type',
+        'day',
+        'type',
+        'category'
+    ]);
+
+const getCoworkerCountValue = (source) =>
+    pickFirstNumber(source, [
+        'coworkerCount',
+        'coworker_count',
+        'workerCount',
+        'worker_count',
+        'simultaneousWorkers',
+        'simultaneousWorkerCount',
+        'simultaneous_worker_count',
+        'sameTimeWorkerCount',
+        'same_time_worker_count',
+        'workers',
+        'count',
+        'value',
+        'averageCoworkerCount',
+        'avgCoworkerCount',
+        'averageWorkers',
+        'avgWorkers'
+    ]);
 
 const buildShiftRowsFromObject = (source) => {
     const result = {};
 
     if (Array.isArray(source)) {
         source.forEach((entry) => {
-            const shiftKey = normalizeShiftKey(
-                entry?.shift ||
-                    entry?.time ||
-                    entry?.slot ||
-                    entry?.label
-            );
-            const dayType = normalizeDayTypeKey(
-                entry?.dayType ||
-                    entry?.type ||
-                    entry?.category
-            );
+            const shiftKey = normalizeShiftKey(getShiftValue(entry));
+            const dayType = normalizeDayTypeKey(getDayTypeValue(entry));
 
             if (
                 SHIFT_LABELS[shiftKey] &&
@@ -489,19 +573,69 @@ const buildShiftRowsFromObject = (source) => {
                 }
 
                 result[shiftKey][dayType] =
-                    coerceNumber(
-                        entry?.count ??
-                            entry?.workers ??
-                            entry?.value
-                    ) || 0;
+                    getCoworkerCountValue(entry) || 0;
             }
         });
 
         return result;
     }
 
+    const directShiftKey = normalizeShiftKey(getShiftValue(source));
+    const directDayType = normalizeDayTypeKey(
+        getDayTypeValue(source)
+    );
+    const directCount = getCoworkerCountValue(source);
+
+    if (
+        SHIFT_LABELS[directShiftKey] &&
+        ['weekday', 'weekend'].includes(directDayType) &&
+        directCount !== null
+    ) {
+        result[directShiftKey] = {
+            id: directShiftKey,
+            label: SHIFT_LABELS[directShiftKey],
+            weekday: directDayType === 'weekday' ? directCount : 0,
+            weekend: directDayType === 'weekend' ? directCount : 0
+        };
+
+        return result;
+    }
+
     Object.entries(source || {}).forEach(([key, value]) => {
         const shiftKey = normalizeShiftKey(key);
+        const dayType = normalizeDayTypeKey(key);
+
+        if (
+            ['weekday', 'weekend'].includes(dayType) &&
+            typeof value === 'object' &&
+            value !== null &&
+            !Array.isArray(value)
+        ) {
+            Object.entries(value).forEach(
+                ([shiftTypeKey, shiftTypeValue]) => {
+                    const normalizedShiftKey =
+                        normalizeShiftKey(shiftTypeKey);
+
+                    if (!SHIFT_LABELS[normalizedShiftKey]) {
+                        return;
+                    }
+
+                    if (!result[normalizedShiftKey]) {
+                        result[normalizedShiftKey] = {
+                            id: normalizedShiftKey,
+                            label: SHIFT_LABELS[normalizedShiftKey],
+                            weekday: 0,
+                            weekend: 0
+                        };
+                    }
+
+                    result[normalizedShiftKey][dayType] =
+                        coerceNumber(shiftTypeValue) || 0;
+                }
+            );
+
+            return;
+        }
 
         if (!SHIFT_LABELS[shiftKey]) {
             return;
@@ -541,16 +675,135 @@ const buildShiftRowsFromObject = (source) => {
     return result;
 };
 
+const hasShiftStats = (rowsMap) =>
+    Object.values(rowsMap || {}).some(
+        (row) => (row.weekday || 0) > 0 || (row.weekend || 0) > 0
+    );
+
+const buildShiftRowsFromReviews = (reviews = []) => {
+    const buckets = {};
+
+    reviews.forEach((review) => {
+        const shiftKey = normalizeShiftKey(getShiftValue(review));
+        const dayType = normalizeDayTypeKey(getDayTypeValue(review));
+        const coworkerCount = getCoworkerCountValue(review);
+
+        if (
+            !SHIFT_LABELS[shiftKey] ||
+            !['weekday', 'weekend'].includes(dayType) ||
+            coworkerCount === null
+        ) {
+            return;
+        }
+
+        const bucketKey = `${shiftKey}:${dayType}`;
+
+        if (!buckets[bucketKey]) {
+            buckets[bucketKey] = {
+                total: 0,
+                count: 0
+            };
+        }
+
+        buckets[bucketKey].total += coworkerCount;
+        buckets[bucketKey].count += 1;
+    });
+
+    return Object.entries(buckets).reduce(
+        (accumulator, [bucketKey, bucket]) => {
+            const [shiftKey, dayType] = bucketKey.split(':');
+
+            if (!accumulator[shiftKey]) {
+                accumulator[shiftKey] = {
+                    id: shiftKey,
+                    label: SHIFT_LABELS[shiftKey],
+                    weekday: 0,
+                    weekend: 0
+                };
+            }
+
+            accumulator[shiftKey][dayType] = Math.round(
+                bucket.total / bucket.count
+            );
+
+            return accumulator;
+        },
+        {}
+    );
+};
+
+const extractReviewCollection = (source) => {
+    if (Array.isArray(source)) {
+        return source;
+    }
+
+    if (!source || typeof source !== 'object') {
+        return [];
+    }
+
+    const reviewKeys = [
+        'reviews',
+        'approvedReviews',
+        'approvedReviewList',
+        'reviewList',
+        'reviewPage',
+        'reviewResponses',
+        'reviewSummaries',
+        'reviewDtos'
+    ];
+    const pageKeys = [
+        'content',
+        'items',
+        'list',
+        'records',
+        'data',
+        'result'
+    ];
+
+    for (const key of reviewKeys) {
+        const reviews = extractReviewCollection(source[key]);
+
+        if (reviews.length > 0) {
+            return reviews;
+        }
+    }
+
+    for (const key of pageKeys) {
+        const value = source[key];
+
+        if (Array.isArray(value)) {
+            return value;
+        }
+
+        if (value && typeof value === 'object') {
+            const reviews = extractReviewCollection(value);
+
+            if (reviews.length > 0) {
+                return reviews;
+            }
+        }
+    }
+
+    return [];
+};
+
 const buildShiftRows = (workspace) => {
     const source =
         workspace?.simultaneousWorkerStats ||
         workspace?.staffingStats ||
         workspace?.timeSlotWorkerStats ||
         workspace?.workerStats ||
+        workspace?.workerCountStats ||
+        workspace?.coworkerStats ||
+        workspace?.coworkerCountStats ||
         workspace?.shiftStats ||
         workspace?.simultaneousWorkersStats ||
+        workspace?.simultaneousWorkerCountStats ||
         null;
-    const rowsMap = buildShiftRowsFromObject(source);
+    const statsRowsMap = buildShiftRowsFromObject(source);
+    const rowsMap = hasShiftStats(statsRowsMap)
+        ? statsRowsMap
+        : buildShiftRowsFromReviews(buildReviews(workspace));
     const rows = DEFAULT_SHIFT_ORDER.map((shiftKey) => ({
         id: shiftKey,
         label: SHIFT_LABELS[shiftKey],
@@ -562,11 +815,7 @@ const buildShiftRows = (workspace) => {
 };
 
 const buildReviews = (workspace) => {
-    const source =
-        workspace?.reviews ||
-        workspace?.approvedReviews ||
-        workspace?.reviewList ||
-        [];
+    const source = extractReviewCollection(workspace);
 
     if (!Array.isArray(source)) {
         return [];
@@ -583,10 +832,11 @@ const buildReviews = (workspace) => {
             review?.text ||
             '',
         violationItems: getViolationIndicatorIds(review),
-        coworkerCount: pickFirstNumber(review, [
-            'coworkerCount',
-            'workerCount'
-        ]),
+        dayType:
+            getDayTypeValue(review) || '',
+        timeSlot:
+            getShiftValue(review) || '',
+        coworkerCount: getCoworkerCountValue(review),
         createdAt:
             review?.createdAt ||
             review?.createdDate ||

@@ -172,8 +172,23 @@ const normalizeWorkspacePayload = (payload) => {
         !Array.isArray(payload.data)
             ? payload.data
             : payload;
+    const nestedWorkspace =
+        source?.workspace ||
+        source?.workspaceDetail ||
+        source?.workspaceInfo ||
+        source?.detail ||
+        source?.item;
+    const mergedSource =
+        nestedWorkspace &&
+        typeof nestedWorkspace === 'object' &&
+        !Array.isArray(nestedWorkspace)
+            ? {
+                  ...source,
+                  ...nestedWorkspace
+              }
+            : source;
 
-    return normalizeWorkspace(source);
+    return normalizeWorkspace(mergedSource);
 };
 
 /**
