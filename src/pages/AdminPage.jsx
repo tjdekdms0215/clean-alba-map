@@ -8,6 +8,7 @@ import {
     getAdminReviewDetail,
     getAdminReviews,
     getAdminStats,
+    updateAdminReviewContent,
     updateAdminReviewStatus
 } from '../api/reviews';
 import { REVIEW_INDICATORS } from '../constants/reviewIndicators';
@@ -242,6 +243,12 @@ const AdminPage = () => {
     const [isDetailLoading, setIsDetailLoading] =
         useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [isReviewTextEditing, setIsReviewTextEditing] =
+        useState(false);
+    const [editableReviewText, setEditableReviewText] =
+        useState('');
+    const [isReviewTextSaving, setIsReviewTextSaving] =
+        useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
     const loadReviews = async () => {
@@ -386,6 +393,11 @@ const AdminPage = () => {
         };
     }, [reviews, selectedReviewId]);
 
+    useEffect(() => {
+        setIsReviewTextEditing(false);
+        setEditableReviewText(selectedReview?.reviewText || '');
+    }, [selectedReview?.reviewId, selectedReview?.reviewText]);
+
     const handleModeration = async (nextStatus) => {
         if (!selectedReview) {
             return;
@@ -490,6 +502,81 @@ const AdminPage = () => {
                         ? '해당 인증 자료를 찾을 수 없습니다.'
                         : '인증 자료 다운로드 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
             );
+        }
+    };
+
+    const handleStartReviewTextEdit = () => {
+        if (!selectedReview) {
+            return;
+        }
+
+        setEditableReviewText(selectedReview.reviewText || '');
+        setIsReviewTextEditing(true);
+        setErrorMessage('');
+    };
+
+    const handleCancelReviewTextEdit = () => {
+        setEditableReviewText(selectedReview?.reviewText || '');
+        setIsReviewTextEditing(false);
+        setErrorMessage('');
+    };
+
+    const handleSaveReviewText = async () => {
+        if (!selectedReview) {
+            return;
+        }
+
+        const nextReviewText = editableReviewText.trim();
+
+        setIsReviewTextSaving(true);
+        setErrorMessage('');
+
+        try {
+            const updatedReview =
+                await updateAdminReviewContent({
+                    reviewId: selectedReview.reviewId,
+                    content: nextReviewText
+                });
+            const updatedText =
+                updatedReview.reviewText ?? nextReviewText;
+
+            setSelectedReview((current) =>
+                current
+                    ? {
+                          ...current,
+                          reviewText: updatedText
+                      }
+                    : current
+            );
+            setReviews((currentReviews) =>
+                currentReviews.map((review) =>
+                    String(review.reviewId) ===
+                    String(selectedReview.reviewId)
+                        ? {
+                              ...review,
+                              reviewText: updatedText
+                          }
+                        : review
+                )
+            );
+            setEditableReviewText(updatedText);
+            setIsReviewTextEditing(false);
+        } catch (error) {
+            console.error(
+                '관리자 주관식 후기 수정에 실패했습니다.',
+                error
+            );
+            setErrorMessage(
+                [401, 403].includes(
+                    error?.response?.status
+                )
+                    ? '후기 수정 권한을 확인할 수 없습니다. 관리자 계정으로 다시 로그인해 주세요.'
+                    : error?.response?.status === 404
+                        ? '후기 수정 API를 찾을 수 없습니다. 백엔드 경로를 확인해 주세요.'
+                        : '주관식 후기 수정 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+            );
+        } finally {
+            setIsReviewTextSaving(false);
         }
     };
 
@@ -1066,16 +1153,127 @@ const AdminPage = () => {
                             </article>
 
                             <article style={sectionCardStyle}>
-                                <h2 style={sectionTitleStyle}>
-                                    주관식 후기
-                                </h2>
+                                <div
+                                    style={
+                                        reviewEditHeaderStyle
+                                    }
+                                >
+                                    <h2
+                                        style={{
+                                            ...sectionTitleStyle,
+                                            margin: 0
+                                        }}
+                                    >
+                                        주관식 후기
+                                    </h2>
 
-                                <div style={reviewContentBoxStyle}>
-                                    {isDetailLoading
-                                        ? '상세 후기를 불러오는 중입니다.'
-                                        : selectedReview.reviewText ||
-                                          '작성된 후기가 없습니다.'}
+                                    {!isReviewTextEditing && (
+                                        <button
+                                            type="button"
+                                            onClick={
+                                                handleStartReviewTextEdit
+                                            }
+                                            disabled={
+                                                isDetailLoading ||
+                                                isReviewTextSaving
+                                            }
+                                            style={
+                                                editReviewTextButtonStyle
+                                            }
+                                        >
+                                            수정
+                                        </button>
+                                    )}
                                 </div>
+
+                                {isReviewTextEditing ? (
+                                    <>
+                                        <textarea
+                                            value={
+                                                editableReviewText
+                                            }
+                                            onChange={(event) =>
+                                                setEditableReviewText(
+                                                    event.target
+                                                        .value
+                                                )
+                                            }
+                                            placeholder="관리자 검수 후 표시할 후기 내용을 입력해 주세요."
+                                            maxLength={1000}
+                                            style={
+                                                reviewEditTextareaStyle
+                                            }
+                                        />
+
+                                        <div
+                                            style={
+                                                reviewEditActionRowStyle
+                                            }
+                                        >
+                                            <span
+                                                style={
+                                                    reviewEditCountStyle
+                                                }
+                                            >
+                                                {
+                                                    editableReviewText.length
+                                                }
+                                                /1000
+                                            </span>
+
+                                            <button
+                                                type="button"
+                                                onClick={
+                                                    handleCancelReviewTextEdit
+                                                }
+                                                disabled={
+                                                    isReviewTextSaving
+                                                }
+                                                style={
+                                                    cancelReviewTextButtonStyle
+                                                }
+                                            >
+                                                취소
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={
+                                                    handleSaveReviewText
+                                                }
+                                                disabled={
+                                                    isReviewTextSaving
+                                                }
+                                                style={{
+                                                    ...saveReviewTextButtonStyle,
+                                                    opacity:
+                                                        isReviewTextSaving
+                                                            ? 0.7
+                                                            : 1,
+                                                    cursor:
+                                                        isReviewTextSaving
+                                                            ? 'not-allowed'
+                                                            : 'pointer'
+                                                }}
+                                            >
+                                                {isReviewTextSaving
+                                                    ? '저장 중'
+                                                    : '저장'}
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div
+                                        style={
+                                            reviewContentBoxStyle
+                                        }
+                                    >
+                                        {isDetailLoading
+                                            ? '상세 후기를 불러오는 중입니다.'
+                                            : selectedReview.reviewText ||
+                                              '작성된 후기가 없습니다.'}
+                                    </div>
+                                )}
                             </article>
 
                             {selectedReview.status ===
@@ -1632,6 +1830,88 @@ const reviewContentBoxStyle = {
     fontSize: '14px',
     lineHeight: '1.8',
     boxSizing: 'border-box'
+};
+
+const reviewEditHeaderStyle = {
+    marginBottom: '16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px'
+};
+
+const editReviewTextButtonStyle = {
+    minWidth: '58px',
+    height: '30px',
+    padding: '0 12px',
+    border: '1px solid #D8DEE8',
+    borderRadius: '8px',
+    backgroundColor: '#FFFFFF',
+    color: '#5F6877',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: '800',
+    fontFamily: 'inherit'
+};
+
+const reviewEditTextareaStyle = {
+    width: '100%',
+    minHeight: '132px',
+    padding: '14px',
+    border: '1px solid #DCE2EA',
+    borderRadius: '12px',
+    backgroundColor: '#FFFFFF',
+    color: '#333C49',
+    outline: 'none',
+    resize: 'vertical',
+    fontSize: '14px',
+    lineHeight: '1.8',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box'
+};
+
+const reviewEditActionRowStyle = {
+    marginTop: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: '8px',
+    flexWrap: 'wrap'
+};
+
+const reviewEditCountStyle = {
+    marginRight: 'auto',
+    color: '#A0A8B4',
+    fontSize: '12px',
+    fontWeight: '600'
+};
+
+const cancelReviewTextButtonStyle = {
+    minWidth: '68px',
+    height: '36px',
+    padding: '0 14px',
+    border: '1px solid #D9DFE7',
+    borderRadius: '10px',
+    backgroundColor: '#FFFFFF',
+    color: '#5B6473',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '800',
+    fontFamily: 'inherit'
+};
+
+const saveReviewTextButtonStyle = {
+    minWidth: '76px',
+    height: '36px',
+    padding: '0 16px',
+    border: 'none',
+    borderRadius: '10px',
+    backgroundColor: '#4668EC',
+    color: '#FFFFFF',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '800',
+    fontFamily: 'inherit'
 };
 
 const rejectReasonCardStyle = {

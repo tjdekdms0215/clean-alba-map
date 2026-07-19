@@ -695,15 +695,13 @@ const ReviewWrite = () => {
             ) &&
             coworkerCount !== null &&
             evidenceItems.length > 0 &&
-            reviewText.trim().length >= MIN_REVIEW_LENGTH &&
-            isPurifiedApplied,
+            reviewText.trim().length >= MIN_REVIEW_LENGTH,
         [
             selectedShiftDay,
             selectedShiftTime,
             coworkerCount,
             evidenceItems.length,
-            reviewText,
-            isPurifiedApplied
+            reviewText
         ]
     );
 
@@ -1102,10 +1100,7 @@ const ReviewWrite = () => {
 
         if (!isFormValid) {
             setFormErrorMessage(
-                reviewText.trim().length >= MIN_REVIEW_LENGTH &&
-                    !isPurifiedApplied
-                    ? 'AI 후기 순화를 적용한 뒤 제출해 주세요.'
-                    : '필수 항목을 모두 입력한 뒤 제출해 주세요.'
+                '필수 항목을 모두 입력한 뒤 제출해 주세요.'
             );
             return;
         }
@@ -1644,7 +1639,7 @@ const ReviewWrite = () => {
                                     </span>
                                 </div>
                                 <p style={sectionHelpStyle}>
-                                    자유롭게 작성하면 AI가 법적 위험 표현을 순화해드립니다.
+                                    자유롭게 작성해 주세요.
                                 </p>
 
                                 <div
@@ -1693,12 +1688,12 @@ const ReviewWrite = () => {
                                         ...purifyRequiredTextStyle,
                                         color: isPurifiedApplied
                                             ? '#4a72ff'
-                                            : '#ff6b4a'
+                                            : '#8f98a6'
                                     }}
                                 >
                                     {isPurifiedApplied
                                         ? 'AI 순화 문안이 적용되었습니다.'
-                                        : 'AI 후기 순화를 적용해야 제출할 수 있습니다.'}
+                                        : '개인정보·협박 등 심각한 표현만 제출 전에 차단될 수 있습니다.'}
                                 </p>
 
                                 {aiNoticeMessage && (

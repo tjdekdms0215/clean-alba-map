@@ -1153,6 +1153,44 @@ export const updateAdminReviewStatus = async ({
     };
 };
 
+export const updateAdminReviewContent = async ({
+    reviewId,
+    content
+}) => {
+    if (!reviewId) {
+        throw new Error('수정할 리뷰 정보가 없습니다.');
+    }
+
+    const response = await api.patch(
+        `/admin/reviews/${reviewId}`,
+        {
+            content,
+            reviewText: content
+        },
+        {
+            preserveAuthOnFailure: true
+        }
+    );
+    const raw = response.data?.data || response.data;
+    const normalized = normalizeAdminReview(raw);
+
+    return {
+        ...normalized,
+        reviewId:
+            normalized.reviewId ||
+            raw?.reviewId ||
+            Number(reviewId) ||
+            reviewId,
+        reviewText:
+            pickFirstString(raw, [
+                'content',
+                'reviewText',
+                'subjectiveReview',
+                'purifiedContent'
+            ]) || content
+    };
+};
+
 export const getAdminStats = async () => {
     const response = await api.get('/admin/stats', {
         preserveAuthOnFailure: true
