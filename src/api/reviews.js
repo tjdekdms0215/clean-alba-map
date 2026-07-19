@@ -618,6 +618,13 @@ const normalizeAdminReview = (item) => {
         'proofFiles',
         'files'
     ]);
+    const attachmentCount =
+        toInteger(
+            item?.attachmentCount ??
+                item?.attachmentsCount ??
+                review?.attachmentCount ??
+                review?.attachmentsCount
+        ) ?? evidenceFiles.length;
 
     return {
         reviewId:
@@ -698,6 +705,7 @@ const normalizeAdminReview = (item) => {
         evidenceFiles: evidenceFiles.map(
             normalizeEvidenceFile
         ),
+        attachmentCount,
         rejectionReason:
             pickFirstString(item, [
                 'rejectionReason',

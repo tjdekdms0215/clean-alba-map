@@ -695,8 +695,7 @@ const AdminPage = () => {
                                                 자료{' '}
                                                 {
                                                     review
-                                                        .evidenceFiles
-                                                        .length
+                                                        .attachmentCount
                                                 }
                                                 개
                                             </span>
@@ -841,7 +840,7 @@ const AdminPage = () => {
                                         ],
                                         [
                                             '인증 자료',
-                                            `${selectedReview.evidenceFiles.length}개`
+                                            `${selectedReview.attachmentCount}개`
                                         ]
                                     ].map(([label, value]) => (
                                         <div
