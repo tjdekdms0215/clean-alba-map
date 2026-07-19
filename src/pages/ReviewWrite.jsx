@@ -1639,10 +1639,6 @@ const ReviewWrite = () => {
                                     </span>
                                 </div>
 
-                                <p style={reviewModerationNoticeStyle}>
-                                    근무 경험을 자유롭게 작성해주세요. 개인정보·협박 등 심각한 표현은 관리자 검수 과정에서 차단될 수 있습니다.
-                                </p>
-
                                 <div
                                     style={
                                         textareaWrapperStyle
@@ -1661,7 +1657,7 @@ const ReviewWrite = () => {
                                                 ''
                                             );
                                         }}
-                                        placeholder="근무 경험을 자유롭게 작성해주세요"
+                                        placeholder="근무 경험을 자유롭게 작성해주세요. 개인정보·협박 등 심각한 표현은 관리자 검수 과정에서 차단될 수 있습니다."
                                         maxLength={1000}
                                         style={textareaStyle}
                                     />
@@ -2257,14 +2253,6 @@ const purifyRequiredTextStyle = {
     textAlign: 'center',
     whiteSpace: 'nowrap',
     letterSpacing: '-0.2px'
-};
-
-const reviewModerationNoticeStyle = {
-    margin: '8px 0 0',
-    color: '#9AA3B0',
-    fontSize: '11px',
-    fontWeight: '600',
-    lineHeight: '1.45'
 };
 
 const warningBoxStyle = {
