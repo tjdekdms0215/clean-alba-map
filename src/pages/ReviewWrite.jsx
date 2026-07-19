@@ -16,6 +16,7 @@ import {
 } from '../api/workspace';
 import {
     buildReviewRequestPayload,
+    NO_VIOLATION_INDICATOR,
     REVIEW_FORM_INDICATORS
 } from '../constants/reviewIndicators';
 import ReviewPurifyModal from '../components/ai/ReviewPurifyModal';
@@ -930,11 +931,21 @@ const ReviewWrite = () => {
     };
 
     const toggleViolation = (itemId) => {
-        setSelectedViolations((current) =>
-            current.includes(itemId)
+        setSelectedViolations((current) => {
+            if (itemId === NO_VIOLATION_INDICATOR.id) {
+                return current.includes(itemId)
+                    ? []
+                    : [NO_VIOLATION_INDICATOR.id];
+            }
+
+            const nextItems = current.includes(itemId)
                 ? current.filter((id) => id !== itemId)
-                : [...current, itemId]
-        );
+                : [...current, itemId];
+
+            return nextItems.filter(
+                (id) => id !== NO_VIOLATION_INDICATOR.id
+            );
+        });
         setFormErrorMessage('');
     };
 
@@ -1371,7 +1382,7 @@ const ReviewWrite = () => {
                                 </div>
                                 <p style={sectionHelpStyle}>
                                     위반한 항목을 체크해주세요.
-                                    (체크 = 위반, 해당 없으면 체크하지 않아도 됩니다.)
+                                    해당 없으면 위반사항 없음을 선택해주세요.
                                 </p>
 
                                 <div style={checklistStyle}>

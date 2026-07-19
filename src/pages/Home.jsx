@@ -85,6 +85,18 @@ const formatCleanScore = (score) => {
 const shouldFallbackToKeywordSearch = (error) =>
     [502, 503].includes(error?.response?.status);
 
+const getWorkspaceLoadErrorMessage = (error) => {
+    if (!error?.response) {
+        return '사업장 목록을 불러오지 못했습니다. 서버 CORS 또는 네트워크 상태를 확인해 주세요.';
+    }
+
+    if ([502, 503, 504].includes(error.response.status)) {
+        return '사업장 목록 서버 응답이 불안정합니다. 잠시 후 다시 시도해 주세요.';
+    }
+
+    return '사업장 목록을 불러오지 못했습니다.';
+};
+
 const coerceFiniteNumber = (value) => {
     const parsed = Number(value);
 
@@ -167,6 +179,8 @@ const Home = () => {
         useState(null);
     const [mapCenterStore, setMapCenterStore] =
         useState(null);
+    const [workspaceErrorMessage, setWorkspaceErrorMessage] =
+        useState('');
 
     const fetchWorkspaces = async (
         keyword = '',
@@ -176,6 +190,7 @@ const Home = () => {
             const data = await getWorkspaces(null, keyword);
 
             if (Array.isArray(data)) {
+                setWorkspaceErrorMessage('');
                 setStores(data);
 
                 if (shouldCenterResult) {
@@ -189,6 +204,9 @@ const Home = () => {
                     data
                 );
                 setStores([]);
+                setWorkspaceErrorMessage(
+                    '사업장 목록 응답 형식이 올바르지 않습니다.'
+                );
 
                 if (shouldCenterResult) {
                     setMapCenterStore(null);
@@ -197,6 +215,9 @@ const Home = () => {
         } catch (error) {
             console.error('API 연동 에러:', error);
             setStores([]);
+            setWorkspaceErrorMessage(
+                getWorkspaceLoadErrorMessage(error)
+            );
 
             if (shouldCenterResult) {
                 setMapCenterStore(null);
@@ -364,6 +385,7 @@ const Home = () => {
                     ? data.results
                     : [];
 
+                setWorkspaceErrorMessage('');
                 setStores(
                     nextStores
                 );
@@ -390,6 +412,9 @@ const Home = () => {
                 setSearchInterpretation(null);
                 setStores([]);
                 setMapCenterStore(null);
+                setWorkspaceErrorMessage(
+                    getWorkspaceLoadErrorMessage(error)
+                );
             }
         };
 
@@ -551,6 +576,20 @@ const Home = () => {
                             40점 미만 위험
                         </div>
                     </div>
+
+                    {workspaceErrorMessage ? (
+                        <div
+                            role="status"
+                            style={{
+                                ...mapErrorBoxStyle,
+                                ...(isMobile
+                                    ? mobileMapErrorBoxStyle
+                                    : null)
+                            }}
+                        >
+                            {workspaceErrorMessage}
+                        </div>
+                    ) : null}
 
                     {activeSelectedStore &&
                         selectedGrade && (
@@ -1100,7 +1139,8 @@ const Home = () => {
                             })
                         ) : (
                             <div style={emptyStyle}>
-                                검색 결과가 없습니다.
+                                {workspaceErrorMessage ||
+                                    '검색 결과가 없습니다.'}
                             </div>
                         )}
                     </div>
@@ -1324,6 +1364,33 @@ const mobileLegendDotStyle = {
     width: '10px',
     height: '10px',
     marginRight: '7px'
+};
+
+const mapErrorBoxStyle = {
+    position: 'absolute',
+    top: '24px',
+    left: '24px',
+    right: '24px',
+    maxWidth: '420px',
+    zIndex: 16,
+    padding: '12px 14px',
+    border: '1px solid #ffc9c6',
+    backgroundColor: '#fff7f6',
+    color: '#d63b35',
+    fontSize: '13px',
+    fontWeight: '700',
+    lineHeight: 1.5,
+    boxShadow: '0 8px 18px rgba(20, 30, 45, 0.08)',
+    boxSizing: 'border-box'
+};
+
+const mobileMapErrorBoxStyle = {
+    top: '12px',
+    left: '12px',
+    right: '12px',
+    maxWidth: 'none',
+    padding: '9px 10px',
+    fontSize: '11px'
 };
 
 const sidebarStyle = {

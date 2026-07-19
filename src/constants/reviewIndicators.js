@@ -121,7 +121,15 @@ export const REVIEW_INDICATORS = [
     }
 ];
 
-export const REVIEW_FORM_INDICATORS = REVIEW_INDICATORS;
+export const NO_VIOLATION_INDICATOR = {
+    id: 'NO_VIOLATION',
+    label: '위반사항 없음'
+};
+
+export const REVIEW_FORM_INDICATORS = [
+    ...REVIEW_INDICATORS,
+    NO_VIOLATION_INDICATOR
+];
 
 export const normalizeIndicatorKey = (value = '') =>
     String(value)

@@ -14,6 +14,11 @@ api.interceptors.request.use((config) => {
     const token = localStorage.getItem('jwt_token');
     config.headers = config.headers ?? {};
 
+    if (config.useAuth === false) {
+        config.withCredentials = false;
+        delete config.headers.Authorization;
+    }
+
     // 공개 API에서는 Authorization을 보내지 않음
     if (token && config.useAuth !== false) {
         config.headers.Authorization =
