@@ -1673,7 +1673,7 @@ const ReviewWrite = () => {
                                 </div>
 
                                 <p style={reviewModerationNoticeStyle}>
-                                    심각한 표현은 관리자 검수에서 조정될 수 있습니다.
+                                    개인정보·협박 등 심각한 표현은 관리자 검수 과정에서 차단될 수 있습니다.
                                 </p>
 
                                 <button
@@ -2251,7 +2251,7 @@ const purifyButtonStyle = {
 
 const purifyRequiredTextStyle = {
     margin: '9px 0 0',
-    fontSize: '10.5px',
+    fontSize: '11.5px',
     fontWeight: '700',
     lineHeight: '1.35',
     textAlign: 'center',
