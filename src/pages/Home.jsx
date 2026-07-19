@@ -1824,8 +1824,9 @@ const statusBadgeRowStyle = {
     alignItems: 'center',
 
     minHeight: '30px',
-    marginBottom: '12px',
-    paddingRight: '38px'
+    marginBottom: '8px',
+    paddingRight: '38px',
+    flexShrink: 0
 };
 
 const mobileStatusBadgeRowStyle = {
@@ -1868,7 +1869,8 @@ const popupStoreNameStyle = {
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
     overflow: 'hidden',
-    wordBreak: 'keep-all'
+    wordBreak: 'keep-all',
+    flexShrink: 0
 };
 
 const mobilePopupStoreNameStyle = {
@@ -1884,11 +1886,12 @@ const popupMetaStyle = {
     flexWrap: 'wrap',
 
     gap: '6px',
-    margin: '0 0 14px',
+    margin: '0 0 10px',
 
     color: '#666666',
     fontSize: '12px',
-    fontWeight: '600'
+    fontWeight: '600',
+    flexShrink: 0
 };
 
 const mobilePopupMetaStyle = {
@@ -1905,13 +1908,14 @@ const grayBoxStyle = {
     display: 'flex',
     flexDirection: 'column',
 
-    gap: '8px',
-    marginBottom: '10px',
-    padding: '12px 13px',
+    gap: '6px',
+    marginBottom: '8px',
+    padding: '10px 12px',
 
     backgroundColor: 'rgba(255,255,255,0.72)',
     border: '1px solid rgba(214, 221, 232, 0.96)',
-    borderRadius: 0
+    borderRadius: 0,
+    flexShrink: 0
 };
 
 const mobileGrayBoxStyle = {
@@ -1924,13 +1928,14 @@ const tintedBoxStyle = {
     display: 'flex',
     flexDirection: 'column',
 
-    gap: '8px',
+    gap: '6px',
     marginBottom: '0',
-    padding: '12px 13px',
+    padding: '10px 12px',
 
     backgroundColor: 'rgba(255,255,255,0.48)',
     border: '1px solid rgba(214, 221, 232, 0.96)',
-    borderRadius: 0
+    borderRadius: 0,
+    flexShrink: 0
 };
 
 const mobileTintedBoxStyle = {
@@ -2000,8 +2005,8 @@ const popupSummaryTextStyle = {
     overflow: 'hidden',
     whiteSpace: 'normal',
     wordBreak: 'keep-all',
-    minHeight: '2.9em',
-    maxHeight: '2.9em'
+    minHeight: '2.6em',
+    maxHeight: '2.6em'
 };
 
 const evidenceBlockStyle = {
