@@ -123,6 +123,17 @@ const getStoreCoordinates = (store) => {
     return { lat, lng };
 };
 
+const readWorkspaceName = (workspace = {}) =>
+    workspace?.name ||
+    workspace?.workspaceName ||
+    workspace?.workspace_name ||
+    workspace?.placeName ||
+    workspace?.place_name ||
+    '';
+
+const getWorkspaceDisplayName = (workspace = {}) =>
+    readWorkspaceName(workspace) || '사업장 이름 없음';
+
 const findFirstMappableStore = (items) =>
     items.find((item) => getStoreCoordinates(item)) || null;
 
@@ -342,7 +353,11 @@ const Home = () => {
                 if (isMounted) {
                     setSelectedStoreSummary({
                         ...selectedStore,
-                        ...data
+                        ...data,
+                        name:
+                            readWorkspaceName(data) ||
+                            readWorkspaceName(selectedStore) ||
+                            '사업장 이름 없음'
                     });
                 }
             } catch (error) {
@@ -612,7 +627,7 @@ const Home = () => {
                         <div
                             role="dialog"
                             aria-modal="true"
-                            aria-label={`${activeSelectedStore.name} 사업장 정보`}
+                            aria-label={`${getWorkspaceDisplayName(activeSelectedStore)} 사업장 정보`}
                             style={{
                                 ...popupStyle,
                                 ...(isMobile
@@ -666,8 +681,9 @@ const Home = () => {
                                         : null)
                                 }}
                             >
-                                {activeSelectedStore.name ||
-                                    '사업장 이름 없음'}
+                                {getWorkspaceDisplayName(
+                                    activeSelectedStore
+                                )}
                             </h3>
 
                             <p
@@ -1152,7 +1168,9 @@ const Home = () => {
                                                 }}
                                             >
                                                 {store.name ||
-                                                    '사업장 이름 없음'}
+                                                    getWorkspaceDisplayName(
+                                                        store
+                                                    )}
                                             </div>
 
                                             <div
