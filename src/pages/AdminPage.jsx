@@ -1194,14 +1194,15 @@ const AdminPage = () => {
                                                                 : '#E2E7EF',
                                                         backgroundColor:
                                                             isSelected
-                                                                ? option.softColor
+                                                                ? option.color
                                                                 : '#FFFFFF',
                                                         color: isSelected
-                                                            ? option.color
+                                                            ? '#FFFFFF'
                                                             : '#687284',
                                                         opacity:
-                                                            isSentimentSaving ||
-                                                            !canEditReview
+                                                            (isSentimentSaving ||
+                                                                !canEditReview) &&
+                                                            !isSelected
                                                                 ? 0.72
                                                                 : 1,
                                                         cursor:
