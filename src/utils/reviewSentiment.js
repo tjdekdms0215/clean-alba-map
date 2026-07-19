@@ -200,17 +200,25 @@ const getDominantSentiment = (rates) => {
         return winners[0].id;
     }
 
-    return 'neutral';
+    return '';
 };
 
 export const buildReviewSentimentStats = ({
     source = {},
     reviews = []
 } = {}) => {
+    const dominantKeys = [
+        'dominantReviewSentiment',
+        'dominantSentiment'
+    ];
+    const hasExplicitDominant = dominantKeys.some((key) =>
+        Object.prototype.hasOwnProperty.call(source, key)
+    );
+    const explicitDominantSentiment = normalizeReviewSentiment(
+        pickFirstDefined(source, dominantKeys)
+    );
     const directSentiment = normalizeReviewSentiment(
         pickFirstDefined(source, [
-            'dominantSentiment',
-            'dominantReviewSentiment',
             'reviewSentiment',
             'sentiment',
             'mood',
@@ -297,24 +305,36 @@ export const buildReviewSentimentStats = ({
             counts,
             rates,
             total: totalFromCounts,
-            dominant: getDominantSentiment(rates)
+            dominant: hasExplicitDominant
+                ? explicitDominantSentiment
+                : getDominantSentiment(rates)
         };
     }
 
-    if (directSentiment) {
+    const fallbackDirectSentiment = hasExplicitDominant
+        ? explicitDominantSentiment
+        : directSentiment;
+
+    if (fallbackDirectSentiment) {
         return {
             counts: {
-                positive: directSentiment === 'positive' ? 1 : 0,
-                neutral: directSentiment === 'neutral' ? 1 : 0,
-                negative: directSentiment === 'negative' ? 1 : 0
+                positive:
+                    fallbackDirectSentiment === 'positive' ? 1 : 0,
+                neutral:
+                    fallbackDirectSentiment === 'neutral' ? 1 : 0,
+                negative:
+                    fallbackDirectSentiment === 'negative' ? 1 : 0
             },
             rates: {
-                positive: directSentiment === 'positive' ? 100 : 0,
-                neutral: directSentiment === 'neutral' ? 100 : 0,
-                negative: directSentiment === 'negative' ? 100 : 0
+                positive:
+                    fallbackDirectSentiment === 'positive' ? 100 : 0,
+                neutral:
+                    fallbackDirectSentiment === 'neutral' ? 100 : 0,
+                negative:
+                    fallbackDirectSentiment === 'negative' ? 100 : 0
             },
             total: 1,
-            dominant: directSentiment
+            dominant: fallbackDirectSentiment
         };
     }
 
@@ -361,7 +381,9 @@ export const buildReviewSentimentStats = ({
         counts: counted,
         rates,
         total,
-        dominant: getDominantSentiment(rates)
+        dominant: hasExplicitDominant
+            ? explicitDominantSentiment
+            : getDominantSentiment(rates)
     };
 };
 

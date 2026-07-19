@@ -617,13 +617,26 @@ const AdminPage = () => {
             return;
         }
 
+        if (selectedReview.status !== 'PENDING') {
+            setErrorMessage(
+                '승인 또는 거절된 후기는 수정할 수 없습니다.'
+            );
+            return;
+        }
+
         const previousSentiment = selectedReview.sentiment || '';
-        const applySentiment = (nextSentiment) => {
+        const applySentiment = (
+            nextSentiment,
+            nextUpdatedAt
+        ) => {
             setSelectedReview((current) =>
                 current
                     ? {
                           ...current,
-                          sentiment: nextSentiment
+                          sentiment: nextSentiment,
+                          updatedAt:
+                              nextUpdatedAt ||
+                              current.updatedAt
                       }
                     : current
             );
@@ -633,7 +646,10 @@ const AdminPage = () => {
                     String(selectedReview.reviewId)
                         ? {
                               ...review,
-                              sentiment: nextSentiment
+                              sentiment: nextSentiment,
+                              updatedAt:
+                                  nextUpdatedAt ||
+                                  review.updatedAt
                           }
                         : review
                 )
@@ -653,7 +669,10 @@ const AdminPage = () => {
             const nextSentiment =
                 updatedReview.sentiment || sentiment;
 
-            applySentiment(nextSentiment);
+            applySentiment(
+                nextSentiment,
+                updatedReview.updatedAt
+            );
         } catch (error) {
             applySentiment(previousSentiment);
             console.error(
@@ -677,8 +696,9 @@ const AdminPage = () => {
     const statusMeta = getStatusMeta(
         selectedReview?.status
     );
-    const canEditReviewText =
+    const canEditReview =
         selectedReview?.status === 'PENDING';
+    const canEditReviewText = canEditReview;
     const violationSet = new Set(
         selectedReview?.violationItems || []
     );
@@ -1163,7 +1183,8 @@ const AdminPage = () => {
                                                         )
                                                     }
                                                     disabled={
-                                                        isSentimentSaving
+                                                        isSentimentSaving ||
+                                                        !canEditReview
                                                     }
                                                     style={{
                                                         ...sentimentSelectButtonStyle,
@@ -1179,9 +1200,15 @@ const AdminPage = () => {
                                                             ? option.color
                                                             : '#687284',
                                                         opacity:
-                                                            isSentimentSaving
+                                                            isSentimentSaving ||
+                                                            !canEditReview
                                                                 ? 0.72
-                                                                : 1
+                                                                : 1,
+                                                        cursor:
+                                                            canEditReview &&
+                                                            !isSentimentSaving
+                                                                ? 'pointer'
+                                                                : 'not-allowed'
                                                     }}
                                                 >
                                                     {option.label}

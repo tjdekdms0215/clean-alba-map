@@ -80,6 +80,16 @@ const pickFirstNumber = (source, keys) => {
     return null;
 };
 
+const formatWorkerCount = (value) => {
+    const number = coerceNumber(value) || 0;
+
+    if (Number.isInteger(number)) {
+        return String(number);
+    }
+
+    return number.toFixed(1).replace(/\.0$/, '');
+};
+
 const pickFirstText = (source, keys) => {
     if (!source || typeof source !== 'object') {
         return '';
@@ -524,12 +534,20 @@ const getShiftValue = (source) =>
     pickFirstDefined(source, [
         'timeSlot',
         'time_slot',
+        'timeSlotType',
+        'time_slot_type',
         'workTimeSlot',
         'work_time_slot',
+        'workerTimeSlot',
+        'worker_time_slot',
+        'simultaneousWorkerTimeSlot',
+        'simultaneous_worker_time_slot',
         'shift',
         'shiftType',
         'shift_type',
         'time',
+        'timePeriod',
+        'time_period',
         'slot',
         'label'
     ]);
@@ -561,11 +579,62 @@ const getCoworkerCountValue = (source) =>
         'workers',
         'count',
         'value',
+        'average',
+        'avg',
+        'mean',
+        'averageCount',
+        'avgCount',
+        'average_count',
+        'avg_count',
         'averageCoworkerCount',
         'avgCoworkerCount',
+        'averageWorkerCount',
+        'avgWorkerCount',
+        'average_worker_count',
+        'avg_worker_count',
         'averageWorkers',
-        'avgWorkers'
+        'avgWorkers',
+        'averageSimultaneousWorkerCount',
+        'avgSimultaneousWorkerCount',
+        'average_simultaneous_worker_count',
+        'avg_simultaneous_worker_count',
+        'averageSimultaneousWorkers',
+        'avgSimultaneousWorkers'
     ]);
+
+const pickWorkerStatCountByDay = (source, dayType) =>
+    pickFirstNumber(source, [
+        dayType,
+        `${dayType}Count`,
+        `${dayType}_count`,
+        `${dayType}WorkerCount`,
+        `${dayType}_worker_count`,
+        `${dayType}Average`,
+        `${dayType}_average`,
+        `${dayType}Avg`,
+        `${dayType}_avg`,
+        `${dayType}AverageCount`,
+        `${dayType}_average_count`,
+        `${dayType}AvgCount`,
+        `${dayType}_avg_count`,
+        `${dayType}AverageWorkerCount`,
+        `${dayType}_average_worker_count`,
+        `${dayType}AvgWorkerCount`,
+        `${dayType}_avg_worker_count`
+    ]);
+
+const ensureShiftRow = (result, shiftKey) => {
+    if (!result[shiftKey]) {
+        result[shiftKey] = {
+            id: shiftKey,
+            label: SHIFT_LABELS[shiftKey],
+            weekday: 0,
+            weekend: 0
+        };
+    }
+
+    return result[shiftKey];
+};
 
 const buildShiftRowsFromObject = (source) => {
     const result = {};
@@ -580,17 +649,10 @@ const buildShiftRowsFromObject = (source) => {
                 (dayType === 'weekday' ||
                     dayType === 'weekend')
             ) {
-                if (!result[shiftKey]) {
-                    result[shiftKey] = {
-                        id: shiftKey,
-                        label: SHIFT_LABELS[shiftKey],
-                        weekday: 0,
-                        weekend: 0
-                    };
-                }
+                const count = getCoworkerCountValue(entry);
 
-                result[shiftKey][dayType] =
-                    getCoworkerCountValue(entry) || 0;
+                ensureShiftRow(result, shiftKey)[dayType] =
+                    count ?? 0;
             }
         });
 
@@ -637,16 +699,10 @@ const buildShiftRowsFromObject = (source) => {
                         return;
                     }
 
-                    if (!result[normalizedShiftKey]) {
-                        result[normalizedShiftKey] = {
-                            id: normalizedShiftKey,
-                            label: SHIFT_LABELS[normalizedShiftKey],
-                            weekday: 0,
-                            weekend: 0
-                        };
-                    }
-
-                    result[normalizedShiftKey][dayType] =
+                    ensureShiftRow(
+                        result,
+                        normalizedShiftKey
+                    )[dayType] =
                         coerceNumber(shiftTypeValue) || 0;
                 }
             );
@@ -658,20 +714,30 @@ const buildShiftRowsFromObject = (source) => {
             return;
         }
 
-        if (!result[shiftKey]) {
-            result[shiftKey] = {
-                id: shiftKey,
-                label: SHIFT_LABELS[shiftKey],
-                weekday: 0,
-                weekend: 0
-            };
-        }
+        const row = ensureShiftRow(result, shiftKey);
 
         if (
             typeof value === 'object' &&
             value !== null &&
             !Array.isArray(value)
         ) {
+            const weekdayCount = pickWorkerStatCountByDay(
+                value,
+                'weekday'
+            );
+            const weekendCount = pickWorkerStatCountByDay(
+                value,
+                'weekend'
+            );
+
+            if (weekdayCount !== null) {
+                row.weekday = weekdayCount;
+            }
+
+            if (weekendCount !== null) {
+                row.weekend = weekendCount;
+            }
+
             Object.entries(value).forEach(
                 ([dayTypeKey, dayTypeValue]) => {
                     const normalizedDayType =
@@ -681,7 +747,7 @@ const buildShiftRowsFromObject = (source) => {
                         normalizedDayType === 'weekday' ||
                         normalizedDayType === 'weekend'
                     ) {
-                        result[shiftKey][normalizedDayType] =
+                        row[normalizedDayType] =
                             coerceNumber(dayTypeValue) || 0;
                     }
                 }
@@ -805,22 +871,29 @@ const extractReviewCollection = (source) => {
 };
 
 const buildShiftRows = (workspace) => {
+    const hasBackendWorkerStats =
+        Object.prototype.hasOwnProperty.call(
+            workspace || {},
+            'simultaneousWorkerStats'
+        );
     const source =
-        workspace?.simultaneousWorkerStats ||
-        workspace?.staffingStats ||
-        workspace?.timeSlotWorkerStats ||
-        workspace?.workerStats ||
-        workspace?.workerCountStats ||
-        workspace?.coworkerStats ||
-        workspace?.coworkerCountStats ||
-        workspace?.shiftStats ||
-        workspace?.simultaneousWorkersStats ||
-        workspace?.simultaneousWorkerCountStats ||
-        null;
+        hasBackendWorkerStats
+            ? workspace?.simultaneousWorkerStats
+            : workspace?.staffingStats ||
+              workspace?.timeSlotWorkerStats ||
+              workspace?.workerStats ||
+              workspace?.workerCountStats ||
+              workspace?.coworkerStats ||
+              workspace?.coworkerCountStats ||
+              workspace?.shiftStats ||
+              workspace?.simultaneousWorkersStats ||
+              workspace?.simultaneousWorkerCountStats ||
+              null;
     const statsRowsMap = buildShiftRowsFromObject(source);
-    const rowsMap = hasShiftStats(statsRowsMap)
-        ? statsRowsMap
-        : buildShiftRowsFromReviews(buildReviews(workspace));
+    const rowsMap =
+        hasBackendWorkerStats || hasShiftStats(statsRowsMap)
+            ? statsRowsMap
+            : buildShiftRowsFromReviews(buildReviews(workspace));
     const rows = DEFAULT_SHIFT_ORDER.map((shiftKey) => ({
         id: shiftKey,
         label: SHIFT_LABELS[shiftKey],
@@ -1429,7 +1502,9 @@ const WorkspaceDetail = () => {
                                                                             }
                                                                         >
                                                                             {
-                                                                                value
+                                                                                formatWorkerCount(
+                                                                                    value
+                                                                                )
                                                                             }
                                                                             명
                                                                         </strong>
