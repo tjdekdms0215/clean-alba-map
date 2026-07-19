@@ -655,9 +655,15 @@ const normalizeAdminReview = (item) => {
             item?.workspaceDistrict ||
             workspace?.district ||
             workspace?.region ||
+            '지역 정보 없음',
+        address:
+            item?.address ||
+            item?.workspaceAddress ||
             workspace?.address ||
             workspace?.roadAddress ||
-            '지역 정보 없음',
+            workspace?.addressName ||
+            workspace?.roadAddressName ||
+            '',
         submitterId:
             item?.submitterId ||
             item?.authorEmail ||

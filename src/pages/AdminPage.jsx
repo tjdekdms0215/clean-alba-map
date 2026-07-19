@@ -965,13 +965,15 @@ const AdminPage = () => {
                                                 summaryMetaStyle
                                             }
                                         >
-                                            {
-                                                selectedReview.category
-                                            }
-                                            {' · '}
-                                            {
-                                                selectedReview.district
-                                            }
+                                            {[
+                                                selectedReview.category ||
+                                                    '업종 정보 없음',
+                                                selectedReview.district ||
+                                                    '지역 정보 없음',
+                                                selectedReview.address
+                                            ]
+                                                .filter(Boolean)
+                                                .join(' · ')}
                                         </p>
                                     </div>
 
