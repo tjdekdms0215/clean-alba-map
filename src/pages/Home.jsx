@@ -1108,7 +1108,7 @@ const Home = () => {
                                     : null)
                             }}
                         >
-                             ex.클린점수 60점 넘는 상대 카페 추천해줘
+                              ex. 클린점수 60점 넘는 상대 카페 추천해줘
                         </div>
 
                         {interpretedChips.length > 0 && (
