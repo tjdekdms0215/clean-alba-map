@@ -1261,10 +1261,11 @@ const Home = () => {
 
 const pageStyle = {
     width: '100%',
-    minHeight: '100dvh',
+    height: '100dvh',
     backgroundColor: '#f5f5f5',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    overflow: 'hidden'
 };
 
 const headerStyle = {
@@ -1653,18 +1654,21 @@ const mobileSearchChipStyle = {
 const listContainerStyle = {
     overflowY: 'auto',
     overflowX: 'hidden',
-    flex: 1,
-    minHeight: 0
+    flex: '0 1 496px',
+    minHeight: 0,
+    maxHeight: '496px'
 };
 
 const mobileListContainerStyle = {
     overflow: 'visible',
-    flex: '0 0 auto'
+    flex: '0 0 auto',
+    maxHeight: 'none'
 };
 
 const listItemStyle = {
     display: 'block',
     width: '100%',
+    height: '62px',
     minHeight: '62px',
     padding: '11px 16px',
     border: 'none',
@@ -1672,10 +1676,13 @@ const listItemStyle = {
     backgroundColor: '#ffffff',
     textAlign: 'left',
     cursor: 'pointer',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    overflow: 'hidden'
 };
 
 const mobileListItemStyle = {
+    height: 'auto',
+    minHeight: '64px',
     padding: '14px'
 };
 

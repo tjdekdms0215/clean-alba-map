@@ -13,8 +13,101 @@ import {
     updateAdminReviewStatus
 } from '../api/reviews';
 import { REVIEW_INDICATORS } from '../constants/reviewIndicators';
-import { REVIEW_SENTIMENT_OPTIONS } from '../utils/reviewSentiment';
+import {
+    normalizeReviewSentiment,
+    REVIEW_SENTIMENT_OPTIONS
+} from '../utils/reviewSentiment';
 import AppHeader from '../components/AppHeader';
+
+const ADMIN_SENTIMENT_CACHE_KEY =
+    'cleanalba-admin-review-sentiments';
+
+const readAdminSentimentCache = () => {
+    if (typeof window === 'undefined') {
+        return {};
+    }
+
+    try {
+        const raw = window.localStorage.getItem(
+            ADMIN_SENTIMENT_CACHE_KEY
+        );
+
+        return raw ? JSON.parse(raw) : {};
+    } catch {
+        return {};
+    }
+};
+
+const writeAdminSentimentCache = (cache) => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    try {
+        window.localStorage.setItem(
+            ADMIN_SENTIMENT_CACHE_KEY,
+            JSON.stringify(cache)
+        );
+    } catch {
+        // localStorage is a convenience cache only.
+    }
+};
+
+const getCachedAdminSentiment = (reviewId) => {
+    if (!reviewId) {
+        return '';
+    }
+
+    const cache = readAdminSentimentCache();
+
+    return normalizeReviewSentiment(
+        cache[String(reviewId)]
+    );
+};
+
+const saveCachedAdminSentiment = (reviewId, sentiment) => {
+    if (!reviewId) {
+        return;
+    }
+
+    const normalizedSentiment =
+        normalizeReviewSentiment(sentiment);
+
+    if (!normalizedSentiment) {
+        return;
+    }
+
+    writeAdminSentimentCache({
+        ...readAdminSentimentCache(),
+        [String(reviewId)]: normalizedSentiment
+    });
+};
+
+const mergeCachedAdminSentiments = (reviews = []) =>
+    reviews.map((review) => {
+        const normalizedSentiment =
+            normalizeReviewSentiment(review.sentiment);
+
+        if (normalizedSentiment) {
+            saveCachedAdminSentiment(
+                review.reviewId,
+                normalizedSentiment
+            );
+
+            return {
+                ...review,
+                sentiment: normalizedSentiment
+            };
+        }
+
+        return {
+            ...review,
+            sentiment:
+                getCachedAdminSentiment(review.reviewId) ||
+                review.sentiment ||
+                ''
+        };
+    });
 
 const STATUS_TABS = [
     {
@@ -261,7 +354,7 @@ const AdminPage = () => {
 
         try {
             const data = await getAdminReviews();
-            setReviews(data);
+            setReviews(mergeCachedAdminSentiments(data));
         } catch (error) {
             console.error(
                 '관리자 리뷰 목록을 불러오지 못했습니다.',
@@ -376,6 +469,11 @@ const AdminPage = () => {
                 );
 
                 if (isMounted) {
+                    const cachedSentiment =
+                        getCachedAdminSentiment(
+                            selectedReviewId
+                        );
+
                     setSelectedReview((current) => ({
                         ...current,
                         ...data,
@@ -383,6 +481,7 @@ const AdminPage = () => {
                             data.sentiment ||
                             current?.sentiment ||
                             summary?.sentiment ||
+                            cachedSentiment ||
                             ''
                     }));
                 }
@@ -412,6 +511,16 @@ const AdminPage = () => {
 
     const handleModeration = async (nextStatus) => {
         if (!selectedReview) {
+            return;
+        }
+
+        if (
+            nextStatus === 'APPROVED' &&
+            !selectedReview.sentiment
+        ) {
+            setErrorMessage(
+                '후기 분위기를 먼저 선택한 뒤 승인해 주세요.'
+            );
             return;
         }
 
@@ -617,9 +726,12 @@ const AdminPage = () => {
             return;
         }
 
-        if (selectedReview.status !== 'PENDING') {
+        if (
+            selectedReview.status !== 'PENDING' &&
+            selectedReview.sentiment
+        ) {
             setErrorMessage(
-                '승인 또는 거절된 후기는 수정할 수 없습니다.'
+                '이미 승인 또는 거절된 후기는 선택된 후기 분위기를 수정할 수 없습니다.'
             );
             return;
         }
@@ -669,6 +781,10 @@ const AdminPage = () => {
             const nextSentiment =
                 updatedReview.sentiment || sentiment;
 
+            saveCachedAdminSentiment(
+                selectedReview.reviewId,
+                nextSentiment
+            );
             applySentiment(
                 nextSentiment,
                 updatedReview.updatedAt
@@ -699,6 +815,14 @@ const AdminPage = () => {
     const canEditReview =
         selectedReview?.status === 'PENDING';
     const canEditReviewText = canEditReview;
+    const hasReviewSentiment = Boolean(
+        selectedReview?.sentiment
+    );
+    const needsReviewSentiment =
+        Boolean(selectedReview) && !hasReviewSentiment;
+    const canSelectReviewSentiment =
+        Boolean(selectedReview) &&
+        (canEditReview || !hasReviewSentiment);
     const violationSet = new Set(
         selectedReview?.violationItems || []
     );
@@ -1161,10 +1285,48 @@ const AdminPage = () => {
                                 </div>
                             </article>
 
-                            <article style={sectionCardStyle}>
-                                <h2 style={sectionTitleStyle}>
-                                    후기 분위기
-                                </h2>
+                            <article
+                                style={{
+                                    ...sectionCardStyle,
+                                    ...(needsReviewSentiment
+                                        ? sentimentRequiredCardStyle
+                                        : null)
+                                }}
+                            >
+                                <div
+                                    style={
+                                        sentimentHeaderRowStyle
+                                    }
+                                >
+                                    <h2 style={sectionTitleStyle}>
+                                        후기 분위기
+                                    </h2>
+
+                                    {needsReviewSentiment && (
+                                        <span
+                                            style={
+                                                sentimentRequiredBadgeStyle
+                                            }
+                                        >
+                                            {selectedReview.status ===
+                                            'PENDING'
+                                                ? '승인 전 필수'
+                                                : '누락 보정'}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {needsReviewSentiment && (
+                                    <p
+                                        style={
+                                            sentimentNoticeStyle
+                                        }
+                                    >
+                                        분위기를 선택해야 사업장 상세와
+                                        지도 팝업의 후기 분위기 통계에
+                                        반영됩니다.
+                                    </p>
+                                )}
 
                                 <div style={sentimentSelectRowStyle}>
                                     {REVIEW_SENTIMENT_OPTIONS.map(
@@ -1184,7 +1346,7 @@ const AdminPage = () => {
                                                     }
                                                     disabled={
                                                         isSentimentSaving ||
-                                                        !canEditReview
+                                                        !canSelectReviewSentiment
                                                     }
                                                     style={{
                                                         ...sentimentSelectButtonStyle,
@@ -1201,12 +1363,12 @@ const AdminPage = () => {
                                                             : '#687284',
                                                         opacity:
                                                             (isSentimentSaving ||
-                                                                !canEditReview) &&
+                                                                !canSelectReviewSentiment) &&
                                                             !isSelected
                                                                 ? 0.72
                                                                 : 1,
                                                         cursor:
-                                                            canEditReview &&
+                                                            canSelectReviewSentiment &&
                                                             !isSentimentSaving
                                                                 ? 'pointer'
                                                                 : 'not-allowed'
@@ -1220,7 +1382,12 @@ const AdminPage = () => {
                                 </div>
 
                                 <p style={sentimentHelpTextStyle}>
-                                    승인 후 사업장 상세의 후기 분위기 비율에 반영됩니다.
+                                    {needsReviewSentiment
+                                        ? selectedReview.status ===
+                                          'PENDING'
+                                            ? '후기 분위기 선택 후 승인할 수 있습니다.'
+                                            : '이미 승인된 리뷰지만 분위기가 비어 있어 분위기만 선택할 수 있습니다.'
+                                        : '선택된 분위기가 사업장 상세의 후기 분위기 비율에 반영됩니다.'}
                                 </p>
                             </article>
 
@@ -1512,15 +1679,21 @@ const AdminPage = () => {
 
                                     <button
                                         type="button"
-                                        style={
-                                            approveButtonStyle
-                                        }
+                                        style={{
+                                            ...approveButtonStyle,
+                                            ...(!hasReviewSentiment
+                                                ? disabledApproveButtonStyle
+                                                : null)
+                                        }}
                                         onClick={() =>
                                             handleModeration(
                                                 'APPROVED'
                                             )
                                         }
-                                        disabled={isUpdating}
+                                        disabled={
+                                            isUpdating ||
+                                            !hasReviewSentiment
+                                        }
                                     >
                                         ✓ 승인하기
                                     </button>
@@ -1960,23 +2133,66 @@ const workerValueStyle = {
 const sentimentSelectRowStyle = {
     display: 'grid',
     gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-    gap: '8px'
+    gap: '10px'
 };
 
 const sentimentSelectButtonStyle = {
-    height: '38px',
-    border: '1px solid',
-    borderRadius: '10px',
+    height: '48px',
+    border: '2px solid',
+    borderRadius: '12px',
     cursor: 'pointer',
-    fontSize: '13px',
+    fontSize: '14px',
     fontWeight: '900',
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    boxShadow: '0 8px 18px rgba(42, 56, 90, 0.06)'
 };
 
 const sentimentHelpTextStyle = {
-    margin: '10px 0 0',
+    margin: '12px 0 0',
     color: '#9EA6B3',
     fontSize: '12px',
+    lineHeight: '1.5'
+};
+
+const sentimentRequiredCardStyle = {
+    borderColor: '#4668EC',
+    background:
+        'linear-gradient(180deg, #FFFFFF 0%, #F7F9FF 100%)',
+    boxShadow: '0 14px 34px rgba(70, 104, 236, 0.16)'
+};
+
+const sentimentHeaderRowStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '10px',
+    marginBottom: '12px'
+};
+
+const sentimentRequiredBadgeStyle = {
+    minWidth: '74px',
+    height: '26px',
+    padding: '0 10px',
+    borderRadius: '999px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4668EC',
+    color: '#FFFFFF',
+    fontSize: '12px',
+    fontWeight: '900',
+    whiteSpace: 'nowrap'
+};
+
+const sentimentNoticeStyle = {
+    margin: '0 0 14px',
+    padding: '11px 12px',
+    border: '1px solid #D9E2FF',
+    borderRadius: '10px',
+    backgroundColor: '#EEF3FF',
+    color: '#3150C8',
+    fontSize: '12px',
+    fontWeight: '800',
     lineHeight: '1.5'
 };
 
@@ -2170,6 +2386,13 @@ const approveButtonStyle = {
     fontSize: '14px',
     fontWeight: '800',
     boxShadow: '0 8px 18px rgba(70, 104, 236, 0.22)'
+};
+
+const disabledApproveButtonStyle = {
+    backgroundColor: '#CBD2DE',
+    color: '#FFFFFF',
+    cursor: 'not-allowed',
+    boxShadow: 'none'
 };
 
 export default AdminPage;
