@@ -1654,15 +1654,13 @@ const mobileSearchChipStyle = {
 const listContainerStyle = {
     overflowY: 'auto',
     overflowX: 'hidden',
-    flex: '0 1 496px',
-    minHeight: 0,
-    maxHeight: '496px'
+    flex: 1,
+    minHeight: 0
 };
 
 const mobileListContainerStyle = {
     overflow: 'visible',
-    flex: '0 0 auto',
-    maxHeight: 'none'
+    flex: '0 0 auto'
 };
 
 const listItemStyle = {

@@ -1285,48 +1285,10 @@ const AdminPage = () => {
                                 </div>
                             </article>
 
-                            <article
-                                style={{
-                                    ...sectionCardStyle,
-                                    ...(needsReviewSentiment
-                                        ? sentimentRequiredCardStyle
-                                        : null)
-                                }}
-                            >
-                                <div
-                                    style={
-                                        sentimentHeaderRowStyle
-                                    }
-                                >
-                                    <h2 style={sectionTitleStyle}>
-                                        후기 분위기
-                                    </h2>
-
-                                    {needsReviewSentiment && (
-                                        <span
-                                            style={
-                                                sentimentRequiredBadgeStyle
-                                            }
-                                        >
-                                            {selectedReview.status ===
-                                            'PENDING'
-                                                ? '승인 전 필수'
-                                                : '누락 보정'}
-                                        </span>
-                                    )}
-                                </div>
-
-                                {needsReviewSentiment && (
-                                    <p
-                                        style={
-                                            sentimentNoticeStyle
-                                        }
-                                    >
-                                        분위기를 선택해야 사업장 상세와
-                                        지도 팝업의 후기 분위기 통계에
-                                        반영됩니다.
-                                    </p>
-                                )}
+                            <article style={sectionCardStyle}>
+                                <h2 style={sectionTitleStyle}>
+                                    후기 분위기
+                                </h2>
 
                                 <div style={sentimentSelectRowStyle}>
                                     {REVIEW_SENTIMENT_OPTIONS.map(
@@ -2151,48 +2113,6 @@ const sentimentHelpTextStyle = {
     margin: '12px 0 0',
     color: '#9EA6B3',
     fontSize: '12px',
-    lineHeight: '1.5'
-};
-
-const sentimentRequiredCardStyle = {
-    borderColor: '#4668EC',
-    background:
-        'linear-gradient(180deg, #FFFFFF 0%, #F7F9FF 100%)',
-    boxShadow: '0 14px 34px rgba(70, 104, 236, 0.16)'
-};
-
-const sentimentHeaderRowStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '10px',
-    marginBottom: '12px'
-};
-
-const sentimentRequiredBadgeStyle = {
-    minWidth: '74px',
-    height: '26px',
-    padding: '0 10px',
-    borderRadius: '999px',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#4668EC',
-    color: '#FFFFFF',
-    fontSize: '12px',
-    fontWeight: '900',
-    whiteSpace: 'nowrap'
-};
-
-const sentimentNoticeStyle = {
-    margin: '0 0 14px',
-    padding: '11px 12px',
-    border: '1px solid #D9E2FF',
-    borderRadius: '10px',
-    backgroundColor: '#EEF3FF',
-    color: '#3150C8',
-    fontSize: '12px',
-    fontWeight: '800',
     lineHeight: '1.5'
 };
 
