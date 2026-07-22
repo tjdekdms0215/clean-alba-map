@@ -172,12 +172,14 @@ const ReviewSelect = () => {
                             : null)
                     }}
                 >
-                    <div style={titleAreaStyle}>
-                        <h1 style={titleStyle}>알바 후기 작성</h1>
-                        <p style={subtitleStyle}>
-                            후기를 남길 사업장을 검색하세요.
-                        </p>
-                    </div>
+                    {!isMobile && (
+                        <div style={titleAreaStyle}>
+                            <h1 style={titleStyle}>알바 후기 작성</h1>
+                            <p style={subtitleStyle}>
+                                후기를 남길 사업장을 검색하세요.
+                            </p>
+                        </div>
+                    )}
 
                     <div
                         style={{
@@ -190,6 +192,34 @@ const ReviewSelect = () => {
                                 : null)
                         }}
                     >
+                        {isMobile && (
+                            <div
+                                style={{
+                                    ...mobileTitleAreaInsideCardStyle,
+                                    ...(!shouldCenterMobileSearch
+                                        ? mobileTitleAreaInsideCardTopStyle
+                                        : null)
+                                }}
+                            >
+                                <h1
+                                    style={{
+                                        ...titleStyle,
+                                        ...mobileTitleStyle
+                                    }}
+                                >
+                                    알바 후기 작성
+                                </h1>
+                                <p
+                                    style={{
+                                        ...subtitleStyle,
+                                        ...mobileSubtitleStyle
+                                    }}
+                                >
+                                    후기를 남길 사업장을 검색하세요.
+                                </p>
+                            </div>
+                        )}
+
                         <div
                             style={{
                                 ...searchTopStyle,
@@ -501,7 +531,7 @@ const mainStyle = {
 };
 
 const mobileMainStyle = {
-    padding: '28px 14px 42px',
+    padding: '22px 14px 36px',
     justifyContent: 'center'
 };
 
@@ -546,7 +576,7 @@ const searchCardStyle = {
 };
 
 const mobileSearchCardStyle = {
-    minHeight: '360px',
+    minHeight: '420px',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'flex-start'
@@ -554,6 +584,28 @@ const mobileSearchCardStyle = {
 
 const mobileCenteredSearchCardStyle = {
     justifyContent: 'center'
+};
+
+const mobileTitleAreaInsideCardStyle = {
+    textAlign: 'center',
+    padding: '0 20px',
+    marginBottom: '28px'
+};
+
+const mobileTitleAreaInsideCardTopStyle = {
+    paddingTop: '34px'
+};
+
+const mobileTitleStyle = {
+    marginBottom: '12px',
+    fontSize: '30px',
+    lineHeight: '1.2',
+    letterSpacing: '-0.8px'
+};
+
+const mobileSubtitleStyle = {
+    fontSize: '15px',
+    lineHeight: '1.45'
 };
 
 const searchTopStyle = {
