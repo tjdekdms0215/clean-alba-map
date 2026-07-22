@@ -172,14 +172,28 @@ const ReviewSelect = () => {
                             : null)
                     }}
                 >
-                    {!isMobile && (
-                        <div style={titleAreaStyle}>
-                            <h1 style={titleStyle}>알바 후기 작성</h1>
-                            <p style={subtitleStyle}>
-                                후기를 남길 사업장을 검색하세요.
-                            </p>
-                        </div>
-                    )}
+                    <div style={titleAreaStyle}>
+                        <h1
+                            style={{
+                                ...titleStyle,
+                                ...(isMobile
+                                    ? mobileTitleStyle
+                                    : null)
+                            }}
+                        >
+                            알바 후기 작성
+                        </h1>
+                        <p
+                            style={{
+                                ...subtitleStyle,
+                                ...(isMobile
+                                    ? mobileSubtitleStyle
+                                    : null)
+                            }}
+                        >
+                            후기를 남길 사업장을 검색하세요.
+                        </p>
+                    </div>
 
                     <div
                         style={{
@@ -192,34 +206,6 @@ const ReviewSelect = () => {
                                 : null)
                         }}
                     >
-                        {isMobile && (
-                            <div
-                                style={{
-                                    ...mobileTitleAreaInsideCardStyle,
-                                    ...(!shouldCenterMobileSearch
-                                        ? mobileTitleAreaInsideCardTopStyle
-                                        : null)
-                                }}
-                            >
-                                <h1
-                                    style={{
-                                        ...titleStyle,
-                                        ...mobileTitleStyle
-                                    }}
-                                >
-                                    알바 후기 작성
-                                </h1>
-                                <p
-                                    style={{
-                                        ...subtitleStyle,
-                                        ...mobileSubtitleStyle
-                                    }}
-                                >
-                                    후기를 남길 사업장을 검색하세요.
-                                </p>
-                            </div>
-                        )}
-
                         <div
                             style={{
                                 ...searchTopStyle,
@@ -531,7 +517,7 @@ const mainStyle = {
 };
 
 const mobileMainStyle = {
-    padding: '22px 14px 36px',
+    padding: '40px 14px 44px',
     justifyContent: 'center'
 };
 
@@ -576,28 +562,16 @@ const searchCardStyle = {
 };
 
 const mobileSearchCardStyle = {
-    minHeight: '420px',
+    minHeight: 'auto',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'flex-start'
 };
 
-const mobileCenteredSearchCardStyle = {
-    justifyContent: 'center'
-};
-
-const mobileTitleAreaInsideCardStyle = {
-    textAlign: 'center',
-    padding: '0 20px',
-    marginBottom: '28px'
-};
-
-const mobileTitleAreaInsideCardTopStyle = {
-    paddingTop: '34px'
-};
+const mobileCenteredSearchCardStyle = {};
 
 const mobileTitleStyle = {
-    marginBottom: '12px',
+    marginBottom: '10px',
     fontSize: '30px',
     lineHeight: '1.2',
     letterSpacing: '-0.8px'
@@ -614,12 +588,12 @@ const searchTopStyle = {
 };
 
 const mobileSearchTopStyle = {
-    padding: '24px 20px 18px'
+    padding: '20px 18px'
 };
 
 const mobileCenteredSearchTopStyle = {
     width: '100%',
-    padding: '0 20px'
+    padding: '20px 18px'
 };
 
 const searchFormStyle = {
@@ -629,7 +603,8 @@ const searchFormStyle = {
 };
 
 const mobileSearchFormStyle = {
-    flexDirection: 'column'
+    flexDirection: 'column',
+    gap: '10px'
 };
 
 const searchInputStyle = {

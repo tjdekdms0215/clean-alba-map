@@ -66,6 +66,9 @@ const AppHeader = () => {
                     ...headerStyle,
                     ...(isMobile
                         ? mobileHeaderStyle
+                        : null),
+                    ...(isMobile && authState.isLoggedIn
+                        ? mobileLoggedInHeaderStyle
                         : null)
                 }}
             >
@@ -74,6 +77,9 @@ const AppHeader = () => {
                         ...headerLeftStyle,
                         ...(isMobile
                             ? mobileHeaderLeftStyle
+                            : null),
+                        ...(isMobile && authState.isLoggedIn
+                            ? mobileLoggedInHeaderLeftStyle
                             : null)
                     }}
                 >
@@ -122,12 +128,22 @@ const AppHeader = () => {
                         ...headerRightStyle,
                         ...(isMobile
                             ? mobileHeaderRightStyle
+                            : null),
+                        ...(isMobile && authState.isLoggedIn
+                            ? mobileLoggedInHeaderRightStyle
                             : null)
                     }}
                 >
                     {authState.isLoggedIn ? (
                         <>
-                            <div style={profileDisplayStyle}>
+                            <div
+                                style={{
+                                    ...profileDisplayStyle,
+                                    ...(isMobile
+                                        ? mobileProfileDisplayStyle
+                                        : null)
+                                }}
+                            >
                                 <div style={profileCircleStyle}>
                                     <img
                                         src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
@@ -161,7 +177,9 @@ const AppHeader = () => {
                                             : null)
                                     }}
                                 >
-                                    관리자 페이지
+                                    {isMobile
+                                        ? '관리자'
+                                        : '관리자 페이지'}
                                 </button>
                             )}
 
@@ -252,6 +270,15 @@ const mobileHeaderStyle = {
     flexWrap: 'nowrap'
 };
 
+const mobileLoggedInHeaderStyle = {
+    minHeight: '82px',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    justifyContent: 'center',
+    gap: '7px',
+    padding: '8px 10px 9px'
+};
+
 const headerLeftStyle = {
     display: 'flex',
     alignItems: 'center',
@@ -267,6 +294,11 @@ const mobileHeaderLeftStyle = {
     flexWrap: 'nowrap'
 };
 
+const mobileLoggedInHeaderLeftStyle = {
+    width: '100%',
+    justifyContent: 'flex-start'
+};
+
 const headerRightStyle = {
     display: 'flex',
     alignItems: 'center',
@@ -280,6 +312,15 @@ const mobileHeaderRightStyle = {
     justifyContent: 'flex-end',
     gap: '4px',
     flexShrink: 0
+};
+
+const mobileLoggedInHeaderRightStyle = {
+    width: '100%',
+    justifyContent: 'flex-end'
+};
+
+const mobileProfileDisplayStyle = {
+    display: 'none'
 };
 
 const logoBtnStyle = {
