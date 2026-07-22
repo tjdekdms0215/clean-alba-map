@@ -18,6 +18,12 @@ const ReviewSelect = () => {
     const [hasSearched, setHasSearched] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+    const shouldCenterMobileSearch =
+        isMobile &&
+        !hasSearched &&
+        !isLoading &&
+        !errorMessage &&
+        results.length === 0;
 
     useEffect(() => {
         const token = localStorage.getItem('jwt_token');
@@ -178,6 +184,9 @@ const ReviewSelect = () => {
                             ...searchCardStyle,
                             ...(isMobile
                                 ? mobileSearchCardStyle
+                                : null),
+                            ...(shouldCenterMobileSearch
+                                ? mobileCenteredSearchCardStyle
                                 : null)
                         }}
                     >
@@ -186,6 +195,9 @@ const ReviewSelect = () => {
                                 ...searchTopStyle,
                                 ...(isMobile
                                     ? mobileSearchTopStyle
+                                    : null),
+                                ...(shouldCenterMobileSearch
+                                    ? mobileCenteredSearchTopStyle
                                     : null)
                             }}
                         >
@@ -540,6 +552,10 @@ const mobileSearchCardStyle = {
     justifyContent: 'flex-start'
 };
 
+const mobileCenteredSearchCardStyle = {
+    justifyContent: 'center'
+};
+
 const searchTopStyle = {
     padding: '20px',
     boxSizing: 'border-box'
@@ -547,6 +563,11 @@ const searchTopStyle = {
 
 const mobileSearchTopStyle = {
     padding: '24px 20px 18px'
+};
+
+const mobileCenteredSearchTopStyle = {
+    width: '100%',
+    padding: '0 20px'
 };
 
 const searchFormStyle = {

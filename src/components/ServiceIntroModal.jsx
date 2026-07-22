@@ -165,8 +165,9 @@ const modalOverlayStyle = {
 };
 
 const mobileModalOverlayStyle = {
-    alignItems: 'flex-end',
-    padding: '12px'
+    alignItems: 'center',
+    padding: '12px',
+    boxSizing: 'border-box'
 };
 
 const introModalStyle = {

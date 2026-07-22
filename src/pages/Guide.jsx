@@ -54,7 +54,6 @@ const Guide = () => {
                     <article key={index} style={faqItemStyle}>
                         <div style={faqQuestionRowStyle}>
                             <strong style={faqQuestionStyle}>Q. {item.question}</strong>
-                            <span style={faqArrowStyle}>⌃</span>
                         </div>
                         <p style={faqAnswerStyle}>A. {item.answer}</p>
                     </article>
@@ -562,7 +561,6 @@ const faqListStyle = { borderTop: '1px solid #eee' };
 const faqItemStyle = { padding: '24px 0', borderBottom: '1px solid #eee' };
 const faqQuestionRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
 const faqQuestionStyle = { color: '#333', fontSize: '15px', fontWeight: 'bold' };
-const faqArrowStyle = { color: '#ccc', fontSize: '15px' };
 const faqAnswerStyle = { margin: '12px 0 0 0', color: '#666', fontSize: '14px', lineHeight: '1.6' };
 
 const footerTextStyle = { color: '#888', fontSize: '14px' };
