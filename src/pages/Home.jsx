@@ -186,6 +186,10 @@ const centerMapOnStore = (map, store) => {
         )
     );
 
+    window.requestAnimationFrame(() => {
+        map.panBy(0, -170);
+    });
+
     return true;
 };
 
@@ -674,7 +678,7 @@ const Home = () => {
                   left: popupPoint.x,
                   top: popupPoint.y,
                   transform:
-                      'translate(-50%, calc(-100% - 18px))'
+                      'translate(-50%, 48px)'
               }
             : null;
     const interpretedChips =
