@@ -1788,26 +1788,27 @@ const mobileSidebarStyle = {
 
 const statusTabsStyle = {
     display: 'flex',
-    gap: '6px',
-    padding: '14px 10px 8px'
+    justifyContent: 'space-between',
+    gap: '8px',
+    padding: '14px 12px 8px'
 };
 
 const statusTabStyle = {
-    minWidth: '72px',
+    minWidth: 0,
     minHeight: '30px',
-    padding: '0 12px',
+    padding: '0 8px',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     border: 'none',
     borderRadius: '8px',
     cursor: 'pointer',
-    fontSize: '13px',
+    fontSize: '12px',
     fontWeight: '800',
     lineHeight: '1.25',
     textAlign: 'center',
     wordBreak: 'keep-all',
-    whiteSpace: 'normal',
+    whiteSpace: 'nowrap',
     flex: '1 1 0'
 };
 
@@ -1927,7 +1928,7 @@ const adminStatsCardStyle = {
     flexDirection: 'column',
     justifyContent: 'space-between',
     border: '1px solid #E7EBF2',
-    borderRadius: '2px',
+    borderRadius: '18px',
     backgroundColor: '#FFFFFF',
     boxSizing: 'border-box'
 };

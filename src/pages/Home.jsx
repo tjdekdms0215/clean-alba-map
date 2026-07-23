@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     getWorkspaceSummary,
@@ -128,6 +128,46 @@ const getStoreCoordinates = (store) => {
     return { lat, lng };
 };
 
+const getMapContainerPointFromStore = (map, store) => {
+    if (!map || !window.kakao || !window.kakao.maps) {
+        return null;
+    }
+
+    const coordinates = getStoreCoordinates(store);
+
+    if (!coordinates) {
+        return null;
+    }
+
+    const projection = map.getProjection?.();
+
+    if (!projection) {
+        return null;
+    }
+
+    const latLng = new window.kakao.maps.LatLng(
+        coordinates.lat,
+        coordinates.lng
+    );
+    const point =
+        typeof projection.containerPointFromCoords === 'function'
+            ? projection.containerPointFromCoords(latLng)
+            : projection.pointFromCoords?.(latLng);
+
+    if (
+        !point ||
+        !Number.isFinite(point.x) ||
+        !Number.isFinite(point.y)
+    ) {
+        return null;
+    }
+
+    return {
+        x: point.x,
+        y: point.y
+    };
+};
+
 const normalizeWorkspaceNameText = (value) => {
     if (typeof value !== 'string') {
         return '';
@@ -225,10 +265,13 @@ const buildInterpretedSearchChips = (
 const Home = () => {
     const navigate = useNavigate();
     const isMobile = useMediaQuery('(max-width: 900px)');
+    const mapRef = useRef(null);
+    const selectedStoreRef = useRef(null);
 
     const [stores, setStores] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStore, setSelectedStore] = useState(null);
+    const [popupPoint, setPopupPoint] = useState(null);
     const [selectedStoreSummary, setSelectedStoreSummary] =
         useState(null);
     const [searchInterpretation, setSearchInterpretation] =
@@ -308,6 +351,15 @@ const Home = () => {
         };
 
         const map = new window.kakao.maps.Map(container, options);
+        mapRef.current = map;
+        const updateCurrentPopupPosition = () => {
+            setPopupPoint(
+                getMapContainerPointFromStore(
+                    map,
+                    selectedStoreRef.current
+                )
+            );
+        };
 
         window.requestAnimationFrame(() => {
             window.kakao.maps.event.trigger(
@@ -320,6 +372,7 @@ const Home = () => {
                     centerCoordinates.lng
                 )
             );
+            updateCurrentPopupPosition();
         });
 
         stores.forEach((store) => {
@@ -367,10 +420,68 @@ const Home = () => {
             marker.setMap(map);
 
             window.kakao.maps.event.addListener(marker, 'click', () => {
+                selectedStoreRef.current = store;
                 setSelectedStore(store);
+                setPopupPoint(
+                    getMapContainerPointFromStore(map, store)
+                );
             });
         });
+
+        window.kakao.maps.event.addListener(
+            map,
+            'center_changed',
+            updateCurrentPopupPosition
+        );
+        window.kakao.maps.event.addListener(
+            map,
+            'zoom_changed',
+            updateCurrentPopupPosition
+        );
+        window.kakao.maps.event.addListener(
+            map,
+            'idle',
+            updateCurrentPopupPosition
+        );
+
+        return () => {
+            window.kakao.maps.event.removeListener(
+                map,
+                'center_changed',
+                updateCurrentPopupPosition
+            );
+            window.kakao.maps.event.removeListener(
+                map,
+                'zoom_changed',
+                updateCurrentPopupPosition
+            );
+            window.kakao.maps.event.removeListener(
+                map,
+                'idle',
+                updateCurrentPopupPosition
+            );
+
+            if (mapRef.current === map) {
+                mapRef.current = null;
+            }
+        };
     }, [stores, mapCenterStore, isMobile]);
+
+    useEffect(() => {
+        selectedStoreRef.current = selectedStore;
+
+        if (!selectedStore) {
+            setPopupPoint(null);
+            return;
+        }
+
+        setPopupPoint(
+            getMapContainerPointFromStore(
+                mapRef.current,
+                selectedStore
+            )
+        );
+    }, [selectedStore]);
 
     useEffect(() => {
         if (!selectedStore) {
@@ -530,6 +641,15 @@ const Home = () => {
     const sentimentMeta = getReviewSentimentMeta(
         sentimentStats?.dominant
     );
+    const popupPositionStyle =
+        !isMobile && popupPoint
+            ? {
+                  left: popupPoint.x,
+                  top: popupPoint.y,
+                  transform:
+                      'translate(-50%, calc(-100% - 18px))'
+              }
+            : null;
     const interpretedChips =
         buildInterpretedSearchChips(
             searchInterpretation
@@ -671,6 +791,7 @@ const Home = () => {
                             aria-label={`${getWorkspaceDisplayName(activeSelectedStore)} 사업장 정보`}
                             style={{
                                 ...popupStyle,
+                                ...popupPositionStyle,
                                 ...(isMobile
                                     ? mobilePopupStyle
                                     : null),
@@ -1195,6 +1316,8 @@ const Home = () => {
                                                 : null)
                                         }}
                                         onClick={() => {
+                                            selectedStoreRef.current =
+                                                store;
                                             setSelectedStore(store)
                                             setMapCenterStore(store);
                                         }}
@@ -1764,12 +1887,12 @@ const popupStyle = {
     left: '50%',
     transform: 'translate(-50%, -50%)',
 
-    width: '336px',
-    height: '448px',
+    width: '300px',
+    height: '400px',
     maxWidth: 'calc(100% - 32px)',
     maxHeight: 'calc(100% - 32px)',
 
-    padding: '20px',
+    padding: '16px',
     boxSizing: 'border-box',
 
     backgroundColor: '#ffffff',
@@ -1796,11 +1919,11 @@ const mobilePopupStyle = {
 
 const popupCloseBtnStyle = {
     position: 'absolute',
-    top: '14px',
-    right: '14px',
+    top: '11px',
+    right: '11px',
 
-    width: '30px',
-    height: '30px',
+    width: '26px',
+    height: '26px',
     padding: 0,
 
     display: 'flex',
@@ -1811,7 +1934,7 @@ const popupCloseBtnStyle = {
     border: 'none',
 
     color: '#8a8a8a',
-    fontSize: '19px',
+    fontSize: '16px',
     lineHeight: 1,
     cursor: 'pointer'
 };
@@ -1828,9 +1951,9 @@ const statusBadgeRowStyle = {
     display: 'flex',
     alignItems: 'center',
 
-    minHeight: '30px',
-    marginBottom: '8px',
-    paddingRight: '38px',
+    minHeight: '26px',
+    marginBottom: '6px',
+    paddingRight: '32px',
     flexShrink: 0
 };
 
@@ -1845,14 +1968,14 @@ const tagStatusStyle = {
     alignItems: 'center',
     justifyContent: 'center',
 
-    minWidth: '48px',
-    padding: '6px 11px',
+    minWidth: '42px',
+    padding: '5px 9px',
 
     backgroundColor: 'rgba(255,255,255,0.72)',
     border: 'none',
     borderRadius: 0,
 
-    fontSize: '13px',
+    fontSize: '12px',
     fontWeight: '900'
 };
 
@@ -1863,13 +1986,13 @@ const mobileTagStatusStyle = {
 };
 
 const popupStoreNameStyle = {
-    margin: '0 0 6px',
-    paddingRight: '30px',
+    margin: '0 0 5px',
+    paddingRight: '26px',
 
     color: '#2d2d2d',
-    fontSize: '19px',
+    fontSize: '17px',
     fontWeight: '900',
-    lineHeight: '1.25',
+    lineHeight: '1.2',
     display: '-webkit-box',
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
@@ -1891,11 +2014,11 @@ const popupMetaStyle = {
     alignItems: 'center',
     flexWrap: 'wrap',
 
-    gap: '6px',
-    margin: '0 0 10px',
+    gap: '5px',
+    margin: '0 0 8px',
 
     color: '#666666',
-    fontSize: '12px',
+    fontSize: '11px',
     fontWeight: '600',
     flexShrink: 0
 };
@@ -1914,9 +2037,9 @@ const grayBoxStyle = {
     display: 'flex',
     flexDirection: 'column',
 
-    gap: '6px',
-    marginBottom: '8px',
-    padding: '10px 12px',
+    gap: '5px',
+    marginBottom: '6px',
+    padding: '8px 10px',
 
     backgroundColor: 'rgba(255,255,255,0.72)',
     border: '1px solid rgba(214, 221, 232, 0.96)',
@@ -1934,9 +2057,9 @@ const tintedBoxStyle = {
     display: 'flex',
     flexDirection: 'column',
 
-    gap: '6px',
+    gap: '5px',
     marginBottom: '0',
-    padding: '10px 12px',
+    padding: '8px 10px',
 
     backgroundColor: 'rgba(255,255,255,0.48)',
     border: '1px solid rgba(214, 221, 232, 0.96)',
@@ -1953,11 +2076,11 @@ const boxRowStyle = {
     display: 'flex',
     alignItems: 'flex-start',
 
-    gap: '10px',
+    gap: '8px',
 
     color: '#333333',
-    fontSize: '12px',
-    lineHeight: '1.45'
+    fontSize: '11px',
+    lineHeight: '1.36'
 };
 
 const mobileBoxRowStyle = {
@@ -1967,7 +2090,7 @@ const mobileBoxRowStyle = {
 };
 
 const boxLabelStyle = {
-    minWidth: '62px',
+    minWidth: '56px',
     color: '#555555',
     fontWeight: '900',
     flexShrink: 0
@@ -1979,7 +2102,7 @@ const mobileBoxLabelStyle = {
 };
 
 const boxValueStyle = {
-    fontSize: '14px',
+    fontSize: '13px',
     fontWeight: '900'
 };
 
@@ -1991,9 +2114,9 @@ const boxTextStyle = {
     minWidth: 0,
 
     color: '#333333',
-    fontSize: '12px',
+    fontSize: '11px',
     fontWeight: '500',
-    lineHeight: '1.45',
+    lineHeight: '1.36',
 
     wordBreak: 'keep-all'
 };
@@ -2011,19 +2134,19 @@ const popupSummaryTextStyle = {
     overflow: 'hidden',
     whiteSpace: 'normal',
     wordBreak: 'keep-all',
-    minHeight: '2.6em',
-    maxHeight: '2.6em'
+    minHeight: '2.55em',
+    maxHeight: '2.55em'
 };
 
 const evidenceBlockStyle = {
     minWidth: 0,
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px'
+    gap: '5px'
 };
 
 const evidenceHeadingStyle = {
-    fontSize: '11px',
+    fontSize: '10px',
     fontWeight: '900',
     letterSpacing: '-0.2px'
 };
@@ -2035,7 +2158,7 @@ const mobileEvidenceHeadingStyle = {
 const evidenceItemsGridStyle = {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: '6px'
+    gap: '5px'
 };
 
 const mobileEvidenceItemsGridStyle = {
@@ -2047,9 +2170,9 @@ const mobileEvidenceItemsGridStyle = {
 const evidenceItemStyle = {
     display: 'flex',
     alignItems: 'flex-start',
-    gap: '7px',
-    minHeight: '40px',
-    padding: '6px 8px',
+    gap: '6px',
+    minHeight: '34px',
+    padding: '5px 7px',
     border: '1px solid rgba(214, 221, 232, 0.96)',
     backgroundColor: 'rgba(255,255,255,0.86)'
 };
@@ -2061,14 +2184,14 @@ const mobileEvidenceItemStyle = {
 };
 
 const evidenceTypeBadgeStyle = {
-    width: '18px',
-    height: '18px',
+    width: '16px',
+    height: '16px',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
     borderRadius: '999px',
-    fontSize: '9px',
+    fontSize: '8px',
     fontWeight: '900'
 };
 
@@ -2090,9 +2213,9 @@ const evidenceTextStyle = {
     display: '-webkit-box',
     minWidth: 0,
     color: '#333333',
-    fontSize: '11px',
+    fontSize: '10px',
     fontWeight: '900',
-    lineHeight: '1.25',
+    lineHeight: '1.2',
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
     whiteSpace: 'normal',
@@ -2137,7 +2260,7 @@ const detailButtonAreaStyle = {
     display: 'flex',
     justifyContent: 'flex-end',
     marginTop: 'auto',
-    paddingTop: '12px',
+    paddingTop: '9px',
     flexShrink: 0
 };
 
@@ -2146,7 +2269,7 @@ const mobileDetailButtonAreaStyle = {
 };
 
 const modernDetailBtnStyle = {
-    padding: '9px 14px',
+    padding: '8px 12px',
 
     backgroundColor: 'rgba(255,255,255,0.82)',
     border: 'none',
@@ -2155,7 +2278,7 @@ const modernDetailBtnStyle = {
     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
 
     cursor: 'pointer',
-    fontSize: '12px',
+    fontSize: '11px',
     lineHeight: '1.2',
     fontWeight: '900'
 };

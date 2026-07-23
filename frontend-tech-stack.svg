@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">FE 기술 스택</title>
+  <desc id="desc">Clean Alba Map 프론트엔드 기술 스택 다이어그램</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#cceffd"/>
+      <stop offset="52%" stop-color="#a9dbf0"/>
+      <stop offset="100%" stop-color="#8cc9e5"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#24456a" flood-opacity="0.16"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M2 2 L10 6 L2 10 Z" fill="#1b3275"/>
+    </marker>
+    <g id="pin">
+      <path d="M16 1C7.7 1 1 7.7 1 16c0 11.2 15 29 15 29s15-17.8 15-29C31 7.7 24.3 1 16 1Z" fill="#7bbfe0" opacity="0.22"/>
+      <circle cx="16" cy="16" r="6" fill="#ffffff" opacity="0.45"/>
+    </g>
+    <style>
+      .title {
+        fill: #172a66;
+        font-family: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+        font-size: 68px;
+        font-weight: 900;
+        letter-spacing: -2px;
+      }
+      .box-title {
+        fill: #172a66;
+        font-family: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+        font-size: 29px;
+        font-weight: 900;
+        text-anchor: middle;
+      }
+      .box-sub {
+        fill: #172a66;
+        font-family: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+        font-size: 20px;
+        font-weight: 650;
+        text-anchor: middle;
+      }
+      .footer {
+        fill: #172a66;
+        font-family: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+        font-size: 23px;
+        font-weight: 800;
+        text-anchor: middle;
+      }
+      .box {
+        fill: #ffffff;
+        stroke: #172a66;
+        stroke-width: 3;
+        filter: url(#shadow);
+      }
+      .line {
+        stroke: #1b3275;
+        stroke-width: 4;
+        marker-start: url(#arrow);
+        marker-end: url(#arrow);
+      }
+      .thin-line {
+        stroke: #1b3275;
+        stroke-width: 3.5;
+        marker-start: url(#arrow);
+        marker-end: url(#arrow);
+      }
+    </style>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+
+  <use href="#pin" x="95" y="112"/>
+  <use href="#pin" x="280" y="190" transform="scale(0.72)"/>
+  <use href="#pin" x="860" y="95" transform="scale(0.72)"/>
+  <use href="#pin" x="1400" y="140" transform="scale(0.75)"/>
+  <use href="#pin" x="170" y="515" transform="scale(0.62)"/>
+  <use href="#pin" x="1240" y="465" transform="scale(0.84)"/>
+  <use href="#pin" x="1440" y="655" transform="scale(0.76)"/>
+  <use href="#pin" x="345" y="770" transform="scale(0.76)"/>
+  <use href="#pin" x="640" y="770" transform="scale(0.65)"/>
+  <use href="#pin" x="1120" y="785" transform="scale(0.63)"/>
+
+  <text x="115" y="150" class="title">FE 기술 스택</text>
+
+  <line x1="800" y1="320" x2="800" y2="430" class="line"/>
+  <line x1="660" y1="500" x2="520" y2="500" class="line"/>
+  <line x1="940" y1="500" x2="1080" y2="500" class="line"/>
+  <line x1="800" y1="570" x2="800" y2="685" class="line"/>
+  <path d="M710 560 C640 630 560 640 485 690" fill="none" class="thin-line"/>
+  <path d="M890 560 C970 625 1035 650 1115 700" fill="none" class="thin-line"/>
+
+  <rect x="670" y="205" width="260" height="112" rx="8" class="box"/>
+  <text x="800" y="255" class="box-title">Vite</text>
+  <text x="800" y="288" class="box-sub">Build Tool</text>
+
+  <rect x="660" y="430" width="280" height="140" rx="8" class="box"/>
+  <text x="800" y="488" class="box-title">React</text>
+  <text x="800" y="522" class="box-sub">SPA · Component UI</text>
+
+  <rect x="305" y="430" width="245" height="140" rx="8" class="box"/>
+  <text x="428" y="486" class="box-title">React Router</text>
+  <text x="428" y="520" class="box-sub">페이지 라우팅</text>
+
+  <rect x="1050" y="430" width="245" height="140" rx="8" class="box"/>
+  <text x="1173" y="486" class="box-title">Axios</text>
+  <text x="1173" y="520" class="box-sub">REST API 연동</text>
+
+  <rect x="660" y="685" width="280" height="120" rx="8" class="box"/>
+  <text x="800" y="735" class="box-title">Kakao Maps SDK</text>
+  <text x="800" y="768" class="box-sub">지도 · 핀 · 팝업</text>
+
+  <rect x="280" y="682" width="270" height="116" rx="8" class="box"/>
+  <text x="415" y="730" class="box-title">Kakao OAuth</text>
+  <text x="415" y="763" class="box-sub">소셜 로그인</text>
+
+  <rect x="1050" y="682" width="270" height="116" rx="8" class="box"/>
+  <text x="1185" y="730" class="box-title">Responsive UI</text>
+  <text x="1185" y="763" class="box-sub">PC · Mobile 대응</text>
+
+  <text x="800" y="850" class="footer">Vercel 배포</text>
+</svg>
